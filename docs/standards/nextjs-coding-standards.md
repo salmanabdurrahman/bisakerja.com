@@ -1,0 +1,67 @@
+# Next.js Coding Standards
+
+Standar ini ditujukan untuk `apps/web` (Next.js App Router).
+
+## 1) Struktur Modul Frontend
+
+- Gunakan pendekatan domain-first di `features/*`.
+- `components/` hanya untuk komponen reusable lintas domain.
+- `services/` untuk API client, bukan untuk state UI.
+- `lib/` untuk utility murni.
+
+## 2) Server vs Client Components
+
+- Default ke **Server Component**.
+- Gunakan Client Component hanya jika butuh interaktivitas browser (`useState`, event handlers, browser APIs).
+- Batasi boundary client agar bundle tetap kecil.
+
+## 3) Data Fetching
+
+- Fetch data utama di server component bila memungkinkan.
+- Gunakan route handlers/backend API client yang typed.
+- Hindari duplicate fetching pada parent-child tree.
+- Tetapkan strategi cache secara eksplisit (`force-cache`, `no-store`, `revalidate`).
+
+## 4) State Management
+
+- State lokal sederhana: React state.
+- State lintas fitur/global: gunakan store yang disepakati tim (misal Zustand/Redux) secara konsisten.
+- Jangan taruh business rule kompleks di komponen presentasi.
+
+## 5) UI dan Accessibility
+
+- Komponen wajib keyboard-friendly dan aksesibel.
+- Gunakan semantic HTML.
+- Gambar pakai `next/image` jika sesuai.
+- Loading/error/empty states harus eksplisit.
+
+## 6) API Integration
+
+- Semua call ke backend lewat layer `services/`.
+- Error handling dari API harus dipetakan ke UI message yang konsisten.
+- Jangan hardcode endpoint; gunakan env config.
+
+## 7) Security
+
+- Sanitasi input user sebelum render data dinamis.
+- Jangan expose secrets di client bundle.
+- Gunakan HTTP-only cookie bila memakai session/token cookie pattern.
+- Validasi input tetap wajib di backend.
+
+## 8) Performance
+
+- Split komponen berat dengan dynamic import bila perlu.
+- Hindari client state berlebih di root layout.
+- Pantau web vitals untuk halaman kritikal.
+
+## 9) Testing Minimum
+
+- Unit test untuk util dan logic murni.
+- Component test untuk UI behavior penting.
+- E2E test untuk journey utama (auth, search, checkout, profile).
+
+## 10) Anti-Pattern yang Harus Dihindari
+
+- Fetching langsung dari banyak komponen tanpa koordinasi.
+- Menaruh seluruh halaman sebagai Client Component tanpa alasan.
+- Styling dan logic bisnis bercampur tidak terkontrol.
