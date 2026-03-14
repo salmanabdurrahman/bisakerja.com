@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -140,9 +141,9 @@ export function LoginForm({
 
       <p className="text-[14px] text-[#666666]" aria-live="polite">
         Don&apos;t have an account?{" "}
-        <a href="/auth/register" className="bk-link text-black underline">
+        <Link href="/auth/register" className="bk-link text-black underline">
           Register here
-        </a>
+        </Link>
       </p>
     </form>
   );

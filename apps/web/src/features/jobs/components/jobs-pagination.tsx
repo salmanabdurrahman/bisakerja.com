@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   buildPaginationHref,
   type JobsSearchParamsState,
@@ -28,7 +30,7 @@ export function JobsPagination({
       aria-label="Jobs pagination"
       className="bk-card flex flex-wrap items-center justify-between gap-3 p-4 text-sm"
     >
-      <a
+      <Link
         href={buildPaginationHref(state, state.page - 1)}
         aria-disabled={state.page <= 1}
         className={buttonVariants({
@@ -38,11 +40,11 @@ export function JobsPagination({
         })}
       >
         Previous
-      </a>
+      </Link>
       <span className="text-slate-600">
         Page {state.page} of {totalPages} ({totalRecords} jobs)
       </span>
-      <a
+      <Link
         href={buildPaginationHref(state, state.page + 1)}
         aria-disabled={state.page >= totalPages}
         className={buttonVariants({
@@ -53,7 +55,7 @@ export function JobsPagination({
         })}
       >
         Next
-      </a>
+      </Link>
     </nav>
   );
 }

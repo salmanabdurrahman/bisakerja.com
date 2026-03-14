@@ -1,8 +1,5 @@
-import type {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  PropsWithChildren,
-} from "react";
+import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils/cn";
 
@@ -82,11 +79,11 @@ export function Button({
 
 interface ButtonLinkProps
   extends
-    Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "className">,
+    Omit<React.ComponentProps<typeof Link>, "className">,
     ButtonStyleOptions {}
 
 /**
- * ButtonLink renders an anchor with button styling.
+ * ButtonLink renders a Next.js Link with button styling.
  */
 export function ButtonLink({
   variant = "outline",
@@ -96,7 +93,7 @@ export function ButtonLink({
   ...props
 }: PropsWithChildren<ButtonLinkProps>) {
   return (
-    <a
+    <Link
       className={buttonVariants({ variant, size, fullWidth, className })}
       {...props}
     />

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { APIRequestError } from "@/lib/utils/fetch-json";
@@ -117,9 +118,9 @@ export function RegisterForm() {
 
       <p className="text-[14px] text-[#666666]">
         Already have an account?{" "}
-        <a href="/auth/login" className="bk-link text-black underline">
+        <Link href="/auth/login" className="bk-link text-black underline">
           Sign in here
-        </a>
+        </Link>
       </p>
     </form>
   );

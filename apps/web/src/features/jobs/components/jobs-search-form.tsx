@@ -1,4 +1,11 @@
+"use client";
+
+import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+
 import type { JobsSearchParamsState } from "@/features/jobs/search-params";
+import { buildSearchSubmitHref } from "@/features/jobs/search-params";
+import type { JobSort } from "@/services/jobs";
 import { Button } from "@/components/ui/button";
 
 interface JobsSearchFormProps {
@@ -6,20 +13,51 @@ interface JobsSearchFormProps {
 }
 
 export function JobsSearchForm({ state }: JobsSearchFormProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  // Local form state initialized from URL params
+  const [q, setQ] = useState(state.q);
+  const [location, setLocation] = useState(state.location);
+  const [salaryMin, setSalaryMin] = useState(
+    state.salaryMin !== undefined ? String(state.salaryMin) : "",
+  );
+  const [source, setSource] = useState(state.source ?? "");
+  const [sort, setSort] = useState(state.sort);
+  const [limit, setLimit] = useState(String(state.limit));
+
+  const handleSearch = useCallback(() => {
+    const href = buildSearchSubmitHref({
+      q,
+      location,
+      salaryMin,
+      source,
+      sort,
+      limit,
+    });
+
+    startTransition(() => {
+      router.push(href);
+    });
+  }, [q, location, salaryMin, source, sort, limit, router]);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSearch();
+  };
+
   return (
     <form
-      action="/jobs"
-      method="GET"
+      onSubmit={handleSubmit}
       className="bk-card grid gap-5 p-6 sm:p-8 md:grid-cols-2"
       aria-label="Jobs search form"
     >
-      <input type="hidden" name="page" value="1" />
       <label className="grid gap-2 text-[14px]">
         <span className="font-medium text-black">Keyword</span>
         <input
           type="text"
-          name="q"
-          defaultValue={state.q}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
           placeholder="golang, backend, intern..."
           className="bk-input"
         />
@@ -29,8 +67,8 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         <span className="font-medium text-black">Location</span>
         <input
           type="text"
-          name="location"
-          defaultValue={state.location}
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
           placeholder="jakarta, remote..."
           className="bk-input"
         />
@@ -41,8 +79,8 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         <input
           type="number"
           min={0}
-          name="salary_min"
-          defaultValue={state.salaryMin}
+          value={salaryMin}
+          onChange={(e) => setSalaryMin(e.target.value)}
           placeholder="10000000"
           className="bk-input"
         />
@@ -51,8 +89,8 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
       <label className="grid gap-2 text-[14px]">
         <span className="font-medium text-black">Source</span>
         <select
-          name="source"
-          defaultValue={state.source ?? ""}
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
           className="bk-select"
         >
           <option value="">All sources</option>
@@ -64,7 +102,11 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
 
       <label className="grid gap-2 text-[14px]">
         <span className="font-medium text-black">Sort</span>
-        <select name="sort" defaultValue={state.sort} className="bk-select">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as JobSort)}
+          className="bk-select"
+        >
           <option value="-posted_at">Newest posted</option>
           <option value="posted_at">Oldest posted</option>
           <option value="-created_at">Newest collected</option>
@@ -75,8 +117,8 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
       <label className="grid gap-2 text-[14px]">
         <span className="font-medium text-black">Limit</span>
         <select
-          name="limit"
-          defaultValue={String(state.limit)}
+          value={limit}
+          onChange={(e) => setLimit(e.target.value)}
           className="bk-select"
         >
           <option value="10">10</option>
@@ -92,8 +134,9 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
           variant="secondary"
           size="lg"
           className="w-full md:w-auto min-w-40"
+          disabled={isPending}
         >
-          Search
+          {isPending ? "Searching..." : "Search"}
         </Button>
       </div>
     </form>
