@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -149,6 +150,57 @@ func (r *BillingRepository) GetByMayarTransactionID(
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}
 	return cloneBillingTransaction(item), nil
+}
+
+func (r *BillingRepository) ListByUser(
+	_ context.Context,
+	userID string,
+) ([]billing.Transaction, error) {
+	normalizedUserID := strings.TrimSpace(userID)
+	if normalizedUserID == "" {
+		return []billing.Transaction{}, nil
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]billing.Transaction, 0)
+	for _, item := range r.transactions {
+		if item.UserID != normalizedUserID {
+			continue
+		}
+		result = append(result, cloneBillingTransaction(item))
+	}
+	slices.SortFunc(result, func(left, right billing.Transaction) int {
+		if left.CreatedAt.Equal(right.CreatedAt) {
+			return strings.Compare(right.ID, left.ID)
+		}
+		if left.CreatedAt.After(right.CreatedAt) {
+			return -1
+		}
+		return 1
+	})
+	return result, nil
+}
+
+func (r *BillingRepository) ListAll(_ context.Context) ([]billing.Transaction, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]billing.Transaction, 0, len(r.transactions))
+	for _, item := range r.transactions {
+		result = append(result, cloneBillingTransaction(item))
+	}
+	slices.SortFunc(result, func(left, right billing.Transaction) int {
+		if left.CreatedAt.Equal(right.CreatedAt) {
+			return strings.Compare(right.ID, left.ID)
+		}
+		if left.CreatedAt.After(right.CreatedAt) {
+			return -1
+		}
+		return 1
+	})
+	return result, nil
 }
 
 func (r *BillingRepository) UpdateStatusByMayarTransactionID(

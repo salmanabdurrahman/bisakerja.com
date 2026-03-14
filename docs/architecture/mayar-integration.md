@@ -73,7 +73,8 @@ sequenceDiagram
   - retry `429/5xx` max 3x (`200ms`, `400ms`, `800ms` + jitter).
 - Webhook processing wajib transaksi DB atomik (`webhook_deliveries`, `transactions`, `users`).
 - Jika status mismatch ditemukan:
-  - rekonsiliasi via `/transactions` atau `/invoice/{id}`.
+  - billing worker melakukan rekonsiliasi periodik status invoice via `GET /invoice/{id}`.
+  - hanya transaksi `pending/reminder` yang discan pada tiap tick worker.
 - Jika endpoint webhook sempat down:
   - gunakan `POST /webhook/retry` dari Mayar dashboard/API.
 

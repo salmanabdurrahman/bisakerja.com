@@ -54,6 +54,8 @@ sequenceDiagram
   API-->>FE: subscription_state canonical
 ```
 
+Selain webhook realtime, billing worker melakukan reconciliation periodik ke endpoint invoice Mayar untuk memperbaiki mismatch status transaksi (misalnya saat webhook terlambat/gagal terkirim).
+
 ## Failure Path
 
 | Kondisi | Respons | Dampak |
@@ -62,3 +64,4 @@ sequenceDiagram
 | Webhook duplicate | `200` idempotent | Tidak ada update ganda |
 | Mayar `429/5xx` saat create invoice | retry internal, lalu `503` jika gagal | User diminta retry |
 | User tidak ditemukan dari webhook email | `422` | Event dicatat untuk rekonsiliasi manual |
+| Webhook terlewat/terlambat | worker reconciliation periodik | Status transaksi tetap dapat dipulihkan |

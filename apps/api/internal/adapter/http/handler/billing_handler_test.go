@@ -283,6 +283,76 @@ func TestBillingHandler_HandleMayarWebhook(t *testing.T) {
 	}
 }
 
+func TestBillingHandler_GetBillingStatusAndTransactions(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:        "billing-read@example.com",
+		PasswordHash: "hashed-password",
+		Name:         "Billing Read User",
+		Role:         identity.RoleUser,
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	transactionRepository := memory.NewBillingRepository()
+	now := time.Now().UTC()
+	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
+		UserID:             user.ID,
+		Provider:           billingdomain.PaymentProviderMayar,
+		PlanCode:           billingdomain.PlanCodeProMonthly,
+		MayarTransactionID: "trx_read_1",
+		InvoiceID:          "inv_read_1",
+		CheckoutURL:        "https://pay.example.com/checkout",
+		Amount:             49_000,
+		ExpiresAt:          &now,
+	})
+	if err != nil {
+		t.Fatalf("seed transaction: %v", err)
+	}
+
+	service := billingapp.NewService(identityRepository, transactionRepository, &handlerProviderStub{}, billingapp.Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+	})
+	handler := NewBillingHandler(service, "webhook-secret")
+
+	statusReq := httptest.NewRequest(http.MethodGet, "/api/v1/billing/status", nil)
+	statusReq = statusReq.WithContext(observability.WithRequestID(statusReq.Context(), "req_billing_status"))
+	statusReq = statusReq.WithContext(middleware.WithAuthUser(statusReq.Context(), middleware.AuthUser{
+		UserID: user.ID,
+		Role:   identity.RoleUser,
+	}))
+	statusResp := httptest.NewRecorder()
+	handler.GetBillingStatus(statusResp, statusReq)
+	if statusResp.Code != http.StatusOK {
+		t.Fatalf("expected billing status 200, got %d (%s)", statusResp.Code, statusResp.Body.String())
+	}
+
+	transactionsReq := httptest.NewRequest(http.MethodGet, "/api/v1/billing/transactions?page=1&limit=1&status=pending", nil)
+	transactionsReq = transactionsReq.WithContext(observability.WithRequestID(transactionsReq.Context(), "req_billing_transactions"))
+	transactionsReq = transactionsReq.WithContext(middleware.WithAuthUser(transactionsReq.Context(), middleware.AuthUser{
+		UserID: user.ID,
+		Role:   identity.RoleUser,
+	}))
+	transactionsResp := httptest.NewRecorder()
+	handler.GetBillingTransactions(transactionsResp, transactionsReq)
+	if transactionsResp.Code != http.StatusOK {
+		t.Fatalf("expected billing transactions 200, got %d (%s)", transactionsResp.Code, transactionsResp.Body.String())
+	}
+
+	invalidReq := httptest.NewRequest(http.MethodGet, "/api/v1/billing/transactions?status=unknown", nil)
+	invalidReq = invalidReq.WithContext(observability.WithRequestID(invalidReq.Context(), "req_billing_transactions_invalid"))
+	invalidReq = invalidReq.WithContext(middleware.WithAuthUser(invalidReq.Context(), middleware.AuthUser{
+		UserID: user.ID,
+		Role:   identity.RoleUser,
+	}))
+	invalidResp := httptest.NewRecorder()
+	handler.GetBillingTransactions(invalidResp, invalidReq)
+	if invalidResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid transactions query 400, got %d", invalidResp.Code)
+	}
+}
+
 func setupBillingHandler(
 	t *testing.T,
 	isPremiumUser bool,

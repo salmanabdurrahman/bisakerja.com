@@ -127,3 +127,80 @@ func TestClient_EnsureCustomer_InvalidResponse(t *testing.T) {
 		t.Fatalf("expected ErrProviderUpstream, got %v", err)
 	}
 }
+
+func TestClient_GetInvoiceByID_RetryAndParse(t *testing.T) {
+	var attempts int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/hl/v1/invoice/inv_123" {
+			http.NotFound(w, r)
+			return
+		}
+		current := atomic.AddInt64(&attempts, 1)
+		if current == 1 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"id":                "inv_123",
+				"transactionId":     "trx_123",
+				"transactionStatus": "paid",
+				"customerEmail":     "user@example.com",
+				"amount":            49000,
+				"updatedAt":         "2026-03-20T10:00:00Z",
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(ClientConfig{
+		BaseURL:    server.URL + "/hl/v1",
+		APIKey:     "test-key",
+		MaxRetries: 2,
+		Sleep:      func(time.Duration) {},
+		RandIntn:   func(int) int { return 0 },
+	})
+
+	snapshot, err := client.GetInvoiceByID(context.Background(), "inv_123")
+	if err != nil {
+		t.Fatalf("get invoice by id: %v", err)
+	}
+	if snapshot.InvoiceID != "inv_123" || snapshot.TransactionID != "trx_123" {
+		t.Fatalf("unexpected invoice snapshot: %+v", snapshot)
+	}
+	if snapshot.TransactionStatus != "paid" {
+		t.Fatalf("expected paid invoice status, got %s", snapshot.TransactionStatus)
+	}
+	if atomic.LoadInt64(&attempts) != 2 {
+		t.Fatalf("expected 2 attempts, got %d", atomic.LoadInt64(&attempts))
+	}
+}
+
+func TestClient_GetInvoiceByID_ExhaustedRateLimit(t *testing.T) {
+	var attempts int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/hl/v1/invoice/inv_rate" {
+			http.NotFound(w, r)
+			return
+		}
+		atomic.AddInt64(&attempts, 1)
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+
+	client := NewClient(ClientConfig{
+		BaseURL:    server.URL + "/hl/v1",
+		APIKey:     "test-key",
+		MaxRetries: 2,
+		Sleep:      func(time.Duration) {},
+		RandIntn:   func(int) int { return 0 },
+	})
+
+	_, err := client.GetInvoiceByID(context.Background(), "inv_rate")
+	if !errors.Is(err, billingdomain.ErrProviderRateLimited) {
+		t.Fatalf("expected ErrProviderRateLimited, got %v", err)
+	}
+	if atomic.LoadInt64(&attempts) != 3 {
+		t.Fatalf("expected 3 attempts with maxRetries=2, got %d", atomic.LoadInt64(&attempts))
+	}
+}

@@ -90,6 +90,8 @@ type CreatePendingTransactionInput struct {
 type Repository interface {
 	CreatePending(ctx context.Context, input CreatePendingTransactionInput) (Transaction, error)
 	GetByMayarTransactionID(ctx context.Context, mayarTransactionID string) (Transaction, error)
+	ListByUser(ctx context.Context, userID string) ([]Transaction, error)
+	ListAll(ctx context.Context) ([]Transaction, error)
 	UpdateStatusByMayarTransactionID(
 		ctx context.Context,
 		mayarTransactionID string,
@@ -139,4 +141,17 @@ type Invoice struct {
 type Provider interface {
 	EnsureCustomer(ctx context.Context, input EnsureCustomerInput) (Customer, error)
 	CreateInvoice(ctx context.Context, input CreateInvoiceInput) (Invoice, error)
+}
+
+type InvoiceSnapshot struct {
+	InvoiceID         string
+	TransactionID     string
+	TransactionStatus string
+	CustomerEmail     string
+	Amount            int64
+	UpdatedAt         *time.Time
+}
+
+type ReconciliationProvider interface {
+	GetInvoiceByID(ctx context.Context, invoiceID string) (InvoiceSnapshot, error)
 }

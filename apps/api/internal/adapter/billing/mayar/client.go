@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -206,6 +207,81 @@ func (c *Client) CreateInvoice(
 	}, nil
 }
 
+func (c *Client) GetInvoiceByID(
+	ctx context.Context,
+	invoiceID string,
+) (billingdomain.InvoiceSnapshot, error) {
+	trimmedInvoiceID := strings.TrimSpace(invoiceID)
+	if trimmedInvoiceID == "" {
+		return billingdomain.InvoiceSnapshot{}, fmt.Errorf("%w: invoice id is required", billingdomain.ErrProviderUpstream)
+	}
+
+	responseBody, err := c.get(ctx, "/invoice/"+url.PathEscape(trimmedInvoiceID))
+	if err != nil {
+		return billingdomain.InvoiceSnapshot{}, err
+	}
+
+	transactionID := extractString(responseBody,
+		"data.transactionId",
+		"data.transaction_id",
+		"transactionId",
+		"transaction_id",
+	)
+	transactionStatus := extractString(responseBody,
+		"data.transactionStatus",
+		"data.transaction_status",
+		"data.status",
+		"transactionStatus",
+		"transaction_status",
+		"status",
+	)
+	customerEmail := extractString(responseBody,
+		"data.customerEmail",
+		"data.customer_email",
+		"customerEmail",
+		"customer_email",
+	)
+	parsedInvoiceID := extractString(responseBody,
+		"data.id",
+		"data.invoice.id",
+		"data.invoice_id",
+		"data.invoiceId",
+		"id",
+	)
+	if parsedInvoiceID == "" {
+		parsedInvoiceID = trimmedInvoiceID
+	}
+
+	amount := int64(0)
+	if value, ok := extractNumber(responseBody, "data.amount", "amount"); ok {
+		amount = value
+	}
+
+	var updatedAt *time.Time
+	rawUpdatedAt := extractString(responseBody,
+		"data.updatedAt",
+		"data.updated_at",
+		"updatedAt",
+		"updated_at",
+	)
+	if rawUpdatedAt != "" {
+		parsedUpdatedAt, parseErr := parseOptionalRFC3339(rawUpdatedAt)
+		if parseErr != nil {
+			return billingdomain.InvoiceSnapshot{}, fmt.Errorf("%w: invalid updated_at", billingdomain.ErrProviderUpstream)
+		}
+		updatedAt = parsedUpdatedAt
+	}
+
+	return billingdomain.InvoiceSnapshot{
+		InvoiceID:         parsedInvoiceID,
+		TransactionID:     transactionID,
+		TransactionStatus: strings.ToLower(strings.TrimSpace(transactionStatus)),
+		CustomerEmail:     strings.ToLower(strings.TrimSpace(customerEmail)),
+		Amount:            amount,
+		UpdatedAt:         updatedAt,
+	}, nil
+}
+
 func (c *Client) post(
 	ctx context.Context,
 	path string,
@@ -232,6 +308,81 @@ func (c *Client) post(
 			return nil, fmt.Errorf("%w: build request: %v", billingdomain.ErrProviderUpstream, reqErr)
 		}
 		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+		response, doErr := c.httpClient.Do(request)
+		if doErr != nil {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf("%w: request failed: %v", billingdomain.ErrProviderUnavailable, doErr)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderUnavailable)
+			}
+			continue
+		}
+
+		responseBody, readErr := readResponseBody(response.Body)
+		if readErr != nil {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf("%w: read response body: %v", billingdomain.ErrProviderUnavailable, readErr)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderUnavailable)
+			}
+			continue
+		}
+
+		if response.StatusCode == http.StatusTooManyRequests {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf("%w: mayar returned 429", billingdomain.ErrProviderRateLimited)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderRateLimited)
+			}
+			continue
+		}
+		if response.StatusCode >= http.StatusInternalServerError {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf(
+					"%w: mayar returned status %d",
+					billingdomain.ErrProviderUnavailable,
+					response.StatusCode,
+				)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderUnavailable)
+			}
+			continue
+		}
+		if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+			return nil, fmt.Errorf(
+				"%w: mayar returned status %d",
+				billingdomain.ErrProviderUpstream,
+				response.StatusCode,
+			)
+		}
+
+		decoded := map[string]any{}
+		if len(responseBody) > 0 {
+			if decodeErr := json.Unmarshal(responseBody, &decoded); decodeErr != nil {
+				return nil, fmt.Errorf("%w: invalid response JSON", billingdomain.ErrProviderUpstream)
+			}
+		}
+		return decoded, nil
+	}
+}
+
+func (c *Client) get(ctx context.Context, path string) (map[string]any, error) {
+	if strings.TrimSpace(c.apiKey) == "" {
+		return nil, fmt.Errorf("%w: mayar api key is empty", billingdomain.ErrProviderUnavailable)
+	}
+
+	endpoint := c.baseURL + path
+	for attempt := 0; ; attempt++ {
+		request, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+		if reqErr != nil {
+			return nil, fmt.Errorf("%w: build request: %v", billingdomain.ErrProviderUpstream, reqErr)
+		}
 		request.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 		response, doErr := c.httpClient.Do(request)
@@ -414,3 +565,4 @@ func parseOptionalRFC3339(raw string) (*time.Time, error) {
 }
 
 var _ billingdomain.Provider = (*Client)(nil)
+var _ billingdomain.ReconciliationProvider = (*Client)(nil)

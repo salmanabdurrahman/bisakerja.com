@@ -13,8 +13,10 @@ Mengelola upgrade user dari Free ke Pro melalui integrasi Mayar yang aman, idemp
 ### In Scope (MVP)
 
 - Endpoint internal checkout: `POST /api/v1/billing/checkout-session`.
+- Endpoint read billing user: `GET /api/v1/billing/status` dan `GET /api/v1/billing/transactions`.
 - Sinkronisasi customer dan invoice ke Mayar.
 - Proses webhook pembayaran dari Mayar (`payment.received`, `payment.reminder`).
+- Reconciliation periodik status invoice Mayar ke transaksi internal.
 - Aktivasi status premium otomatis setelah pembayaran valid.
 - Pencatatan transaksi + raw webhook untuk audit.
 
@@ -81,6 +83,7 @@ Lihat detail: [`../architecture/database.md`](../architecture/database.md), [`..
 - User tidak ditemukan saat webhook masuk -> `422` + tandai untuk rekonsiliasi.
 - Upstream Mayar `429/5xx` -> retry max 3x + backoff; gagal akhir -> `503`.
 - User double-click upgrade -> dibatasi rate limit 1 request / 10 detik + idempotency key.
+- Transaksi `pending/reminder` stale >24 jam -> terdeteksi anomaly summary pada billing worker.
 
 ## NFR Minimum (MVP)
 
@@ -97,4 +100,6 @@ Lihat detail: [`../architecture/database.md`](../architecture/database.md), [`..
 - Pembayaran sukses (`payment.received`) mengaktifkan premium dalam <= 30 detik.
 - Event reminder/gagal tidak memberi akses premium.
 - Duplikasi webhook tidak menyebabkan double activation.
+- Endpoint status/history menampilkan entitlement premium dan riwayat transaksi user-scoped.
+- Reconciliation worker dapat mengoreksi mismatch status transaksi berdasarkan invoice Mayar.
 - Histori transaksi dan webhook dapat ditelusuri end-to-end via `request_id` + tabel audit.

@@ -17,8 +17,9 @@ Implementasi backend saat ini:
 - **Iteration 1.3 backend** sudah diimplementasikan (matcher worker rule-based + email notifier + notification status persistence + notification flow tests).
 - **Iteration 2.1 backend** sudah diimplementasikan (checkout orchestration endpoint + adapter Mayar customer/invoice + pending transaction persistence + idempotency replay + rate-limit protection).
 - **Iteration 2.2 backend** sudah diimplementasikan (webhook receiver + token validation + idempotency delivery key + transaction status update + premium activation + duplicate handling tests).
+- **Iteration 2.3 backend** sudah diimplementasikan (`GET /billing/status` + `GET /billing/transactions`, reconciliation ke Mayar `GET /invoice/{id}`, retry-aware recovery path, dan anomaly warning pada billing worker).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend Iteration 2.1-2.2 complete**, siap lanjut ke backend Iteration 2.3 (reconciliation & recovery).
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete**, siap lanjut ke phase berikutnya.
 
 ## Prinsip Eksekusi
 
@@ -127,9 +128,9 @@ Membuat monetisasi stabil, idempotent, dan dapat diaudit operasional.
 
 ### Iteration 2.3 - Reconciliation & Recovery
 
-- endpoint/status page billing internal,
-- rekonsiliasi via endpoint Mayar (`invoice`, `transactions`, `webhook/history`),
-- playbook retry jika callback gagal.
+- endpoint read model billing internal (`GET /billing/status`, `GET /billing/transactions`),
+- rekonsiliasi status transaksi via endpoint Mayar `GET /invoice/{id}`,
+- retry-aware recovery untuk transient upstream failures + anomaly summary untuk transaksi stale.
 
 ### Exit Criteria (Measurable)
 

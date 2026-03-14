@@ -140,3 +140,51 @@ func TestBillingRepository_RecordWebhookDelivery_Duplicate(t *testing.T) {
 		t.Fatalf("expected ErrWebhookDeliveryAlreadyExists, got %v", err)
 	}
 }
+
+func TestBillingRepository_ListByUserAndListAll(t *testing.T) {
+	repository := NewBillingRepository()
+	now := time.Now().UTC()
+
+	_, err := repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
+		UserID:             "usr_1",
+		Provider:           billing.PaymentProviderMayar,
+		PlanCode:           billing.PlanCodeProMonthly,
+		MayarTransactionID: "trx_list_1",
+		InvoiceID:          "inv_list_1",
+		CheckoutURL:        "https://pay.example.com/checkout",
+		Amount:             49_000,
+		ExpiresAt:          &now,
+	})
+	if err != nil {
+		t.Fatalf("create first transaction: %v", err)
+	}
+	_, err = repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
+		UserID:             "usr_2",
+		Provider:           billing.PaymentProviderMayar,
+		PlanCode:           billing.PlanCodeProMonthly,
+		MayarTransactionID: "trx_list_2",
+		InvoiceID:          "inv_list_2",
+		CheckoutURL:        "https://pay.example.com/checkout",
+		Amount:             49_000,
+		ExpiresAt:          &now,
+	})
+	if err != nil {
+		t.Fatalf("create second transaction: %v", err)
+	}
+
+	userTransactions, err := repository.ListByUser(context.Background(), "usr_1")
+	if err != nil {
+		t.Fatalf("list by user: %v", err)
+	}
+	if len(userTransactions) != 1 {
+		t.Fatalf("expected one transaction for usr_1, got %d", len(userTransactions))
+	}
+
+	allTransactions, err := repository.ListAll(context.Background())
+	if err != nil {
+		t.Fatalf("list all transactions: %v", err)
+	}
+	if len(allTransactions) != 2 {
+		t.Fatalf("expected two transactions in list all, got %d", len(allTransactions))
+	}
+}

@@ -133,6 +133,11 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
 }
 ```
 
+### Error
+
+- `401 UNAUTHORIZED` token user invalid atau tidak tersedia.
+- `500 INTERNAL_SERVER_ERROR` gagal membaca profil/riwayat billing user.
+
 ## 3) Get My Billing History
 
 - **Method**: `GET`
@@ -177,7 +182,50 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
 }
 ```
 
-## Kontrak Integrasi ke Mayar
+### Error
+
+- `400 BAD_REQUEST` query `page`, `limit`, atau `status` tidak valid.
+- `401 UNAUTHORIZED` token user invalid atau tidak tersedia.
+- `500 INTERNAL_SERVER_ERROR` gagal membaca histori transaksi user.
+
+## 4) Reconciliation & Recovery (Internal Worker)
+
+Reconciliation dijalankan periodik oleh `billing-worker` untuk memastikan status transaksi lokal tetap sinkron dengan status invoice di Mayar.
+
+### Input Reconciliation
+
+- Sumber transaksi: semua transaksi internal status `pending`/`reminder`.
+- Sumber status upstream: `GET /hl/v1/invoice/{id}` ke Mayar.
+
+### Status Normalization
+
+| Status invoice Mayar | Status internal Bisakerja |
+|---|---|
+| `paid`, `success`, `completed` | `success` |
+| `reminder` | `reminder` |
+| `pending`, `unpaid`, `open`, `waiting` | `pending` |
+| `failed`, `expired`, `cancelled`, `canceled`, `void` | `failed` |
+
+Jika rekonsiliasi menemukan status berubah menjadi `success`, sistem akan mengaktifkan premium user terkait sesuai kontrak `subscription_state`.
+
+### Retry & Failure Contract
+
+- Outbound call rekonsiliasi mengikuti retry policy yang sama dengan checkout:
+  - retry hanya untuk `429/5xx`,
+  - max retry 3 kali,
+  - exponential backoff + jitter (`200ms`, `400ms`, `800ms`).
+- Jika tetap gagal setelah retry, transaksi dihitung sebagai `retryable_failure` dan diproses pada tick worker berikutnya.
+
+### Anomaly Signal
+
+- Worker menandai anomali jika transaksi masih `pending`/`reminder` lebih dari 24 jam.
+- Ringkasan reconciliation setiap tick:
+  - `scanned_transactions`,
+  - `reconciled`,
+  - `retryable_failures`,
+  - `anomaly_count`.
+
+## 5) Kontrak Integrasi ke Mayar
 
 - Referensi endpoint resmi: [`mayar-headless.md`](./mayar-headless.md).
 - Webhook inbound: [`webhooks.md`](./webhooks.md).

@@ -53,6 +53,14 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 			"POST /api/v1/billing/checkout-session",
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.BillingHandler.CreateCheckoutSession)),
 		)
+		mux.Handle(
+			"GET /api/v1/billing/status",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.BillingHandler.GetBillingStatus)),
+		)
+		mux.Handle(
+			"GET /api/v1/billing/transactions",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.BillingHandler.GetBillingTransactions)),
+		)
 	}
 	if deps.BillingHandler != nil {
 		mux.HandleFunc("POST /api/v1/webhook/mayar", deps.BillingHandler.HandleMayarWebhook)

@@ -175,6 +175,13 @@ func TestNew_RegistersBillingRouteWhenDependencyProvided(t *testing.T) {
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("expected billing route to be protected with 401, got %d", response.Code)
 	}
+
+	statusRequest := httptest.NewRequest(http.MethodGet, "/api/v1/billing/status", nil)
+	statusResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(statusResponse, statusRequest)
+	if statusResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected billing status route to be protected with 401, got %d", statusResponse.Code)
+	}
 }
 
 func TestNew_RegistersWebhookRouteWhenBillingDependencyProvided(t *testing.T) {

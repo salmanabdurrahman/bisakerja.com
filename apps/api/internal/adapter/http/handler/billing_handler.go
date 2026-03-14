@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
@@ -23,6 +24,11 @@ type BillingCheckoutService interface {
 		ctx context.Context,
 		input billingapp.ProcessMayarWebhookInput,
 	) (billingapp.ProcessMayarWebhookResult, error)
+	GetBillingStatus(ctx context.Context, userID string) (billingapp.BillingStatus, error)
+	ListBillingTransactions(
+		ctx context.Context,
+		input billingapp.ListTransactionsInput,
+	) (billingapp.ListTransactionsResult, error)
 }
 
 type BillingHandler struct {
@@ -33,6 +39,12 @@ type BillingHandler struct {
 type createCheckoutSessionRequest struct {
 	PlanCode    string `json:"plan_code"`
 	RedirectURL string `json:"redirect_url"`
+}
+
+type billingTransactionsQuery struct {
+	Page   int
+	Limit  int
+	Status string
 }
 
 func NewBillingHandler(service BillingCheckoutService, webhookToken ...string) *BillingHandler {
@@ -205,4 +217,163 @@ func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Reque
 		"processed":  result.Processed,
 		"idempotent": result.Idempotent,
 	})
+}
+
+func (h *BillingHandler) GetBillingStatus(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	authUser, ok := middleware.AuthUserFromContext(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+			Code:    errcode.Unauthorized,
+			Message: "authentication context missing",
+		}})
+		return
+	}
+
+	status, err := h.service.GetBillingStatus(r.Context(), authUser.UserID)
+	if err != nil {
+		switch {
+		case errors.Is(err, identity.ErrUserNotFound):
+			response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+				Code:    errcode.Unauthorized,
+				Message: "user not found",
+			}})
+		default:
+			response.WriteError(w, http.StatusInternalServerError, "Internal server error", requestID, []response.ErrorItem{{
+				Code:    errcode.InternalServerError,
+				Message: "failed to load billing status",
+			}})
+		}
+		return
+	}
+
+	response.WriteSuccess(w, http.StatusOK, "Billing status retrieved", requestID, map[string]any{
+		"plan_code":               status.PlanCode,
+		"subscription_state":      status.SubscriptionState,
+		"is_premium":              status.IsPremium,
+		"premium_expired_at":      status.PremiumExpiredAt,
+		"last_transaction_status": status.LastTransactionStatus,
+	})
+}
+
+func (h *BillingHandler) GetBillingTransactions(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	authUser, ok := middleware.AuthUserFromContext(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+			Code:    errcode.Unauthorized,
+			Message: "authentication context missing",
+		}})
+		return
+	}
+
+	query, err := parseBillingTransactionsQuery(r)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, "Invalid query parameters", requestID, []response.ErrorItem{{
+			Code:    errcode.BadRequest,
+			Message: err.Error(),
+		}})
+		return
+	}
+
+	result, serviceErr := h.service.ListBillingTransactions(r.Context(), billingapp.ListTransactionsInput{
+		UserID: authUser.UserID,
+		Page:   query.Page,
+		Limit:  query.Limit,
+		Status: query.Status,
+	})
+	if serviceErr != nil {
+		switch {
+		case errors.Is(serviceErr, billingapp.ErrInvalidPage):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "page",
+				Code:    errcode.InvalidPage,
+				Message: "page must be an integer >= 1",
+			}})
+		case errors.Is(serviceErr, billingapp.ErrInvalidLimit):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "limit",
+				Code:    errcode.InvalidLimit,
+				Message: "limit must be between 1 and 100",
+			}})
+		case errors.Is(serviceErr, billingapp.ErrInvalidTransactionStatus):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "status",
+				Code:    errcode.BadRequest,
+				Message: "status must be one of pending, reminder, success, failed",
+			}})
+		case errors.Is(serviceErr, identity.ErrUserNotFound):
+			response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+				Code:    errcode.Unauthorized,
+				Message: "user not found",
+			}})
+		default:
+			response.WriteError(w, http.StatusInternalServerError, "Internal server error", requestID, []response.ErrorItem{{
+				Code:    errcode.InternalServerError,
+				Message: "failed to load billing transactions",
+			}})
+		}
+		return
+	}
+
+	transactions := make([]map[string]any, 0, len(result.Data))
+	for _, item := range result.Data {
+		transactions = append(transactions, map[string]any{
+			"id":                   item.ID,
+			"provider":             item.Provider,
+			"mayar_transaction_id": item.MayarTransactionID,
+			"amount":               item.Amount,
+			"status":               item.Status,
+			"created_at":           item.CreatedAt,
+		})
+	}
+
+	response.WriteSuccessWithPagination(
+		w,
+		http.StatusOK,
+		"Transactions retrieved",
+		requestID,
+		transactions,
+		response.Pagination{
+			Page:         result.Page,
+			Limit:        result.Limit,
+			TotalPages:   result.TotalPages,
+			TotalRecords: result.TotalRecords,
+		},
+	)
+}
+
+func parseBillingTransactionsQuery(r *http.Request) (billingTransactionsQuery, error) {
+	values := r.URL.Query()
+	result := billingTransactionsQuery{
+		Page:   1,
+		Limit:  20,
+		Status: strings.ToLower(strings.TrimSpace(values.Get("status"))),
+	}
+
+	if rawPage := strings.TrimSpace(values.Get("page")); rawPage != "" {
+		page, err := strconv.Atoi(rawPage)
+		if err != nil || page < 1 {
+			return billingTransactionsQuery{}, errors.New("page must be an integer >= 1")
+		}
+		result.Page = page
+	}
+
+	if rawLimit := strings.TrimSpace(values.Get("limit")); rawLimit != "" {
+		limit, err := strconv.Atoi(rawLimit)
+		if err != nil || limit < 1 || limit > 100 {
+			return billingTransactionsQuery{}, errors.New("limit must be between 1 and 100")
+		}
+		result.Limit = limit
+	}
+
+	if result.Status != "" {
+		switch result.Status {
+		case "pending", "reminder", "success", "failed":
+		default:
+			return billingTransactionsQuery{}, errors.New("status must be one of pending, reminder, success, failed")
+		}
+	}
+
+	return result, nil
 }
