@@ -52,16 +52,19 @@ type Preferences struct {
 }
 
 type CreateUserInput struct {
-	Email        string
-	PasswordHash string
-	Name         string
-	Role         Role
+	Email            string
+	PasswordHash     string
+	Name             string
+	Role             Role
+	IsPremium        bool
+	PremiumExpiredAt *time.Time
 }
 
 type Repository interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (User, error)
 	GetUserByID(ctx context.Context, userID string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	ListUsers(ctx context.Context) ([]User, error)
 	GetPreferences(ctx context.Context, userID string) (Preferences, error)
 	SavePreferences(ctx context.Context, preferences Preferences) (Preferences, error)
 }

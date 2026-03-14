@@ -70,10 +70,10 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0** sudah dimulai
 
 | Item                        | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | --------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
-| matcher worker rule-based   | ⬜     | -             | -             | -           | -                 |
-| email notifier worker       | ⬜     | -             | -             | -           | -                 |
-| status notifikasi tersimpan | ⬜     | -             | -             | -           | -                 |
-| test notification flow      | ⬜     | -             | -             | -           | -                 |
+| matcher worker rule-based   | ✅     | `apps/api/internal/app/notification/matcher.go`, `apps/api/internal/domain/notification/notification.go`, `apps/api/internal/adapter/queue/memory/queue.go` | `apps/api/internal/app/notification/matcher_test.go`, `apps/api/internal/adapter/queue/memory/queue_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/features/smart-notification.md`, `docs/flows/scraping-matching-flow.md`, `docs/architecture/redis_queue_cache.md` |
+| email notifier worker       | ✅     | `apps/api/internal/app/notification/notifier.go`, `apps/api/internal/adapter/notifier/email/logger_sender.go`, `apps/api/cmd/notifier/main.go` | `apps/api/internal/app/notification/notifier_test.go`, `apps/api/test/integration/notification_flow_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/features/smart-notification.md`, `docs/architecture/system_architecture.md`, `docs/flows/scraping-matching-flow.md` |
+| status notifikasi tersimpan | ✅     | `apps/api/internal/adapter/persistence/memory/notification_repository.go`, `apps/api/internal/domain/notification/notification.go`, `apps/api/internal/app/notification/notifier.go` | `apps/api/internal/adapter/persistence/memory/notification_repository_test.go`, `apps/api/internal/app/notification/notifier_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/architecture/database.md`, `docs/features/smart-notification.md`, `docs/api/errors.md` |
+| test notification flow      | ✅     | `apps/api/internal/app/notification/matcher.go`, `apps/api/internal/app/notification/notifier.go`, `apps/api/cmd/notifier/main.go` | `apps/api/test/integration/notification_flow_test.go`, `apps/api/internal/app/notification/matcher_test.go`, `apps/api/internal/app/notification/notifier_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/phases/implementation-roadmap.md`, `docs/flows/scraping-matching-flow.md` |
 
 ## Phase 2 - Billing Hardening (Mayar)
 

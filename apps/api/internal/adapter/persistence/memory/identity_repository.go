@@ -52,13 +52,15 @@ func (r *IdentityRepository) CreateUser(_ context.Context, input identity.Create
 
 	userID := "usr_" + randomHex(12)
 	user := identity.User{
-		ID:           userID,
-		Email:        normalizedEmail,
-		PasswordHash: input.PasswordHash,
-		Name:         strings.TrimSpace(input.Name),
-		Role:         role,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:               userID,
+		Email:            normalizedEmail,
+		PasswordHash:     input.PasswordHash,
+		Name:             strings.TrimSpace(input.Name),
+		Role:             role,
+		IsPremium:        input.IsPremium,
+		PremiumExpiredAt: input.PremiumExpiredAt,
+		CreatedAt:        now,
+		UpdatedAt:        now,
 	}
 
 	r.usersByID[userID] = user
@@ -92,6 +94,17 @@ func (r *IdentityRepository) GetUserByEmail(_ context.Context, email string) (id
 		return identity.User{}, identity.ErrUserNotFound
 	}
 	return user, nil
+}
+
+func (r *IdentityRepository) ListUsers(_ context.Context) ([]identity.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]identity.User, 0, len(r.usersByID))
+	for _, user := range r.usersByID {
+		result = append(result, user)
+	}
+	return result, nil
 }
 
 func (r *IdentityRepository) GetPreferences(_ context.Context, userID string) (identity.Preferences, error) {
