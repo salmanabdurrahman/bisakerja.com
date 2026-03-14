@@ -22,7 +22,8 @@ Digunakan untuk menjalankan scraping manual.
 ```
 
 - `source` opsional.
-- Jika kosong, sistem men-trigger semua source MVP (`glints`, `jobstreet`, `kalibrr`, `linkedin`).
+- Jika kosong, sistem men-trigger semua source aktif Phase 1.1 (`glints`, `jobstreet`, `kalibrr`).
+- `linkedin` diperlakukan sebagai source cadangan dan belum aktif default sampai adapter-nya tersedia.
 
 ### Validation & Idempotency
 

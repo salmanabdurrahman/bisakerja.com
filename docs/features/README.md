@@ -5,11 +5,12 @@ Dokumen ini adalah katalog fitur backend Bisakerja.
 ## Daftar Fitur Inti
 
 1. [Job Aggregation Engine](./job-aggregation.md)
-2. [Job Search Engine](./job-search.md)
-3. [Smart Notification Engine](./smart-notification.md)
-4. [Subscription & Billing](./subscription-billing.md)
-5. [Admin Operations](./admin-operations.md)
-6. [Optional Features (Post-MVP)](./optional-features.md)
+2. [Source Scraping Playbook (Glints, Kalibrr, JobStreet)](./source-scraping-playbook.md)
+3. [Job Search Engine](./job-search.md)
+4. [Smart Notification Engine](./smart-notification.md)
+5. [Subscription & Billing](./subscription-billing.md)
+6. [Admin Operations](./admin-operations.md)
+7. [Optional Features (Post-MVP)](./optional-features.md)
 
 ## Cara Membaca
 

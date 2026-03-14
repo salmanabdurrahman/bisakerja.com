@@ -3,6 +3,7 @@
 Dokumen arsitektur Bisakerja dibagi per domain teknis agar lebih jelas:
 
 - [System Architecture](./system_architecture.md)
+- [Scraper Source Adapters](./scraper-source-adapters.md)
 - [Database Schema](./database.md)
 - [Redis, Queue, and Cache](./redis_queue_cache.md)
 - [Mayar Integration Architecture](./mayar-integration.md)

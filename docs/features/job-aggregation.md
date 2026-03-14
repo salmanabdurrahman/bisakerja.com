@@ -25,12 +25,19 @@ Mengumpulkan lowongan kerja dari beberapa portal ke satu sumber data terstandar 
 - Auto-apply ke portal pihak ketiga.
 - Cross-source deduplication semantik.
 
-## Sumber Data Awal
+## Referensi Detail per Source
 
-- Glints
-- Jobstreet
-- Kalibrr
-- LinkedIn
+- Playbook scraping source: [`./source-scraping-playbook.md`](./source-scraping-playbook.md)
+- Desain adapter + token boundary: [`../architecture/scraper-source-adapters.md`](../architecture/scraper-source-adapters.md)
+
+## Sumber Data Awal & Status Integrasi
+
+| Source | Tipe endpoint | Auth | Snapshot referensi | Catatan implementasi |
+|---|---|---|---|---|
+| `glints` | GraphQL `POST` | Tidak wajib bearer token | ✅ sukses (`item_count: 90`) | Wajib set header `x-glints-country-code`; gunakan pagination berbasis `page`. |
+| `kalibrr` | REST `GET` | Tidak wajib bearer token | ✅ sukses (`item_count: 45`) | Gunakan pagination `limit+offset`; response utama berupa daftar jobs. |
+| `jobstreet` | GraphQL `POST` | **Wajib Bearer token** | ⚠️ gagal tanpa token (`item_count: 0`) | Token bersifat short-lived; butuh token provider + rotasi aman. |
+| `linkedin` | TBD | TBD | 📝 belum divalidasi pada referensi saat ini | Tetap non-blocking untuk MVP sampai ada kontrak teknis valid. |
 
 ## Aturan Bisnis
 
@@ -49,12 +56,14 @@ Mengumpulkan lowongan kerja dari beberapa portal ke satu sumber data terstandar 
 ### Pipeline
 
 1. Load daftar source.
-2. Fetch halaman/endpoint source.
-3. Parse item lowongan.
-4. Normalize fields.
-5. Check duplicate.
-6. Insert jobs baru (`ON CONFLICT DO NOTHING`).
-7. Publish event `JobCreated` hanya untuk row baru.
+2. Preflight capability per source (`requires_auth`, `pagination_mode`, `enabled`).
+3. Resolve token jika source memerlukan auth (contoh: JobStreet).
+4. Fetch halaman/endpoint source.
+5. Parse item lowongan.
+6. Normalize fields.
+7. Check duplicate.
+8. Insert jobs baru (`ON CONFLICT DO NOTHING`).
+9. Publish event `JobCreated` hanya untuk row baru.
 
 ## Dampak ke Database
 
@@ -82,6 +91,7 @@ Lihat detail: [`../api/jobs.md`](../api/jobs.md), [`../api/admin.md`](../api/adm
 - **IP blocked / rate limit portal**: concurrency limit per source + retry terbatas.
 - **Perubahan struktur HTML**: parser per source terpisah + observability error per source.
 - **Data duplikat tinggi**: enforce constraint DB + cek conflict insert.
+- **JobStreet token tidak valid/expired**: tandai source `auth_missing/auth_failed`, lakukan rotasi token, source lain tetap lanjut.
 
 ## NFR Minimum
 
@@ -97,3 +107,4 @@ Lihat detail: [`../api/jobs.md`](../api/jobs.md), [`../api/admin.md`](../api/adm
 - Tidak ada duplikasi untuk kombinasi source + original id.
 - Field minimum (`title`, `company`, `url`, `source`) selalu terisi.
 - Event notifikasi hanya dipublish untuk row baru.
+- Kegagalan auth pada satu source tidak menghentikan scraping source lain dalam batch yang sama.

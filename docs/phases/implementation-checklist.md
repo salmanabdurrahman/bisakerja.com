@@ -50,8 +50,11 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0** sudah dimulai
 | Item                                   | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | -------------------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
 | scraper worker source utama            | ⬜     | -             | -             | -           | -                 |
+| source adapters (`glints/kalibrr/jobstreet`) | ⬜     | -             | -             | -           | `docs/features/source-scraping-playbook.md`, `docs/architecture/scraper-source-adapters.md` |
+| token provider untuk source auth-required | ⬜     | -             | -             | -           | `docs/features/source-scraping-playbook.md`, `docs/flows/scraping-matching-flow.md` |
 | deduplikasi jobs                       | ⬜     | -             | -             | -           | -                 |
 | endpoint `GET /jobs` + `GET /jobs/:id` | ⬜     | -             | -             | -           | -                 |
+| telemetry scrape run per source        | ⬜     | -             | -             | -           | `docs/architecture/scraper-source-adapters.md` |
 | regression test search                 | ⬜     | -             | -             | -           | -                 |
 
 ### Iteration 1.2 - Identity & Preferences

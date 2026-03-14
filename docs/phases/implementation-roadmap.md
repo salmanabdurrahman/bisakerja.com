@@ -77,9 +77,11 @@ Menyediakan value inti Bisakerja: agregasi lowongan, pencarian, dan notifikasi p
 
 ### Iteration 1.1 - Aggregation & Search
 
-- scraper source utama aktif,
+- source adapter `glints`, `kalibrr`, `jobstreet` aktif,
+- token provider untuk source auth-required (JobStreet) terpasang,
 - deduplikasi (`UNIQUE(source, original_job_id)`),
-- endpoint jobs list/detail + pagination + filter.
+- endpoint jobs list/detail + pagination + filter,
+- telemetry scrape run per source tersedia untuk troubleshooting cepat.
 
 ### Iteration 1.2 - Identity & Preferences
 

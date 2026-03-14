@@ -11,9 +11,12 @@ graph TD
   API --> PG[(PostgreSQL)]
   API --> R[(Redis)]
 
-  SCRAPER[Scraper Worker] --> PG
+  SCRAPER[Scraper Worker] --> ADAPTERS[Source Adapters]
+  ADAPTERS --> PORTALS[Job Portals]
+  ADAPTERS --> TOK[Token Provider]
+  TOK --> SEC[Secret Store]
+  SCRAPER --> PG
   SCRAPER --> R
-  SCRAPER --> PORTALS[Job Portals]
 
   MATCHER[Matcher Worker] --> PG
   MATCHER --> R
@@ -44,10 +47,15 @@ Tanggung jawab:
 
 Tanggung jawab:
 
+- orkestrasi source adapter per portal (Glints, Kalibrr, JobStreet).
+- token preflight untuk source yang membutuhkan auth (JobStreet).
 - scraping source eksternal.
-- parsing + normalisasi.
+- parsing + normalisasi lintas source.
 - deduplikasi.
 - publish event lowongan baru.
+
+Detail kontrak adapter source:
+[`./scraper-source-adapters.md`](./scraper-source-adapters.md)
 
 ### 2.3 Matcher/Notifier Worker (`cmd/notifier` / `cmd/worker`)
 

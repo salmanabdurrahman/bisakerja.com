@@ -11,6 +11,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 
 - [`features/README.md`](./features/README.md)
 - [`features/job-aggregation.md`](./features/job-aggregation.md)
+- [`features/source-scraping-playbook.md`](./features/source-scraping-playbook.md)
 - [`features/job-search.md`](./features/job-search.md)
 - [`features/smart-notification.md`](./features/smart-notification.md)
 - [`features/subscription-billing.md`](./features/subscription-billing.md)
@@ -33,6 +34,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 
 - [`architecture/README.md`](./architecture/README.md)
 - [`architecture/system_architecture.md`](./architecture/system_architecture.md)
+- [`architecture/scraper-source-adapters.md`](./architecture/scraper-source-adapters.md)
 - [`architecture/database.md`](./architecture/database.md)
 - [`architecture/redis_queue_cache.md`](./architecture/redis_queue_cache.md)
 - [`architecture/mayar-integration.md`](./architecture/mayar-integration.md)

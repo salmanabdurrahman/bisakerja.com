@@ -14,6 +14,7 @@ Semua poin berikut harus siap:
 
 - PRD backend: [`../prd/bisakerja-api-prd.md`](../prd/bisakerja-api-prd.md)
 - PRD frontend: [`../prd/bisakerja-frontend-prd.md`](../prd/bisakerja-frontend-prd.md)
+- Source scraping playbook: [`../features/source-scraping-playbook.md`](../features/source-scraping-playbook.md)
 - Standards hub: [`../standards/README.md`](../standards/README.md)
 - Roadmap backend: [`./implementation-roadmap.md`](./implementation-roadmap.md)
 - Checklist backend: [`./implementation-checklist.md`](./implementation-checklist.md)
@@ -35,6 +36,7 @@ Semua poin berikut harus siap:
 ### 3.2 Pecah Scope per Phase/Iteration
 
 - Turunkan roadmap menjadi task implementasi yang kecil dan independen.
+- Konfirmasi capability matrix source (`requires_auth`, pagination mode, source readiness) sebelum mulai Iteration 1.1.
 - Tandai dependency antar task backend/frontend (khusus endpoint yang dipakai UI).
 - Tetapkan evidence minimum per task: code, test, CI, docs/ADR.
 

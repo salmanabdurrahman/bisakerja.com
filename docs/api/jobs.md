@@ -16,17 +16,17 @@
 | `page` | integer | no | 1 | `>= 1`. |
 | `limit` | integer | no | 20 | `1..100`. |
 | `sort` | string | no | `-posted_at` | enum: `-posted_at`, `posted_at`, `-created_at`, `created_at`. |
-| `source` | string | no | - | enum MVP: `glints`, `jobstreet`, `kalibrr`, `linkedin`. |
+| `source` | string | no | - | enum Phase 1.1: `glints`, `jobstreet`, `kalibrr` (`linkedin` reserved untuk tahap lanjut). |
 
 ### Behavior Notes
 
 - Query kosong (`q` tidak ada) = list lowongan terbaru.
 - `page` di atas `total_pages` -> `200 OK` dengan `data: []`.
-- `source` multi-value (mis. `source=linkedin,glints`) belum didukung di MVP.
+- `source` multi-value (mis. `source=glints,kalibrr`) belum didukung di MVP.
 
 ### Example Request
 
-`GET /api/v1/jobs?q=golang&location=jakarta&page=1&limit=20&sort=-posted_at&source=linkedin`
+`GET /api/v1/jobs?q=golang&location=jakarta&page=1&limit=20&sort=-posted_at&source=glints`
 
 ### Response `200 OK`
 
@@ -51,7 +51,7 @@
       "company": "Contoh Teknologi",
       "location": "Jakarta",
       "salary_range": "12000000 - 22000000",
-      "source": "linkedin",
+      "source": "glints",
       "posted_at": "2026-03-13T12:00:00Z"
     }
   ]
@@ -85,8 +85,8 @@
     "location": "Jakarta",
     "description": "Membangun API dan worker dengan Go...",
     "salary_range": "12000000 - 22000000",
-    "source": "linkedin",
-    "url": "https://www.linkedin.com/jobs/view/123456",
+    "source": "glints",
+    "url": "https://glints.com/id/opportunities/jobs/123456",
     "posted_at": "2026-03-13T12:00:00Z",
     "created_at": "2026-03-13T12:03:04Z"
   }

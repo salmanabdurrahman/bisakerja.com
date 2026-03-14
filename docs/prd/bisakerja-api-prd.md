@@ -83,6 +83,7 @@ PRD ini sengaja dipadatkan. Detail dipisahkan agar lebih maintainable.
 
 - Katalog fitur: [`../features/README.md`](../features/README.md)
 - Job Aggregation: [`../features/job-aggregation.md`](../features/job-aggregation.md)
+- Source Scraping Playbook: [`../features/source-scraping-playbook.md`](../features/source-scraping-playbook.md)
 - Job Search: [`../features/job-search.md`](../features/job-search.md)
 - Smart Notification: [`../features/smart-notification.md`](../features/smart-notification.md)
 - Subscription & Billing: [`../features/subscription-billing.md`](../features/subscription-billing.md)
@@ -104,6 +105,7 @@ PRD ini sengaja dipadatkan. Detail dipisahkan agar lebih maintainable.
 ### 7.3 Architecture Specs
 
 - System Architecture: [`../architecture/system_architecture.md`](../architecture/system_architecture.md)
+- Scraper Source Adapters: [`../architecture/scraper-source-adapters.md`](../architecture/scraper-source-adapters.md)
 - Database Schema: [`../architecture/database.md`](../architecture/database.md)
 - Redis/Queue/Cache: [`../architecture/redis_queue_cache.md`](../architecture/redis_queue_cache.md)
 - Mayar Integration: [`../architecture/mayar-integration.md`](../architecture/mayar-integration.md)

@@ -61,7 +61,7 @@ Menyimpan hasil agregasi lowongan.
 |---|---|---|
 | id | uuid | PK |
 | original_job_id | text | id dari source |
-| source | text | glints/jobstreet/linkedin/etc |
+| source | text | glints/jobstreet/kalibrr/linkedin/etc |
 | title | text | judul lowongan |
 | company | text | nama perusahaan |
 | location | text | lokasi lowongan |
