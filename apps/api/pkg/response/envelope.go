@@ -6,10 +6,18 @@ import (
 )
 
 type Meta struct {
-	Code      int    `json:"code"`
-	Status    string `json:"status"`
-	Message   string `json:"message"`
-	RequestID string `json:"request_id,omitempty"`
+	Code       int         `json:"code"`
+	Status     string      `json:"status"`
+	Message    string      `json:"message"`
+	RequestID  string      `json:"request_id,omitempty"`
+	Pagination *Pagination `json:"pagination,omitempty"`
+}
+
+type Pagination struct {
+	Page         int `json:"page"`
+	Limit        int `json:"limit"`
+	TotalPages   int `json:"total_pages"`
+	TotalRecords int `json:"total_records"`
 }
 
 type ErrorItem struct {
@@ -35,6 +43,25 @@ func WriteSuccess(w http.ResponseWriter, code int, message, requestID string, da
 			Status:    "success",
 			Message:   message,
 			RequestID: requestID,
+		},
+		Data: data,
+	})
+}
+
+func WriteSuccessWithPagination(
+	w http.ResponseWriter,
+	code int,
+	message, requestID string,
+	data any,
+	pagination Pagination,
+) {
+	writeJSON(w, code, successEnvelope{
+		Meta: Meta{
+			Code:       code,
+			Status:     "success",
+			Message:    message,
+			RequestID:  requestID,
+			Pagination: &pagination,
 		},
 		Data: data,
 	})

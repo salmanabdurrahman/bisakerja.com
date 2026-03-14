@@ -3,3 +3,9 @@ environment: development
 http_port: "8080"
 shutdown_timeout: 10s
 worker_tick_interval: 15s
+scraper_page_size: 30
+scraper_max_pages: 1
+scraper_keywords:
+  - backend
+  - frontend
+  - intern

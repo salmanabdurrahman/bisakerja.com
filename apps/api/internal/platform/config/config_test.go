@@ -11,6 +11,8 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("HTTP_PORT", "")
 	t.Setenv("SHUTDOWN_TIMEOUT", "")
 	t.Setenv("WORKER_TICK_INTERVAL", "")
+	t.Setenv("SCRAPER_PAGE_SIZE", "")
+	t.Setenv("SCRAPER_MAX_PAGES", "")
 
 	cfg := Load()
 
@@ -33,6 +35,14 @@ func TestLoad_DefaultValues(t *testing.T) {
 	if cfg.WorkerTick != 15*time.Second {
 		t.Fatalf("expected default worker tick 15s, got %s", cfg.WorkerTick)
 	}
+
+	if cfg.ScraperPageSize != 30 {
+		t.Fatalf("expected default scraper page size 30, got %d", cfg.ScraperPageSize)
+	}
+
+	if cfg.ScraperMaxPages != 1 {
+		t.Fatalf("expected default scraper max pages 1, got %d", cfg.ScraperMaxPages)
+	}
 }
 
 func TestLoad_EnvOverrides(t *testing.T) {
@@ -41,6 +51,8 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("HTTP_PORT", ":9090")
 	t.Setenv("SHUTDOWN_TIMEOUT", "25s")
 	t.Setenv("WORKER_TICK_INTERVAL", "9")
+	t.Setenv("SCRAPER_PAGE_SIZE", "45")
+	t.Setenv("SCRAPER_MAX_PAGES", "3")
 
 	cfg := Load()
 
@@ -62,5 +74,13 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.WorkerTick != 9*time.Second {
 		t.Fatalf("expected worker tick 9s, got %s", cfg.WorkerTick)
+	}
+
+	if cfg.ScraperPageSize != 45 {
+		t.Fatalf("expected scraper page size 45, got %d", cfg.ScraperPageSize)
+	}
+
+	if cfg.ScraperMaxPages != 3 {
+		t.Fatalf("expected scraper max pages 3, got %d", cfg.ScraperMaxPages)
 	}
 }

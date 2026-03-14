@@ -6,14 +6,15 @@ Checklist status implementasi per phase:
 
 ## Snapshot Saat Ini
 
-Implementasi **Phase 0 foundation** sudah dimulai:
+Implementasi backend saat ini:
 
 - baseline `apps/api` tersedia (cmd, internal, pkg, migrations, healthcheck, worker skeleton),
 - baseline `apps/web` tersedia (Next.js App Router + domain-first skeleton),
 - validasi lokal lint/typecheck/test/build sudah dijalankan,
-- workflow `ci-api` dan `ci-web` tervalidasi lewat run lokal `act`.
+- workflow `ci-api` dan `ci-web` tervalidasi lewat run lokal `act`,
+- **Iteration 1.1 backend** sudah diimplementasikan (source adapters + token provider + dedup + Jobs API list/detail + scrape telemetry + regression tests).
 
-Status saat ini: **Phase 0 foundation baseline complete**, siap lanjut ke Phase 1 dengan hardening bertahap.
+Status saat ini: **Phase 0 complete + Phase 1 Iteration 1.1 backend complete**, siap lanjut ke Iteration 1.1 frontend discovery atau Iteration 1.2 backend sesuai prioritas delivery.
 
 ## Prinsip Eksekusi
 

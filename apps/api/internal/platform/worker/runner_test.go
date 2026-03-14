@@ -52,3 +52,27 @@ func TestRun_ReturnsNilOnContextCancel(t *testing.T) {
 		t.Fatal("worker run did not stop after context cancel")
 	}
 }
+
+func TestRunWithTask_InvokesTaskOnTick(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	taskCalled := make(chan struct{}, 1)
+	go func() {
+		_ = RunWithTask(ctx, logger, "scraper", 10*time.Millisecond, func(context.Context) error {
+			select {
+			case taskCalled <- struct{}{}:
+			default:
+			}
+			cancel()
+			return nil
+		})
+	}()
+
+	select {
+	case <-taskCalled:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected task callback to be called at least once")
+	}
+}

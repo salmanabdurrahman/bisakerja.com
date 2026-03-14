@@ -10,12 +10,25 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
-func New(logger *slog.Logger) http.Handler {
+type Dependencies struct {
+	JobsHandler *handler.JobsHandler
+}
+
+func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
+	var deps Dependencies
+	if len(dependencies) > 0 {
+		deps = dependencies[0]
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", handler.Healthz)
 	mux.HandleFunc("/readyz", handler.Readyz)
 	mux.HandleFunc("/api/v1/healthz", handler.Healthz)
 	mux.HandleFunc("/api/v1/readyz", handler.Readyz)
+	if deps.JobsHandler != nil {
+		mux.HandleFunc("GET /api/v1/jobs", deps.JobsHandler.ListJobs)
+		mux.HandleFunc("GET /api/v1/jobs/{id}", deps.JobsHandler.GetJobByID)
+	}
 
 	return observability.RequestID(withRecovery(logger, mux))
 }

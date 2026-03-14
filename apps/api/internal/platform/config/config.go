@@ -13,6 +13,8 @@ type Config struct {
 	HTTPPort        string
 	ShutdownTimeout time.Duration
 	WorkerTick      time.Duration
+	ScraperPageSize int
+	ScraperMaxPages int
 }
 
 func Load() Config {
@@ -22,6 +24,8 @@ func Load() Config {
 		HTTPPort:        strings.TrimPrefix(getenv("HTTP_PORT", "8080"), ":"),
 		ShutdownTimeout: parseDuration(getenv("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second),
 		WorkerTick:      parseDuration(getenv("WORKER_TICK_INTERVAL", "15s"), 15*time.Second),
+		ScraperPageSize: parseInt(getenv("SCRAPER_PAGE_SIZE", "30"), 30),
+		ScraperMaxPages: parseInt(getenv("SCRAPER_MAX_PAGES", "1"), 1),
 	}
 }
 
@@ -47,4 +51,12 @@ func parseDuration(raw string, fallback time.Duration) time.Duration {
 	}
 
 	return fallback
+}
+
+func parseInt(raw string, fallback int) int {
+	value, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
 }

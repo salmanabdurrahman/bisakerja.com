@@ -68,3 +68,36 @@ func TestWriteError(t *testing.T) {
 		t.Fatalf("expected INVALID_EMAIL error item, got %+v", payload.Errors)
 	}
 }
+
+func TestWriteSuccessWithPagination(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	WriteSuccessWithPagination(
+		recorder,
+		http.StatusOK,
+		"ok",
+		"req_paginated",
+		[]map[string]string{{"id": "1"}},
+		Pagination{
+			Page:         2,
+			Limit:        10,
+			TotalPages:   4,
+			TotalRecords: 37,
+		},
+	)
+
+	var payload struct {
+		Meta Meta                `json:"meta"`
+		Data []map[string]string `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+
+	if payload.Meta.Pagination == nil {
+		t.Fatal("expected pagination metadata to be present")
+	}
+
+	if payload.Meta.Pagination.Page != 2 || payload.Meta.Pagination.TotalRecords != 37 {
+		t.Fatalf("unexpected pagination payload: %+v", payload.Meta.Pagination)
+	}
+}
