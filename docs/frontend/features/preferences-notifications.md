@@ -11,10 +11,10 @@ Memungkinkan user mengelola preferensi lowongan dan memahami ketersediaan notifi
 - Simpan preferensi ke backend.
 - Menampilkan status akses notifikasi berdasarkan subscription state.
 - Upsell premium jika user belum `premium_active`.
+- Pengaturan frekuensi notifikasi (`alert_mode`, `digest_hour`) via endpoint khusus notifikasi.
 
 ## Out of Scope
 
-- Pengaturan frekuensi notifikasi (instant/digest).
 - In-app notification center/histori notifikasi.
 - Multi-channel notification settings (email/WhatsApp toggle detail).
 
@@ -56,6 +56,7 @@ Memungkinkan user mengelola preferensi lowongan dan memahami ketersediaan notifi
 |---|---|---|---|
 | `GET /api/v1/preferences` | Bootstrap data preferensi user saat halaman dibuka. | `data.keywords`, `data.locations`, `data.job_types`, `data.salary_min`, `data.updated_at` | [preferences.md](../../api/preferences.md) |
 | `PUT /api/v1/preferences` | Menyimpan preferensi pencarian/notifikasi user. | `data.keywords`, `data.locations`, `data.job_types`, `data.salary_min`, `data.updated_at` | [preferences.md](../../api/preferences.md) |
+| `PUT /api/v1/preferences/notification` | Menyimpan mode notifikasi instant/digest. | `data.alert_mode`, `data.digest_hour`, `data.updated_at` | [preferences.md](../../api/preferences.md) |
 | `GET /api/v1/billing/status` | Menentukan state gating notifikasi. | `data.subscription_state` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/auth/me` | Validasi session user aktif sebelum submit perubahan preferensi. | `data.id`, `data.email` | [auth.md](../../api/auth.md) |
 
@@ -90,8 +91,8 @@ Catatan readiness kontrak:
 ## Output Implementasi Minimum
 
 - Route: `/account/preferences` (protected).
-- Komponen: `PreferencesForm`, `NotificationEntitlementBanner`.
-- Service calls typed: `getPreferences`, `updatePreferences`, `getBillingStatus`, `getMe`.
+- Komponen: `PreferencesForm`, `NotificationEntitlementBanner`, `NotificationDigestControl`.
+- Service calls typed: `getPreferences`, `updatePreferences`, `updateNotificationPreferences`, `getBillingStatus`, `getMe`.
 - Test minimum:
   - component test validasi field (`keywords`, `salary_min`),
   - integration test submit sukses + `updated_at` ter-render,

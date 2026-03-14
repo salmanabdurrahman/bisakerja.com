@@ -43,6 +43,12 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0 frontend** suda
 | `POST /api/v1/billing/checkout-session` | `checkout_url`, `transaction_id`, `expired_at`, `subscription_state`, `transaction_status` | 📝     | dipakai upgrade initiation                 |
 | `GET /api/v1/billing/status`            | `subscription_state`, `last_transaction_status`                                            | 📝     | source of truth entitlement                |
 | `GET /api/v1/billing/transactions`      | `data[].status`, `data[].amount`                                                           | 📝     | histori pembayaran account/subscription    |
+| `POST /api/v1/saved-searches`           | `id`, `query`, `frequency`, `is_active`, `created_at`                                      | 📝     | dipakai create saved search                |
+| `GET /api/v1/saved-searches`            | `data[]` saved search user                                                                  | 📝     | dipakai bootstrap list saved search        |
+| `DELETE /api/v1/saved-searches/:id`     | `id`                                                                                        | 📝     | dipakai hapus saved search                 |
+| `GET /api/v1/notifications`             | `data[]`, `meta.pagination`                                                                 | 📝     | dipakai notification center                |
+| `PATCH /api/v1/notifications/:id/read`  | `id`, `read_at`                                                                             | 📝     | dipakai mark as read                       |
+| `PUT /api/v1/preferences/notification`  | `alert_mode`, `digest_hour`, `updated_at`                                                   | 📝     | dipakai kontrol digest mode                |
 
 ## 4) Checklist per Phase & Iteration
 
@@ -96,9 +102,9 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0 frontend** suda
 
 | Item                                      | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | ----------------------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
-| saved searches management UI              | ⬜     | -             | -             | -           | -                 |
-| notification center UI                    | ⬜     | -             | -             | -           | -                 |
-| pengaturan frekuensi/digest notifikasi    | ⬜     | -             | -             | -           | -                 |
+| saved searches management UI              | ✅     | `apps/web/src/app/account/saved-searches/page.tsx`, `apps/web/src/features/growth/components/account-saved-searches-client.tsx`, `apps/web/src/services/growth.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/components/account-saved-searches-client.test.tsx`, `apps/web/tests/unit/growth-service.test.ts`, `pnpm --filter web test` | `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/growth-engagement.md`, `docs/frontend/flows/growth-engagement-flow.md`, `docs/api/growth.md` |
+| notification center UI                    | ✅     | `apps/web/src/app/account/notifications/page.tsx`, `apps/web/src/features/growth/components/account-notifications-client.tsx`, `apps/web/src/services/growth.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/components/account-notifications-client.test.tsx`, `apps/web/tests/unit/growth-service.test.ts`, `pnpm --filter web test` | `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/growth-engagement.md`, `docs/frontend/flows/growth-engagement-flow.md`, `docs/api/growth.md` |
+| pengaturan frekuensi/digest notifikasi    | ✅     | `apps/web/src/features/preferences/components/notification-digest-control.tsx`, `apps/web/src/features/preferences/components/account-preferences-client.tsx`, `apps/web/src/app/account/preferences/page.tsx`, `apps/web/src/services/preferences.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/components/notification-digest-control.test.tsx`, `apps/web/tests/components/account-preferences-client.test.tsx`, `pnpm --filter web test` | `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/preferences-notifications.md`, `docs/frontend/features/growth-engagement.md`, `docs/api/preferences.md` |
 | observability web vitals halaman kritikal | ⬜     | -             | -             | -           | -                 |
 | e2e flow fitur growth prioritas           | ⬜     | -             | -             | -           | -                 |
 

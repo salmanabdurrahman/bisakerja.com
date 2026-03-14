@@ -68,6 +68,12 @@ describe("UpgradeCTA", () => {
       getBillingTransactions: vi.fn(),
       getPreferences: vi.fn(),
       updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -97,6 +103,12 @@ describe("UpgradeCTA", () => {
       getBillingTransactions: vi.fn(),
       getPreferences: vi.fn(),
       updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);

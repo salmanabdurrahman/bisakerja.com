@@ -11,6 +11,7 @@ import { getMe, type SubscriptionState } from "@/services/auth";
 import { getBillingStatus } from "@/services/billing";
 import type { UpdatePreferencesInput } from "@/services/preferences";
 import { getPreferences } from "@/services/preferences";
+import type { NotificationAlertMode } from "@/services/preferences";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -57,10 +58,25 @@ export default async function AccountPreferencesPage() {
 
   let initialPreferences: UpdatePreferencesInput | null = cookieDraft;
   let initialUpdatedAt: string | null = null;
+  let initialNotificationSettings: {
+    alert_mode: NotificationAlertMode;
+    digest_hour?: number | null;
+    updated_at?: string | null;
+  } = {
+    alert_mode: "instant",
+    digest_hour: null,
+    updated_at: null,
+  };
 
-  if (!initialPreferences) {
-    try {
-      const preferencesResponse = await getPreferences(accessToken);
+  try {
+    const preferencesResponse = await getPreferences(accessToken);
+    initialNotificationSettings = {
+      alert_mode: preferencesResponse.data.alert_mode,
+      digest_hour: preferencesResponse.data.digest_hour ?? null,
+      updated_at: preferencesResponse.data.updated_at ?? null,
+    };
+
+    if (!initialPreferences) {
       initialPreferences = {
         keywords: preferencesResponse.data.keywords,
         locations: preferencesResponse.data.locations,
@@ -68,12 +84,14 @@ export default async function AccountPreferencesPage() {
         salary_min: preferencesResponse.data.salary_min,
       };
       initialUpdatedAt = preferencesResponse.data.updated_at ?? null;
-    } catch (error) {
-      if (error instanceof APIRequestError && error.status === 401) {
-        redirect(buildLoginHref("/account/preferences"));
-      }
     }
-  } else {
+  } catch (error) {
+    if (error instanceof APIRequestError && error.status === 401) {
+      redirect(buildLoginHref("/account/preferences"));
+    }
+  }
+
+  if (cookieDraft) {
     infoMessage =
       "Draft lokal berhasil dipulihkan. Simpan ulang preferences untuk sinkronisasi ke server.";
   }
@@ -121,6 +139,7 @@ export default async function AccountPreferencesPage() {
         <AccountPreferencesClient
           initialPreferences={initialPreferences}
           initialUpdatedAt={initialUpdatedAt}
+          initialNotificationSettings={initialNotificationSettings}
           subscriptionState={subscriptionState}
           infoMessage={infoMessage}
         />

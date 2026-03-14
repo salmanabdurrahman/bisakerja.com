@@ -19,10 +19,24 @@ import {
 } from "@/services/billing";
 import {
   getPreferences,
+  updateNotificationPreferences,
   updatePreferences,
+  type NotificationPreferences,
+  type UpdateNotificationPreferencesInput,
   type UpdatePreferencesInput,
   type UserPreferences,
 } from "@/services/preferences";
+import {
+  createSavedSearch,
+  deleteSavedSearch,
+  listNotifications,
+  listSavedSearches,
+  markNotificationAsRead,
+  type CreateSavedSearchInput,
+  type NotificationRecord,
+  type NotificationsQuery,
+  type SavedSearch,
+} from "@/services/growth";
 
 interface SessionClientDependencies {
   getSession: typeof readBrowserSession;
@@ -51,6 +65,20 @@ export interface SessionAPIClient {
   updatePreferences: (
     input: UpdatePreferencesInput,
   ) => Promise<APIResponse<UserPreferences>>;
+  listSavedSearches: () => Promise<APIResponse<SavedSearch[]>>;
+  createSavedSearch: (
+    input: CreateSavedSearchInput,
+  ) => Promise<APIResponse<SavedSearch>>;
+  deleteSavedSearch: (id: string) => Promise<APIResponse<{ id: string }>>;
+  listNotifications: (
+    query?: NotificationsQuery,
+  ) => Promise<APIResponse<NotificationRecord[]>>;
+  markNotificationAsRead: (
+    notificationID: string,
+  ) => Promise<APIResponse<NotificationRecord>>;
+  updateNotificationPreferences: (
+    input: UpdateNotificationPreferencesInput,
+  ) => Promise<APIResponse<NotificationPreferences>>;
 }
 
 let refreshInFlight: Promise<string | null> | null = null;
@@ -92,6 +120,22 @@ export function createSessionAPIClient(
       withAuthorizedRequest((token) => getPreferences(token)),
     updatePreferences: (input) =>
       withAuthorizedRequest((token) => updatePreferences(token, input)),
+    listSavedSearches: () =>
+      withAuthorizedRequest((token) => listSavedSearches(token)),
+    createSavedSearch: (input) =>
+      withAuthorizedRequest((token) => createSavedSearch(token, input)),
+    deleteSavedSearch: (id) =>
+      withAuthorizedRequest((token) => deleteSavedSearch(token, id)),
+    listNotifications: (query) =>
+      withAuthorizedRequest((token) => listNotifications(token, query)),
+    markNotificationAsRead: (notificationID) =>
+      withAuthorizedRequest((token) =>
+        markNotificationAsRead(token, notificationID),
+      ),
+    updateNotificationPreferences: (input) =>
+      withAuthorizedRequest((token) =>
+        updateNotificationPreferences(token, input),
+      ),
   };
 }
 

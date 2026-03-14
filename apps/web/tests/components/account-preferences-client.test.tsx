@@ -52,6 +52,12 @@ describe("AccountPreferencesClient", () => {
       getBillingTransactions: vi.fn(),
       getMe: vi.fn(),
       updatePreferences: updatePreferencesMock,
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
     });
 
     render(
@@ -63,6 +69,11 @@ describe("AccountPreferencesClient", () => {
           salary_min: 1_000_000,
         }}
         initialUpdatedAt="2026-03-14T00:00:00Z"
+        initialNotificationSettings={{
+          alert_mode: "instant",
+          digest_hour: null,
+          updated_at: "2026-03-14T00:00:00Z",
+        }}
         subscriptionState="free"
         infoMessage={null}
       />,

@@ -43,6 +43,7 @@ Saat ada konflik data antar endpoint:
 3. [Premium Upgrade](./premium-upgrade.md)
 4. [Preferences & Notifications](./preferences-notifications.md)
 5. [Profile & Account](./profile-account.md)
+6. [Growth & Engagement](./growth-engagement.md)
 
 ## Dependency Flow (Frontend)
 
@@ -50,6 +51,7 @@ Saat ada konflik data antar endpoint:
 - **Profile & Account** dan **Premium Upgrade** mengonsumsi state langganan dari session/billing.
 - **Job Discovery** memanfaatkan state langganan untuk upsell konteks premium.
 - **Preferences & Notifications** memanfaatkan state langganan untuk gating fitur notifikasi.
+- **Growth & Engagement** menggunakan preference + session client untuk saved searches, notification center, dan digest control.
 
 ## Backend API References
 
