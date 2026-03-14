@@ -8,30 +8,44 @@ import (
 )
 
 type Config struct {
-	AppName             string
-	Environment         string
-	HTTPPort            string
-	ShutdownTimeout     time.Duration
-	WorkerTick          time.Duration
-	ScraperPageSize     int
-	ScraperMaxPages     int
-	AuthJWTSecret       string
-	AuthAccessTokenTTL  time.Duration
-	AuthRefreshTokenTTL time.Duration
+	AppName                    string
+	Environment                string
+	HTTPPort                   string
+	ShutdownTimeout            time.Duration
+	WorkerTick                 time.Duration
+	ScraperPageSize            int
+	ScraperMaxPages            int
+	AuthJWTSecret              string
+	AuthAccessTokenTTL         time.Duration
+	AuthRefreshTokenTTL        time.Duration
+	MayarBaseURL               string
+	MayarAPIKey                string
+	MayarRequestTimeout        time.Duration
+	MayarMaxRetries            int
+	BillingRedirectAllowlist   []string
+	BillingIdempotencyWindow   time.Duration
+	BillingUserRateLimitWindow time.Duration
 }
 
 func Load() Config {
 	return Config{
-		AppName:             getenv("APP_NAME", "bisakerja-api"),
-		Environment:         getenv("APP_ENV", "development"),
-		HTTPPort:            strings.TrimPrefix(getenv("HTTP_PORT", "8080"), ":"),
-		ShutdownTimeout:     parseDuration(getenv("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second),
-		WorkerTick:          parseDuration(getenv("WORKER_TICK_INTERVAL", "15s"), 15*time.Second),
-		ScraperPageSize:     parseInt(getenv("SCRAPER_PAGE_SIZE", "30"), 30),
-		ScraperMaxPages:     parseInt(getenv("SCRAPER_MAX_PAGES", "1"), 1),
-		AuthJWTSecret:       getenv("AUTH_JWT_SECRET", "bisakerja-dev-secret"),
-		AuthAccessTokenTTL:  parseDuration(getenv("AUTH_ACCESS_TOKEN_TTL", "15m"), 15*time.Minute),
-		AuthRefreshTokenTTL: parseDuration(getenv("AUTH_REFRESH_TOKEN_TTL", "168h"), 168*time.Hour),
+		AppName:                    getenv("APP_NAME", "bisakerja-api"),
+		Environment:                getenv("APP_ENV", "development"),
+		HTTPPort:                   strings.TrimPrefix(getenv("HTTP_PORT", "8080"), ":"),
+		ShutdownTimeout:            parseDuration(getenv("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second),
+		WorkerTick:                 parseDuration(getenv("WORKER_TICK_INTERVAL", "15s"), 15*time.Second),
+		ScraperPageSize:            parseInt(getenv("SCRAPER_PAGE_SIZE", "30"), 30),
+		ScraperMaxPages:            parseInt(getenv("SCRAPER_MAX_PAGES", "1"), 1),
+		AuthJWTSecret:              getenv("AUTH_JWT_SECRET", "bisakerja-dev-secret"),
+		AuthAccessTokenTTL:         parseDuration(getenv("AUTH_ACCESS_TOKEN_TTL", "15m"), 15*time.Minute),
+		AuthRefreshTokenTTL:        parseDuration(getenv("AUTH_REFRESH_TOKEN_TTL", "168h"), 168*time.Hour),
+		MayarBaseURL:               getenv("MAYAR_BASE_URL", "https://api.mayar.id/hl/v1"),
+		MayarAPIKey:                getenv("MAYAR_API_KEY", ""),
+		MayarRequestTimeout:        parseDuration(getenv("MAYAR_REQUEST_TIMEOUT", "5s"), 5*time.Second),
+		MayarMaxRetries:            parseInt(getenv("MAYAR_MAX_RETRIES", "3"), 3),
+		BillingRedirectAllowlist:   parseCSVList(getenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,localhost:3000")),
+		BillingIdempotencyWindow:   parseDuration(getenv("BILLING_IDEMPOTENCY_WINDOW", "15m"), 15*time.Minute),
+		BillingUserRateLimitWindow: parseDuration(getenv("BILLING_USER_RATE_LIMIT_WINDOW", "10s"), 10*time.Second),
 	}
 }
 
@@ -65,4 +79,17 @@ func parseInt(raw string, fallback int) int {
 		return fallback
 	}
 	return value
+}
+
+func parseCSVList(raw string) []string {
+	parts := strings.Split(raw, ",")
+	result := make([]string, 0, len(parts))
+	for _, item := range parts {
+		normalized := strings.ToLower(strings.TrimSpace(item))
+		if normalized == "" {
+			continue
+		}
+		result = append(result, normalized)
+	}
+	return result
 }

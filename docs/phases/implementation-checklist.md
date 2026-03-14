@@ -81,9 +81,9 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0** sudah dimulai
 
 | Item                                               | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | -------------------------------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
-| endpoint `POST /billing/checkout-session`          | ⬜     | -             | -             | -           | -                 |
-| adapter Mayar `customer/create` + `invoice/create` | ⬜     | -             | -             | -           | -                 |
-| transaksi pending tersimpan                        | ⬜     | -             | -             | -           | -                 |
+| endpoint `POST /billing/checkout-session`          | ✅     | `apps/api/internal/adapter/http/handler/billing_handler.go`, `apps/api/internal/adapter/http/router/router.go`, `apps/api/cmd/api/main.go` | `apps/api/internal/adapter/http/handler/billing_handler_test.go`, `apps/api/internal/adapter/http/router/router_test.go`, `apps/api/test/integration/billing_checkout_flow_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/api/billing.md`, `docs/phases/implementation-roadmap.md`, `docs/api/errors.md` |
+| adapter Mayar `customer/create` + `invoice/create` | ✅     | `apps/api/internal/adapter/billing/mayar/client.go`, `apps/api/internal/app/billing/service.go`, `apps/api/internal/platform/config/config.go` | `apps/api/internal/adapter/billing/mayar/client_test.go`, `apps/api/internal/app/billing/service_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/api/mayar-headless.md`, `docs/architecture/mayar-integration.md`, `docs/features/subscription-billing.md` |
+| transaksi pending tersimpan                        | ✅     | `apps/api/internal/domain/billing/billing.go`, `apps/api/internal/adapter/persistence/memory/billing_repository.go`, `apps/api/internal/app/billing/service.go` | `apps/api/internal/adapter/persistence/memory/billing_repository_test.go`, `apps/api/internal/app/billing/service_test.go`, `apps/api/test/integration/billing_checkout_flow_test.go`, `make -C apps/api test` | `act pull_request -W .github/workflows/ci-api.yml -j lint-test-build` (job succeeded) | `docs/architecture/database.md`, `docs/features/subscription-billing.md`, `docs/phases/implementation-roadmap.md` |
 
 ### Iteration 2.2 - Webhook Reliability
 

@@ -60,6 +60,30 @@ Endpoint ini:
 }
 ```
 
+### Response `200 OK` (Idempotent Reuse)
+
+Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit), API dapat mengembalikan checkout pending sebelumnya tanpa membuat invoice baru:
+
+```json
+{
+  "meta": {
+    "code": 200,
+    "status": "success",
+    "message": "Checkout session reused",
+    "request_id": "req_01J..."
+  },
+  "data": {
+    "provider": "mayar",
+    "invoice_id": "f774034d-d9cc-43a0-97d8-a2520c127f03",
+    "transaction_id": "23fa41c5-c6ed-45d4-8302-5fac4a165dfa",
+    "checkout_url": "https://andiak.myr.id/invoices/ibzfrf4880",
+    "expired_at": "2026-03-20T10:00:00Z",
+    "subscription_state": "pending_payment",
+    "transaction_status": "pending"
+  }
+}
+```
+
 ### Error
 
 - `400 BAD_REQUEST` (`INVALID_PLAN_CODE`, `INVALID_REDIRECT_URL`).

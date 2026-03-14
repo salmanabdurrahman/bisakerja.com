@@ -12,3 +12,10 @@ scraper_keywords:
 auth_jwt_secret: change-this-jwt-secret
 auth_access_token_ttl: 15m
 auth_refresh_token_ttl: 168h
+mayar_base_url: https://api.mayar.id/hl/v1
+mayar_api_key: ""
+mayar_request_timeout: 5s
+mayar_max_retries: 3
+billing_redirect_allowlist: app.bisakerja.com,localhost:3000
+billing_idempotency_window: 15m
+billing_user_rate_limit_window: 10s

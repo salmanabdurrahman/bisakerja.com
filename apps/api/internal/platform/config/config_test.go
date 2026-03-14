@@ -16,6 +16,13 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("AUTH_JWT_SECRET", "")
 	t.Setenv("AUTH_ACCESS_TOKEN_TTL", "")
 	t.Setenv("AUTH_REFRESH_TOKEN_TTL", "")
+	t.Setenv("MAYAR_BASE_URL", "")
+	t.Setenv("MAYAR_API_KEY", "")
+	t.Setenv("MAYAR_REQUEST_TIMEOUT", "")
+	t.Setenv("MAYAR_MAX_RETRIES", "")
+	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "")
+	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "")
+	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "")
 
 	cfg := Load()
 
@@ -58,6 +65,36 @@ func TestLoad_DefaultValues(t *testing.T) {
 	if cfg.AuthRefreshTokenTTL != 168*time.Hour {
 		t.Fatalf("expected default refresh ttl 168h, got %s", cfg.AuthRefreshTokenTTL)
 	}
+
+	if cfg.MayarBaseURL != "https://api.mayar.id/hl/v1" {
+		t.Fatalf("expected default mayar base url, got %q", cfg.MayarBaseURL)
+	}
+
+	if cfg.MayarAPIKey != "" {
+		t.Fatalf("expected default mayar api key empty, got %q", cfg.MayarAPIKey)
+	}
+
+	if cfg.MayarRequestTimeout != 5*time.Second {
+		t.Fatalf("expected default mayar timeout 5s, got %s", cfg.MayarRequestTimeout)
+	}
+
+	if cfg.MayarMaxRetries != 3 {
+		t.Fatalf("expected default mayar max retries 3, got %d", cfg.MayarMaxRetries)
+	}
+
+	if len(cfg.BillingRedirectAllowlist) != 2 ||
+		cfg.BillingRedirectAllowlist[0] != "app.bisakerja.com" ||
+		cfg.BillingRedirectAllowlist[1] != "localhost:3000" {
+		t.Fatalf("unexpected default billing allowlist: %#v", cfg.BillingRedirectAllowlist)
+	}
+
+	if cfg.BillingIdempotencyWindow != 15*time.Minute {
+		t.Fatalf("expected default billing idempotency window 15m, got %s", cfg.BillingIdempotencyWindow)
+	}
+
+	if cfg.BillingUserRateLimitWindow != 10*time.Second {
+		t.Fatalf("expected default billing user rate limit window 10s, got %s", cfg.BillingUserRateLimitWindow)
+	}
 }
 
 func TestLoad_EnvOverrides(t *testing.T) {
@@ -71,6 +108,13 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("AUTH_JWT_SECRET", "super-secret")
 	t.Setenv("AUTH_ACCESS_TOKEN_TTL", "25m")
 	t.Setenv("AUTH_REFRESH_TOKEN_TTL", "336h")
+	t.Setenv("MAYAR_BASE_URL", "https://api.mayar.club/hl/v1")
+	t.Setenv("MAYAR_API_KEY", "test-api-key")
+	t.Setenv("MAYAR_REQUEST_TIMEOUT", "8s")
+	t.Setenv("MAYAR_MAX_RETRIES", "5")
+	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,staging.bisakerja.com")
+	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "20m")
+	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "12s")
 
 	cfg := Load()
 
@@ -112,5 +156,35 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.AuthRefreshTokenTTL != 336*time.Hour {
 		t.Fatalf("expected refresh ttl 336h, got %s", cfg.AuthRefreshTokenTTL)
+	}
+
+	if cfg.MayarBaseURL != "https://api.mayar.club/hl/v1" {
+		t.Fatalf("expected mayar base url override, got %q", cfg.MayarBaseURL)
+	}
+
+	if cfg.MayarAPIKey != "test-api-key" {
+		t.Fatalf("expected mayar api key override, got %q", cfg.MayarAPIKey)
+	}
+
+	if cfg.MayarRequestTimeout != 8*time.Second {
+		t.Fatalf("expected mayar timeout 8s, got %s", cfg.MayarRequestTimeout)
+	}
+
+	if cfg.MayarMaxRetries != 5 {
+		t.Fatalf("expected mayar max retries 5, got %d", cfg.MayarMaxRetries)
+	}
+
+	if len(cfg.BillingRedirectAllowlist) != 2 ||
+		cfg.BillingRedirectAllowlist[0] != "app.bisakerja.com" ||
+		cfg.BillingRedirectAllowlist[1] != "staging.bisakerja.com" {
+		t.Fatalf("unexpected billing allowlist override: %#v", cfg.BillingRedirectAllowlist)
+	}
+
+	if cfg.BillingIdempotencyWindow != 20*time.Minute {
+		t.Fatalf("expected billing idempotency window 20m, got %s", cfg.BillingIdempotencyWindow)
+	}
+
+	if cfg.BillingUserRateLimitWindow != 12*time.Second {
+		t.Fatalf("expected billing user rate limit window 12s, got %s", cfg.BillingUserRateLimitWindow)
 	}
 }

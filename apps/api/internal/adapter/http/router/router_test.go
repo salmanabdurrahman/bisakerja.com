@@ -14,8 +14,10 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/jobs"
+	billingdomain "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/observability"
@@ -137,4 +139,63 @@ func TestNew_RegistersAuthRoutesWhenDependencyProvided(t *testing.T) {
 	if meResp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected /auth/me status 401 without bearer token, got %d", meResp.Code)
 	}
+}
+
+func TestNew_RegistersBillingRouteWhenDependencyProvided(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tokenManager, err := platformauth.NewManager("router-billing-secret", 15*time.Minute, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("create token manager: %v", err)
+	}
+
+	identityRepository := memory.NewIdentityRepository()
+	billingService := billingapp.NewService(
+		identityRepository,
+		memory.NewBillingRepository(),
+		&routerTestBillingProvider{},
+		billingapp.Config{RedirectAllowlist: []string{"app.bisakerja.com"}},
+	)
+	billingHandler := handler.NewBillingHandler(billingService)
+	authMiddleware := middleware.NewAuthenticator(tokenManager)
+
+	appHandler := New(logger, Dependencies{
+		BillingHandler: billingHandler,
+		AuthMiddleware: authMiddleware,
+	})
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/billing/checkout-session",
+		strings.NewReader(`{"plan_code":"pro_monthly","redirect_url":"https://app.bisakerja.com/billing/success"}`),
+	)
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	appHandler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected billing route to be protected with 401, got %d", response.Code)
+	}
+}
+
+type routerTestBillingProvider struct{}
+
+func (p *routerTestBillingProvider) EnsureCustomer(
+	_ context.Context,
+	_ billingdomain.EnsureCustomerInput,
+) (billingdomain.Customer, error) {
+	return billingdomain.Customer{ID: "cust_router"}, nil
+}
+
+func (p *routerTestBillingProvider) CreateInvoice(
+	_ context.Context,
+	input billingdomain.CreateInvoiceInput,
+) (billingdomain.Invoice, error) {
+	expiresAt := time.Now().UTC().Add(24 * time.Hour)
+	return billingdomain.Invoice{
+		ID:            "inv_router",
+		TransactionID: "trx_router",
+		CheckoutURL:   "https://pay.example.com/router",
+		Amount:        input.Amount,
+		ExpiresAt:     &expiresAt,
+	}, nil
 }

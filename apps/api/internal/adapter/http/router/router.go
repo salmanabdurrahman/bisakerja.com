@@ -15,6 +15,7 @@ type Dependencies struct {
 	JobsHandler        *handler.JobsHandler
 	AuthHandler        *handler.AuthHandler
 	PreferencesHandler *handler.PreferencesHandler
+	BillingHandler     *handler.BillingHandler
 	AuthMiddleware     *middleware.Authenticator
 }
 
@@ -46,6 +47,12 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 	if deps.PreferencesHandler != nil && deps.AuthMiddleware != nil {
 		mux.Handle("GET /api/v1/preferences", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.GetPreferences)))
 		mux.Handle("PUT /api/v1/preferences", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.UpdatePreferences)))
+	}
+	if deps.BillingHandler != nil && deps.AuthMiddleware != nil {
+		mux.Handle(
+			"POST /api/v1/billing/checkout-session",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.BillingHandler.CreateCheckoutSession)),
+		)
 	}
 
 	return observability.RequestID(withRecovery(logger, mux))

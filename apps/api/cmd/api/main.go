@@ -7,10 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/mayar"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/router"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/jobs"
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
@@ -42,10 +44,25 @@ func main() {
 	preferencesHandler := handler.NewPreferencesHandler(identityService)
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 
+	billingRepository := memory.NewBillingRepository()
+	mayarClient := mayar.NewClient(mayar.ClientConfig{
+		BaseURL:    cfg.MayarBaseURL,
+		APIKey:     cfg.MayarAPIKey,
+		Timeout:    cfg.MayarRequestTimeout,
+		MaxRetries: cfg.MayarMaxRetries,
+	})
+	billingService := billingapp.NewService(identityRepository, billingRepository, mayarClient, billingapp.Config{
+		RedirectAllowlist: cfg.BillingRedirectAllowlist,
+		IdempotencyWindow: cfg.BillingIdempotencyWindow,
+		RateLimitWindow:   cfg.BillingUserRateLimitWindow,
+	})
+	billingHandler := handler.NewBillingHandler(billingService)
+
 	httpHandler := router.New(appLogger, router.Dependencies{
 		JobsHandler:        jobsHandler,
 		AuthHandler:        authHandler,
 		PreferencesHandler: preferencesHandler,
+		BillingHandler:     billingHandler,
 		AuthMiddleware:     authMiddleware,
 	})
 	httpServer := server.NewHTTP(cfg, httpHandler, appLogger)
