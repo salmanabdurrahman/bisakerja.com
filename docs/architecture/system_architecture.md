@@ -19,11 +19,9 @@ graph TD
   SCRAPER --> R
 
   MATCHER[Matcher Worker] --> PG
-  MATCHER --> R
 
-  NOTIFIER[Notification Worker] --> R
+  NOTIFIER[Notification Worker] --> PG
   NOTIFIER --> SMTP[SMTP Provider]
-  NOTIFIER --> PG
 
   API -->|Customer/Invoice API| MAYAR_API[Mayar Headless API]
   MAYAR_API -->|Webhook events| API
@@ -65,6 +63,7 @@ Tanggung jawab:
 - matching user preference.
 - enqueue + kirim notifikasi.
 - update status notifikasi.
+- state queue disimpan persisten di PostgreSQL (`notification_job_events`, `notification_delivery_tasks`).
 
 ### 2.4 Billing Retry Worker (opsional phase hardening)
 

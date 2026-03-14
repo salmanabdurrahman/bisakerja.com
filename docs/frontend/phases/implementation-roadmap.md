@@ -26,7 +26,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | Milestone | Dampak Utama ke Frontend | Status | Catatan Eksekusi |
 | --------- | ------------------------ | ------ | ---------------- |
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete | Detail rollout sudah ditetapkan sebelum coding lanjutan |
-| M1 | Fondasi PostgreSQL backend | 🟧 In Queue | Menjadi dependensi stabilitas data untuk flow frontend berikutnya |
+| M1 | Fondasi PostgreSQL backend | ✅ Complete | Adapter PostgreSQL backend + wiring runtime + queue persistence sudah aktif |
 | M2 | Comments/docstrings quality pass | ⬜ Pending | Berlaku juga untuk util/helper TS yang exported dan non-obvious |
 | M3 | English-only copy migration | ⬜ Pending | Seluruh UI copy, feedback state, dan message user-facing API |
 | M4 | SaaS redesign + hardening growth | ⬜ Pending | Menutup item pending: web vitals observability + growth e2e |

@@ -37,11 +37,19 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | Milestone | Fokus | Status |
 | --------- | ----- | ------ |
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete |
-| M1 | Migrasi fondasi persistence ke PostgreSQL | 📝 Documented |
+| M1 | Migrasi fondasi persistence ke PostgreSQL | ✅ Complete |
 | M2 | Comments/docstrings pass sesuai standar | 📝 Documented |
 | M3 | English migration (UI + API user-facing messages) | 📝 Documented |
 | M4 | Frontend redesign + growth hardening | 📝 Documented |
 | M5 | Phase 4 backend execution | 📝 Documented |
+
+Catatan progress M1 saat ini:
+
+- adapter persistence PostgreSQL untuk identity/jobs/preferences/billing/notifications/growth sudah ditambahkan,
+- wiring runtime `cmd/api`, `cmd/scraper`, `cmd/notifier`, `cmd/billing-worker` sudah pindah ke PostgreSQL pool + fail-fast connection,
+- migration cutover `000003_phase3_persistence_cutover` sudah ditambahkan,
+- persistence queue notifier sudah dipindah ke PostgreSQL (`000004_phase3_notification_queue_postgres` + adapter queue PostgreSQL),
+- validasi pass: `pnpm lint`, `pnpm test`, `pnpm build`, serta `make -C apps/api check-migrations`.
 
 ## 4) Checklist per Phase & Iteration
 

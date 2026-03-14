@@ -11,6 +11,12 @@ type Config struct {
 	AppName                    string
 	Environment                string
 	HTTPPort                   string
+	DatabaseURL                string
+	DatabaseMaxOpenConns       int
+	DatabaseMinOpenConns       int
+	DatabaseMaxConnLifetime    time.Duration
+	DatabaseMaxConnIdleTime    time.Duration
+	DatabaseConnectTimeout     time.Duration
 	ShutdownTimeout            time.Duration
 	WorkerTick                 time.Duration
 	ScraperPageSize            int
@@ -33,6 +39,12 @@ func Load() Config {
 		AppName:                    getenv("APP_NAME", "bisakerja-api"),
 		Environment:                getenv("APP_ENV", "development"),
 		HTTPPort:                   strings.TrimPrefix(getenv("HTTP_PORT", "8080"), ":"),
+		DatabaseURL:                getenv("DATABASE_URL", ""),
+		DatabaseMaxOpenConns:       parseInt(getenv("DATABASE_MAX_OPEN_CONNS", "20"), 20),
+		DatabaseMinOpenConns:       parseNonNegativeInt(getenv("DATABASE_MIN_OPEN_CONNS", "2"), 2),
+		DatabaseMaxConnLifetime:    parseDuration(getenv("DATABASE_MAX_CONN_LIFETIME", "30m"), 30*time.Minute),
+		DatabaseMaxConnIdleTime:    parseDuration(getenv("DATABASE_MAX_CONN_IDLE_TIME", "5m"), 5*time.Minute),
+		DatabaseConnectTimeout:     parseDuration(getenv("DATABASE_CONNECT_TIMEOUT", "5s"), 5*time.Second),
 		ShutdownTimeout:            parseDuration(getenv("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second),
 		WorkerTick:                 parseDuration(getenv("WORKER_TICK_INTERVAL", "15s"), 15*time.Second),
 		ScraperPageSize:            parseInt(getenv("SCRAPER_PAGE_SIZE", "30"), 30),
@@ -78,6 +90,14 @@ func parseDuration(raw string, fallback time.Duration) time.Duration {
 func parseInt(raw string, fallback int) int {
 	value, err := strconv.Atoi(strings.TrimSpace(raw))
 	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
+}
+
+func parseNonNegativeInt(raw string, fallback int) int {
+	value, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || value < 0 {
 		return fallback
 	}
 	return value

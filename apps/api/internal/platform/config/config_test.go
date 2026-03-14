@@ -9,6 +9,12 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("APP_NAME", "")
 	t.Setenv("APP_ENV", "")
 	t.Setenv("HTTP_PORT", "")
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("DATABASE_MAX_OPEN_CONNS", "")
+	t.Setenv("DATABASE_MIN_OPEN_CONNS", "")
+	t.Setenv("DATABASE_MAX_CONN_LIFETIME", "")
+	t.Setenv("DATABASE_MAX_CONN_IDLE_TIME", "")
+	t.Setenv("DATABASE_CONNECT_TIMEOUT", "")
 	t.Setenv("SHUTDOWN_TIMEOUT", "")
 	t.Setenv("WORKER_TICK_INTERVAL", "")
 	t.Setenv("SCRAPER_PAGE_SIZE", "")
@@ -37,6 +43,30 @@ func TestLoad_DefaultValues(t *testing.T) {
 
 	if cfg.HTTPAddress() != ":8080" {
 		t.Fatalf("expected default address :8080, got %q", cfg.HTTPAddress())
+	}
+
+	if cfg.DatabaseURL != "" {
+		t.Fatalf("expected default database url empty, got %q", cfg.DatabaseURL)
+	}
+
+	if cfg.DatabaseMaxOpenConns != 20 {
+		t.Fatalf("expected default database max open conns 20, got %d", cfg.DatabaseMaxOpenConns)
+	}
+
+	if cfg.DatabaseMinOpenConns != 2 {
+		t.Fatalf("expected default database min open conns 2, got %d", cfg.DatabaseMinOpenConns)
+	}
+
+	if cfg.DatabaseMaxConnLifetime != 30*time.Minute {
+		t.Fatalf("expected default database max conn lifetime 30m, got %s", cfg.DatabaseMaxConnLifetime)
+	}
+
+	if cfg.DatabaseMaxConnIdleTime != 5*time.Minute {
+		t.Fatalf("expected default database max conn idle time 5m, got %s", cfg.DatabaseMaxConnIdleTime)
+	}
+
+	if cfg.DatabaseConnectTimeout != 5*time.Second {
+		t.Fatalf("expected default database connect timeout 5s, got %s", cfg.DatabaseConnectTimeout)
 	}
 
 	if cfg.ShutdownTimeout != 10*time.Second {
@@ -106,6 +136,12 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("APP_NAME", "custom-api")
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("HTTP_PORT", ":9090")
+	t.Setenv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/bisakerja?sslmode=disable")
+	t.Setenv("DATABASE_MAX_OPEN_CONNS", "30")
+	t.Setenv("DATABASE_MIN_OPEN_CONNS", "4")
+	t.Setenv("DATABASE_MAX_CONN_LIFETIME", "45m")
+	t.Setenv("DATABASE_MAX_CONN_IDLE_TIME", "8m")
+	t.Setenv("DATABASE_CONNECT_TIMEOUT", "7s")
 	t.Setenv("SHUTDOWN_TIMEOUT", "25s")
 	t.Setenv("WORKER_TICK_INTERVAL", "9")
 	t.Setenv("SCRAPER_PAGE_SIZE", "45")
@@ -134,6 +170,30 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.HTTPAddress() != ":9090" {
 		t.Fatalf("expected env address :9090, got %q", cfg.HTTPAddress())
+	}
+
+	if cfg.DatabaseURL != "postgres://postgres:postgres@localhost:5432/bisakerja?sslmode=disable" {
+		t.Fatalf("expected database url override, got %q", cfg.DatabaseURL)
+	}
+
+	if cfg.DatabaseMaxOpenConns != 30 {
+		t.Fatalf("expected database max open conns 30, got %d", cfg.DatabaseMaxOpenConns)
+	}
+
+	if cfg.DatabaseMinOpenConns != 4 {
+		t.Fatalf("expected database min open conns 4, got %d", cfg.DatabaseMinOpenConns)
+	}
+
+	if cfg.DatabaseMaxConnLifetime != 45*time.Minute {
+		t.Fatalf("expected database max conn lifetime 45m, got %s", cfg.DatabaseMaxConnLifetime)
+	}
+
+	if cfg.DatabaseMaxConnIdleTime != 8*time.Minute {
+		t.Fatalf("expected database max conn idle time 8m, got %s", cfg.DatabaseMaxConnIdleTime)
+	}
+
+	if cfg.DatabaseConnectTimeout != 7*time.Second {
+		t.Fatalf("expected database connect timeout 7s, got %s", cfg.DatabaseConnectTimeout)
 	}
 
 	if cfg.ShutdownTimeout != 25*time.Second {

@@ -9,11 +9,15 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/postgres"
+	queuepostgres "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/queue/postgres"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/scraper/source"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/scraper/token"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/scraper"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/worker"
 )
@@ -32,7 +36,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	repository := memory.NewJobsRepository()
+	dbPool, err := database.OpenPostgres(ctx, cfg)
+	if err != nil {
+		appLogger.Error("failed to connect database", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer dbPool.Close()
+
+	repository := postgres.NewJobsRepository(dbPool)
+	queue := queuepostgres.NewQueue(dbPool)
 	orchestrator := scraper.NewOrchestrator(
 		appLogger,
 		repository,
@@ -48,8 +60,11 @@ func main() {
 			MaxPages: cfg.ScraperMaxPages,
 		},
 	)
+	orchestrator.SetOnJobInserted(func(callbackCtx context.Context, insertedJob job.Job) error {
+		return queue.EnqueueJobEvent(callbackCtx, notification.JobEvent{JobID: insertedJob.ID})
+	})
 
-	if err := worker.RunWithTask(ctx, appLogger, "scraper", cfg.WorkerTick, func(taskCtx context.Context) error {
+	if err = worker.RunWithTask(ctx, appLogger, "scraper", cfg.WorkerTick, func(taskCtx context.Context) error {
 		summary, runErr := orchestrator.RunOnce(taskCtx)
 		if runErr != nil {
 			return runErr

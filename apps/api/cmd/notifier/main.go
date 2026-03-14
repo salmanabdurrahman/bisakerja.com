@@ -9,10 +9,11 @@ import (
 	"syscall"
 
 	notificationemail "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/notifier/email"
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
-	queuememory "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/queue/memory"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/postgres"
+	queuepostgres "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/queue/postgres"
 	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/worker"
 )
@@ -31,10 +32,17 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	jobsRepository := memory.NewJobsRepository()
-	identityRepository := memory.NewIdentityRepository()
-	notificationRepository := memory.NewNotificationRepository()
-	queue := queuememory.NewQueue()
+	dbPool, err := database.OpenPostgres(ctx, cfg)
+	if err != nil {
+		appLogger.Error("failed to connect database", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer dbPool.Close()
+
+	jobsRepository := postgres.NewJobsRepository(dbPool)
+	identityRepository := postgres.NewIdentityRepository(dbPool)
+	notificationRepository := postgres.NewNotificationRepository(dbPool)
+	queue := queuepostgres.NewQueue(dbPool)
 
 	matcher := notificationapp.NewMatcher(
 		appLogger,
@@ -47,7 +55,7 @@ func main() {
 	emailSender := notificationemail.NewLoggerSender(appLogger)
 	notifier := notificationapp.NewNotifier(appLogger, notificationRepository, queue, emailSender, 100)
 
-	if err := worker.RunWithTask(ctx, appLogger, "notifier", cfg.WorkerTick, func(taskCtx context.Context) error {
+	if err = worker.RunWithTask(ctx, appLogger, "notifier", cfg.WorkerTick, func(taskCtx context.Context) error {
 		matchSummary, matchErr := matcher.RunOnce(taskCtx)
 		if matchErr != nil {
 			return matchErr

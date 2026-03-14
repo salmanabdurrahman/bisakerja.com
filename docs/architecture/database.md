@@ -37,7 +37,7 @@ Menyimpan identitas user + status subscription + referensi customer di Mayar.
 | premium_expired_at | timestamp | null untuk free user |
 | mayar_customer_id | text | nullable, unique jika sudah sinkron |
 | created_at | timestamp | default now |
-| updated_at | timestamp | default now |
+| updated_at | timestamp | nullable untuk user baru, diisi saat pertama kali menyimpan preference |
 
 ### 3.2 `user_preferences`
 
@@ -51,6 +51,8 @@ Menyimpan preferensi job untuk matching.
 | locations | text[] | daftar lokasi |
 | job_types | text[] | daftar tipe pekerjaan |
 | salary_min | integer | minimum salary |
+| alert_mode | text | `instant`, `daily_digest`, `weekly_digest` |
+| digest_hour | integer | `0..23`, nullable untuk mode `instant` |
 | updated_at | timestamp | default now |
 
 ### 3.3 `jobs`
@@ -140,7 +142,9 @@ Menyimpan riwayat notifikasi user.
 | job_id | uuid | FK -> jobs.id |
 | channel | text | email/whatsapp |
 | status | text | pending/sent/failed |
+| error_message | text | error delivery terakhir (jika ada) |
 | sent_at | timestamp | nullable |
+| read_at | timestamp | nullable |
 | created_at | timestamp | default now |
 
 Constraint rekomendasi:
@@ -148,6 +152,68 @@ Constraint rekomendasi:
 ```sql
 UNIQUE (user_id, job_id, channel)
 ```
+
+### 3.7 `saved_searches`
+
+Menyimpan rule pencarian tersimpan user (Phase 3 growth).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | FK -> users.id |
+| query | text | query pencarian user |
+| location | text | filter lokasi |
+| source | text | filter source |
+| salary_min | bigint | nullable |
+| frequency | text | `instant`, `daily_digest`, `weekly_digest` |
+| is_active | boolean | status aktif rule |
+| created_at | timestamp | default now |
+| updated_at | timestamp | default now |
+
+### 3.8 `watchlist_companies`
+
+Menyimpan daftar perusahaan yang di-watch user.
+
+| Column | Type | Notes |
+|---|---|---|
+| user_id | uuid | FK -> users.id |
+| company_slug | text | slug company |
+| created_at | timestamp | default now |
+
+Constraint utama:
+
+```sql
+PRIMARY KEY (user_id, company_slug)
+```
+
+### 3.9 `notification_job_events`
+
+Queue state persisten untuk event lowongan baru yang akan diproses matcher.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | bigserial | PK |
+| job_id | text | referensi ID job (domain-level) |
+| created_at | timestamp | default now |
+
+### 3.10 `notification_delivery_tasks`
+
+Queue state persisten untuk task pengiriman notifikasi.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | bigserial | PK |
+| notification_id | text | ID notifikasi |
+| user_id | text | ID user tujuan |
+| user_email | text | email tujuan |
+| user_name | text | nama user |
+| job_id | text | ID job |
+| channel | text | channel pengiriman |
+| job_title | text | judul job |
+| company | text | nama company |
+| location | text | lokasi |
+| url | text | URL job |
+| created_at | timestamp | default now |
 
 ## 4. SQL DDL Contoh
 
@@ -257,6 +323,18 @@ ON transactions (status);
 
 CREATE INDEX idx_webhook_deliveries_received
 ON webhook_deliveries (received_at DESC);
+
+CREATE INDEX idx_saved_searches_user_created
+ON saved_searches (user_id, created_at DESC);
+
+CREATE INDEX idx_watchlist_companies_user_created
+ON watchlist_companies (user_id, created_at DESC);
+
+CREATE INDEX idx_notification_job_events_created
+ON notification_job_events (created_at ASC, id ASC);
+
+CREATE INDEX idx_notification_delivery_tasks_created
+ON notification_delivery_tasks (created_at ASC, id ASC);
 ```
 
 ## 6. Akses Pola Query

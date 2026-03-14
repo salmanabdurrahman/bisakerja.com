@@ -9,9 +9,10 @@ import (
 	"syscall"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/mayar"
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/postgres"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/worker"
 )
@@ -30,8 +31,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	identityRepository := memory.NewIdentityRepository()
-	billingRepository := memory.NewBillingRepository()
+	dbPool, err := database.OpenPostgres(ctx, cfg)
+	if err != nil {
+		appLogger.Error("failed to connect database", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer dbPool.Close()
+
+	identityRepository := postgres.NewIdentityRepository(dbPool)
+	billingRepository := postgres.NewBillingRepository(dbPool)
 	mayarClient := mayar.NewClient(mayar.ClientConfig{
 		BaseURL:    cfg.MayarBaseURL,
 		APIKey:     cfg.MayarAPIKey,
@@ -44,7 +52,7 @@ func main() {
 		RateLimitWindow:   cfg.BillingUserRateLimitWindow,
 	})
 
-	if err := worker.RunWithTask(ctx, appLogger, "billing-worker", cfg.WorkerTick, func(taskCtx context.Context) error {
+	if err = worker.RunWithTask(ctx, appLogger, "billing-worker", cfg.WorkerTick, func(taskCtx context.Context) error {
 		summary, reconcileErr := billingService.ReconcileWithMayar(taskCtx)
 		if reconcileErr != nil {
 			return reconcileErr

@@ -11,7 +11,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/router"
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/postgres"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	growthapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/growth"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
@@ -19,6 +19,7 @@ import (
 	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/server"
 )
@@ -36,24 +37,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	jobsRepository := memory.NewJobsRepository()
+	dbPool, err := database.OpenPostgres(ctx, cfg)
+	if err != nil {
+		appLogger.Error("failed to connect database", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer dbPool.Close()
+
+	jobsRepository := postgres.NewJobsRepository(dbPool)
 	jobsService := jobs.NewService(jobsRepository)
 	jobsHandler := handler.NewJobsHandler(jobsService)
 
-	identityRepository := memory.NewIdentityRepository()
+	identityRepository := postgres.NewIdentityRepository(dbPool)
 	identityService := identityapp.NewService(identityRepository, tokenManager)
 	authHandler := handler.NewAuthHandler(identityService)
 	preferencesHandler := handler.NewPreferencesHandler(identityService)
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
-	growthRepository := memory.NewGrowthRepository()
+	growthRepository := postgres.NewGrowthRepository(dbPool)
 	growthService := growthapp.NewService(identityRepository, growthRepository)
 	growthHandler := handler.NewGrowthHandler(growthService)
 
-	notificationRepository := memory.NewNotificationRepository()
+	notificationRepository := postgres.NewNotificationRepository(dbPool)
 	notificationCenterService := notificationapp.NewCenterService(identityRepository, notificationRepository)
 	notificationHandler := handler.NewNotificationHandler(notificationCenterService)
 
-	billingRepository := memory.NewBillingRepository()
+	billingRepository := postgres.NewBillingRepository(dbPool)
 	mayarClient := mayar.NewClient(mayar.ClientConfig{
 		BaseURL:    cfg.MayarBaseURL,
 		APIKey:     cfg.MayarAPIKey,

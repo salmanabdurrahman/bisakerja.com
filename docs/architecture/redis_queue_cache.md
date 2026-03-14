@@ -2,11 +2,15 @@
 
 ## Peran Redis di Bisakerja
 
-Redis dipakai untuk 3 kebutuhan:
+Redis dipakai untuk 2 kebutuhan utama saat ini:
 
 1. **Cache layer** untuk mempercepat read endpoint.
-2. **Queue layer** untuk proses async (notification, task internal, dan retry integrasi eksternal).
-3. **Rate limiting store** untuk API protection.
+2. **Rate limiting store** untuk API protection.
+
+Catatan implementasi terkini:
+
+- Queue state notification (`job events` dan `delivery tasks`) saat ini dipersistenkan di PostgreSQL (`notification_job_events`, `notification_delivery_tasks`) agar state tetap konsisten lintas proses worker.
+- Queue berbasis Redis tetap opsional untuk scale-out lanjutan (post-MVP hardening).
 
 ## 1) Cache Design
 
@@ -25,9 +29,9 @@ Redis dipakai untuk 3 kebutuhan:
 
 ## 2) Queue Design
 
-### Notification Queue
+### Notification Queue (Current: PostgreSQL)
 
-- Key: `queue:notifications`
+- Storage: tabel `notification_delivery_tasks`.
 - Producer: Matcher Engine.
 - Consumer: Notification Worker.
 - Payload contoh:
@@ -41,9 +45,9 @@ Redis dipakai untuk 3 kebutuhan:
 }
 ```
 
-### Job Event Queue
+### Job Event Queue (Current: PostgreSQL)
 
-- Key: `queue:job_events`
+- Storage: tabel `notification_job_events`.
 - Producer: Scraper Worker saat insert job baru.
 - Consumer: Matcher Engine.
 
@@ -101,7 +105,7 @@ Metrik yang disarankan:
 
 - `redis_cache_hit_total`
 - `redis_cache_miss_total`
-- `queue_notifications_depth`
+- `queue_notifications_depth` (dari tabel queue PostgreSQL)
 - `queue_notifications_failed_total`
 - `queue_mayar_retry_depth`
 - `mayar_rate_limit_block_total`
