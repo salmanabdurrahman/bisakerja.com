@@ -49,6 +49,11 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0 frontend** suda
 | `GET /api/v1/notifications`             | `data[]`, `meta.pagination`                                                                 | 📝     | dipakai notification center                |
 | `PATCH /api/v1/notifications/:id/read`  | `id`, `read_at`                                                                             | 📝     | dipakai mark as read                       |
 | `PUT /api/v1/preferences/notification`  | `alert_mode`, `digest_hour`, `updated_at`                                                   | 📝     | dipakai kontrol digest mode                |
+| `POST /api/v1/ai/search-assistant`      | `prompt`, `suggested_query`, `suggested_filters`, `quota_remaining`                         | 📝     | planned phase AI assistant                 |
+| `POST /api/v1/ai/job-fit-summary`       | `job_id`, `fit_score`, `strengths`, `gaps`, `next_actions`                                  | 📝     | planned premium AI insight                 |
+| `POST /api/v1/ai/cover-letter-draft`    | `job_id`, `tone`, `draft`, `quota_remaining`                                                 | 📝     | planned premium AI writing aid             |
+| `POST /api/v1/ai/interview-prep`        | `job_id`, `questions`, `answer_tips`, `practice_plan`                                        | 📝     | planned free+premium AI prep               |
+| `GET /api/v1/ai/usage`                  | `tier`, `daily_quota`, `used`, `remaining`, `reset_at`                                       | 📝     | planned quota meter source                 |
 
 ## 3.2) Rencana Lanjutan (Document-First)
 
@@ -62,6 +67,7 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | M3 | Migrasi seluruh UI copy + message user-facing ke English | ✅ Complete |
 | M4 | Redesign SaaS + penutupan web vitals dan growth e2e | ✅ Complete |
 | M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 🟡 In Progress |
+| M6 | AI experience layer (free + premium value) | 📝 Documented |
 
 ## 4) Checklist per Phase & Iteration
 
@@ -127,6 +133,17 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | Item | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | --- | --- | --- | --- | --- | --- |
 | coupon-enabled checkout UX (`coupon_code` + amount breakdown) | 🟡 | `apps/web/src/features/billing/components/upgrade-cta.tsx`, `apps/web/src/features/billing/checkout-session-cache.ts`, `apps/web/src/services/billing.ts` | `apps/web/tests/components/upgrade-cta.test.tsx`, `apps/web/tests/unit/billing-service.test.ts` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/premium-upgrade.md`, `docs/frontend/flows/upgrade-billing-flow.md`, `docs/frontend/phases/implementation-roadmap.md`, `docs/api/billing.md` |
+
+## Phase 6 - AI Experience & Premium Value Layer
+
+| Item | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
+| --- | --- | --- | --- | --- | --- |
+| AI search assistant UX (query rewrite/refinement) | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| AI job-fit summary UX pada halaman detail/account | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| AI cover letter composer + interview prep workspace | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| quota meter + tier badge (free vs premium AI capability) | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md`, `docs/api/billing.md` |
+| fallback UX saat AI provider unavailable/quota exhausted | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/standards/security-observability-standards.md`, `docs/api/errors.md` |
+| traceability endpoint AI FE-BE | 📝 | - | - | - | `docs/frontend/traceability/frontend-backend-traceability.md`, `docs/frontend/phases/implementation-roadmap.md` |
 
 ## 5) Cara Pakai
 

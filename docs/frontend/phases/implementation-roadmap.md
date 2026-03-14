@@ -17,8 +17,9 @@ Implementasi **Phase 0 frontend** sudah dimulai:
 - **Iteration 1.3 frontend** sudah diimplementasikan (`/pricing`, `/account/subscription`, `/billing/success`, checkout initiation + status verification + retry branches + billing tests).
 - **Phase 2 frontend (core growth UI)** sudah diimplementasikan (`/account/saved-searches`, `/account/notifications`, digest control, web vitals observability, dan growth e2e coverage).
 - **M5 frontend follow-up** sudah mulai diimplementasikan untuk kontrak backend Phase 4 increment 1 (coupon-enabled checkout).
+- **Phase AI frontend (post-M5)** sudah ditambahkan pada roadmap sebagai fase lanjutan value layer untuk free dan premium (status: documented).
 
-Status saat ini: **Phase 0 frontend baseline complete + Phase 1 complete + Phase 2 frontend complete + Phase 4 backend follow-up frontend (M5) in progress**.
+Status saat ini: **Phase 0 frontend baseline complete + Phase 1 complete + Phase 2 frontend complete + Phase 4 backend follow-up frontend (M5) in progress + phase AI documented**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -32,6 +33,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | M3 | English-only copy migration | ✅ Complete | UI copy, feedback states, dan test assertions frontend sudah dimigrasikan ke English |
 | M4 | SaaS redesign + hardening growth | ✅ Complete | Redesign SaaS pada halaman auth/jobs/account/pricing + web vitals observability + growth e2e coverage + refinement visual pass ala Paper (hero/nav/footer + copy cleanup non-teknis) |
 | M5 | Phase 4 backend follow-up | 🟡 In Progress | Coupon-enabled checkout UX mengikuti kontrak backend increment 1 |
+| M6 | AI experience layer follow-up | 📝 Documented | Journey AI assistant/job-fit/cover-letter untuk free vs premium sudah dipetakan menunggu kontrak backend |
 
 Aturan eksekusi:
 
@@ -183,3 +185,43 @@ Meningkatkan retensi, engagement, dan value premium melalui fitur growth.
 - metrik adopsi fitur growth tersedia,
 - e2e journey growth prioritas pass dan stabil,
 - perubahan arsitektur signifikan didokumentasikan (ADR bila diperlukan).
+
+## Phase 3 - AI Experience & Premium Value Layer
+
+### Objective
+
+Menghadirkan pengalaman AI yang benar-benar membantu user mencari kerja lebih efektif, dengan pembedaan value yang jelas antara free dan premium.
+
+### Scope
+
+- AI search assistant UI (rewrite query, refine filters, explain search strategy).
+- AI job-fit summary panel di job detail/account recommendation area.
+- AI cover letter composer + interview prep workspace.
+- Tier-aware UX:
+  - free: quota terbatas + capability dasar,
+  - premium: quota lebih besar + output lebih mendalam.
+- Provider-awareness di frontend:
+  - tampilkan fallback state saat backend AI gateway unavailable,
+  - error message eksplisit untuk quota exhausted/rate limited/provider down.
+
+### API Dependency Wajib Siap
+
+- `POST /api/v1/ai/search-assistant`
+- `POST /api/v1/ai/job-fit-summary`
+- `POST /api/v1/ai/cover-letter-draft`
+- `POST /api/v1/ai/interview-prep`
+- `GET /api/v1/ai/usage` (opsional tetapi direkomendasikan untuk quota meter)
+
+### Output Implementasi Minimum
+
+- route/section AI assistant terhubung ke account dan discovery flow,
+- komponen quota meter + capability badge (free/premium),
+- fallback non-AI UX saat provider unavailable,
+- test component + e2e journey minimal untuk satu flow AI prioritas.
+
+### Exit Criteria (Measurable)
+
+- AI journeys prioritas pass di test frontend,
+- tidak ada regression pada flow discovery/account/subscription,
+- UX premium vs free terlihat jelas dan terukur melalui metrik adopsi,
+- traceability frontend-backend untuk endpoint AI tersedia dan sinkron.

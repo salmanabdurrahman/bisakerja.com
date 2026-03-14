@@ -20,8 +20,9 @@ Implementasi backend saat ini:
 - **Iteration 2.3 backend** sudah diimplementasikan (`GET /billing/status` + `GET /billing/transactions`, reconciliation ke Mayar `GET /invoice/{id}`, retry-aware recovery path, dan anomaly warning pada billing worker).
 - **Phase 3 backend** sudah diimplementasikan (saved searches, company watchlist, notification center, dan preference digest control).
 - **Phase 4 backend increment 1** sudah mulai diimplementasikan (coupon-enabled checkout: validasi `coupon_code` ke Mayar + invoice amount diskon + metadata amount response).
+- **Phase 5 (AI Career Intelligence & Value Layer)** sudah ditambahkan di roadmap sebagai fase lanjutan backend+frontend (status: documented, belum diimplementasikan).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1)**.
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1) + Phase 5 documented**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -35,6 +36,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | M3 | Migrasi copy UI + API user-facing ke English | ✅ Complete | Seluruh copy user-facing frontend + pesan notifier backend sudah di-English-kan tanpa mengubah kontrak |
 | M4 | Redesign frontend ala SaaS + hardening growth | ✅ Complete | UI frontend sudah direfresh berbasis design tokens + observability web vitals + e2e growth coverage + refinement visual pass ala Paper sudah ditutup |
 | M5 | Eksekusi Phase 4 backend | 🟡 In Progress | Increment 1 aktif: coupon-enabled checkout pada billing |
+| M6 | Phase 5 AI value layer (backend + frontend) | 📝 Documented | Scope AI Copilot + configurable OpenAI-compatible provider sudah dipetakan untuk free/premium value |
 
 Aturan eksekusi:
 
@@ -76,6 +78,7 @@ Phase dinyatakan selesai jika seluruh kondisi berikut terpenuhi:
 | Phase 2 - Billing Hardening   | Billing flow stabil, idempotent, dapat diaudit            | G1-G8                                         | webhook idempotency + reconciliation evidence + alert aktif    |
 | Phase 3 - Growth (opsional)   | Fitur retensi/engagement bertambah tanpa regress core     | G1-G8 (untuk scope perubahan)                 | e2e growth + metrik adopsi tersedia                            |
 | Phase 4 - Advanced (opsional) | Monetisasi lanjutan + intelligence stabil                 | G1-G8 + ADR wajib untuk keputusan besar       | contract stabil, fallback tervalidasi, ADR tersedia            |
+| Phase 5 - AI Value Layer (opsional) | Asisten karier AI + personalisasi premium/free yang terukur | G1-G8 + AI safety/usage policy + ADR arsitektur | kontrak AI gateway stabil, quota/guardrail tervalidasi, UX AI lulus uji utama |
 
 ## Phase 0 - Foundation & Baseline
 
@@ -198,3 +201,37 @@ Meningkatkan conversion dan relevansi secara bertahap dengan risiko terkontrol.
 - observability mencakup flow monetisasi lanjutan,
 - fallback/recovery untuk dependency eksternal tervalidasi,
 - ADR tersedia untuk keputusan arsitektur signifikan pada phase ini.
+
+## Phase 5 - AI Career Intelligence & Value Layer (Optional Set C)
+
+### Objective
+
+Menambahkan value nyata berbasis AI untuk user free dan premium tanpa mengorbankan stabilitas core flow.
+
+### Scope
+
+- OpenAI-compatible gateway di backend dengan provider config yang bisa dicustom (`base_url`, `api_key`, `model`, `timeout`) via environment/runtime config.
+- AI query assistant untuk membantu user menyusun pencarian lowongan yang lebih relevan.
+- AI job fit summary (ringkasan kecocokan profil/preferensi terhadap lowongan) sebagai value premium.
+- AI cover letter draft & interview prep pack (template + talking points) dengan quota berbasis tier.
+- Usage metering + quota enforcement per user/tier agar biaya AI terkendali.
+- Audit-safe observability: structured logs tanpa menyimpan prompt sensitif mentah.
+
+### Free vs Premium Value Target
+
+- **Free**:
+  - AI search assistant quota harian terbatas.
+  - Interview prep tips dasar (template standar).
+- **Premium**:
+  - quota AI lebih tinggi,
+  - job-fit insight lebih mendalam,
+  - cover letter draft dengan konteks job+profile,
+  - prioritas respons (latency budget lebih ketat).
+
+### Exit Criteria (Measurable)
+
+- endpoint AI backend terdokumentasi + rate/quota policy jelas,
+- konfigurasi provider AI bisa dialihkan via `AI_PROVIDER_BASE_URL` tanpa ubah code,
+- guardrail keamanan (redaction + abuse/rate limit) aktif dan tervalidasi,
+- metrik penggunaan AI per tier tersedia untuk evaluasi conversion premium,
+- checklist phase backend + frontend untuk scope AI sudah berisi evidence minimal `📝`/`🟡` sesuai progres.

@@ -42,6 +42,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | M3 | English migration (UI + API user-facing messages) | ✅ Complete |
 | M4 | Frontend redesign + growth hardening | ✅ Complete |
 | M5 | Phase 4 backend execution | 🟡 In Progress |
+| M6 | Phase 5 AI value layer (backend + frontend) | 📝 Documented |
 
 Catatan progress M1 saat ini:
 
@@ -164,6 +165,18 @@ Catatan progress M4 saat ini:
 | semantic recommendation                      | ⬜     | -             | -             | -           | -                 |
 | B2B team subscription                        | ⬜     | -             | -             | -           | -                 |
 | ADR untuk keputusan besar phase ini          | ⬜     | -             | -             | -           | -                 |
+
+## Phase 5 - AI Career Intelligence & Value Layer (Optional Set C)
+
+| Item                                                                    | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
+| ----------------------------------------------------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
+| OpenAI-compatible gateway (`base_url` configurable)                     | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| usage metering + quota enforcement per tier (free/premium)              | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md`, `docs/standards/security-observability-standards.md` |
+| AI search assistant (query rewrite/expansion)                           | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| AI job-fit summary (premium insight)                                    | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| AI cover letter + interview prep APIs (tier-based capability)           | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| AI safety guardrails (prompt redaction, moderation, anti-abuse limits)  | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/standards/security-observability-standards.md` |
+| ADR arsitektur AI provider, fallback strategy, dan cost governance       | 📝     | -             | -             | -           | `docs/standards/adr-guidelines.md`, `docs/phases/implementation-roadmap.md` |
 
 ## 5) Cara Pakai
 

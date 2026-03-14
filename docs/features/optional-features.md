@@ -104,6 +104,44 @@ Catatan implementasi saat ini:
   - `GET /api/v1/orgs/:id/billing`
 - **Dampak DB**: tabel `organizations`, `organization_members`, `organization_subscriptions`.
 
+### 10) AI Career Copilot (OpenAI-Compatible)
+
+- **Nilai bisnis**: meningkatkan relevansi pencarian, conversion premium, dan stickiness user melalui asisten karier berbasis AI.
+- **Prinsip arsitektur**:
+  - backend memakai provider gateway yang kompatibel OpenAI API,
+  - `base_url` provider bisa dicustom per environment (default OpenAI public API, bisa diganti Azure/OpenRouter/self-hosted compatible),
+  - semua pemanggilan AI melewati service internal untuk quota, audit, dan guardrail.
+- **Kebutuhan konfigurasi minimum**:
+  - `AI_PROVIDER_BASE_URL`,
+  - `AI_PROVIDER_API_KEY`,
+  - `AI_PROVIDER_MODEL_DEFAULT`,
+  - `AI_PROVIDER_TIMEOUT`,
+  - `AI_DAILY_QUOTA_FREE` dan `AI_DAILY_QUOTA_PREMIUM`.
+- **Contoh endpoint internal yang direkomendasikan**:
+  - `POST /api/v1/ai/search-assistant` (free + premium; quota berbeda),
+  - `POST /api/v1/ai/job-fit-summary` (premium default),
+  - `POST /api/v1/ai/cover-letter-draft` (premium),
+  - `POST /api/v1/ai/interview-prep` (free basic + premium advanced).
+- **Dampak DB**:
+  - tabel `ai_usage_logs` (user_id, feature, tokens_in, tokens_out, cost_estimate, created_at),
+  - tabel `ai_quota_counters` (user_id, period_key, used_count, tier).
+
+### 11) Value Matrix Free vs Premium (AI + Non-AI)
+
+| Capability | Free | Premium |
+|---|---|---|
+| AI search assistant | quota harian kecil, prompt template dasar | quota tinggi + rewrite multi-step |
+| Job-fit summary | ringkasan singkat (opsional trial terbatas) | insight detail + skill gap + next action |
+| Cover letter draft | template statis non-AI/manual | draft AI kontekstual per lowongan |
+| Interview prep | checklist umum | simulasi Q&A + follow-up plan |
+| Notification intelligence | rule-based baseline | ranking prioritas + rekomendasi lebih personal |
+
+Catatan produk:
+
+1. fitur free tetap punya value nyata agar onboarding kuat,
+2. fitur premium harus jelas lebih dalam/hemat waktu, bukan sekadar “lebih banyak kuota”,
+3. semua capability AI wajib punya fallback non-AI saat provider bermasalah.
+
 ## Exit Criteria Fitur Opsional
 
 - Setiap fitur opsional harus punya:
