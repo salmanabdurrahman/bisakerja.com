@@ -33,7 +33,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | M3 | English-only copy migration | ✅ Complete | UI copy, feedback states, dan test assertions frontend sudah dimigrasikan ke English |
 | M4 | SaaS redesign + hardening growth | ✅ Complete | Redesign SaaS pada halaman auth/jobs/account/pricing + web vitals observability + growth e2e coverage + refinement visual pass ala Paper (hero/nav/footer + copy cleanup non-teknis) |
 | M5 | Phase 4 backend follow-up | 🟡 In Progress | Coupon-enabled checkout UX mengikuti kontrak backend increment 1 |
-| M6 | AI experience layer follow-up | 📝 Documented | Journey AI assistant/job-fit/cover-letter untuk free vs premium sudah dipetakan menunggu kontrak backend |
+| M6 | AI experience layer follow-up | 📝 Documented | Backend increment 1 (`POST /ai/search-assistant`, `GET /ai/usage`) sudah siap; UI AI frontend menunggu implementasi |
 
 Aturan eksekusi:
 

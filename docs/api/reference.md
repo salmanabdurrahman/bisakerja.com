@@ -10,6 +10,7 @@ Dokumen API sudah dipecah menjadi beberapa file agar lebih mudah dirawat.
 - Preferences: [`preferences.md`](./preferences.md)
 - Billing: [`billing.md`](./billing.md)
 - Growth: [`growth.md`](./growth.md)
+- AI: [`ai.md`](./ai.md)
 - Admin: [`admin.md`](./admin.md)
 - Webhook: [`webhooks.md`](./webhooks.md)
 - Error codes: [`errors.md`](./errors.md)

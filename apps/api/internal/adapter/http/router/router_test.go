@@ -14,6 +14,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	aiapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/ai"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	growthapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/growth"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
@@ -253,6 +254,39 @@ func TestNew_RegistersGrowthAndNotificationRoutesWhenDependencyProvided(t *testi
 	}
 }
 
+func TestNew_RegistersAIRoutesWhenDependencyProvided(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tokenManager, err := platformauth.NewManager("router-ai-secret", 15*time.Minute, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("create token manager: %v", err)
+	}
+
+	authMiddleware := middleware.NewAuthenticator(tokenManager)
+	appHandler := New(logger, Dependencies{
+		AIHandler:      handler.NewAIHandler(&routerTestAIService{}),
+		AuthMiddleware: authMiddleware,
+	})
+
+	searchRequest := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/ai/search-assistant",
+		strings.NewReader(`{"prompt":"golang backend jobs"}`),
+	)
+	searchRequest.Header.Set("Content-Type", "application/json")
+	searchResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(searchResponse, searchRequest)
+	if searchResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected ai search route to be protected with 401, got %d", searchResponse.Code)
+	}
+
+	usageRequest := httptest.NewRequest(http.MethodGet, "/api/v1/ai/usage", nil)
+	usageResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(usageResponse, usageRequest)
+	if usageResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected ai usage route to be protected with 401, got %d", usageResponse.Code)
+	}
+}
+
 type routerTestBillingProvider struct{}
 
 func (p *routerTestBillingProvider) EnsureCustomer(
@@ -274,4 +308,20 @@ func (p *routerTestBillingProvider) CreateInvoice(
 		Amount:        input.Amount,
 		ExpiresAt:     &expiresAt,
 	}, nil
+}
+
+type routerTestAIService struct{}
+
+func (s *routerTestAIService) GenerateSearchAssistant(
+	_ context.Context,
+	_ aiapp.GenerateSearchAssistantInput,
+) (aiapp.SearchAssistantResult, error) {
+	return aiapp.SearchAssistantResult{}, nil
+}
+
+func (s *routerTestAIService) GetUsage(
+	_ context.Context,
+	_ aiapp.GetUsageInput,
+) (aiapp.UsageSnapshot, error) {
+	return aiapp.UsageSnapshot{}, nil
 }

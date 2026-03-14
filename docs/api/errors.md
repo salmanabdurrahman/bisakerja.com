@@ -58,6 +58,12 @@ Dokumen ini menetapkan standar error lintas endpoint.
 | billing | `ALREADY_PREMIUM` | 409 | User masih premium aktif. |
 | billing | `MAYAR_RATE_LIMITED` | 503 | Mayar `429` setelah retry exhausted. |
 | billing | `MAYAR_UPSTREAM_ERROR` | 502 | Mayar memberi error non-rate-limit. |
+| ai | `INVALID_AI_PROMPT` | 400 | Prompt AI kosong/terlalu pendek/terlalu panjang. |
+| ai | `INVALID_AI_FEATURE` | 400 | Feature AI tidak didukung endpoint usage. |
+| ai | `AI_QUOTA_EXCEEDED` | 429 | Quota AI harian user sudah habis. |
+| ai | `AI_PROVIDER_RATE_LIMITED` | 503 | Provider AI mengembalikan rate limit. |
+| ai | `AI_PROVIDER_UPSTREAM_ERROR` | 502 | Provider AI memberi respons invalid/non-2xx. |
+| ai | `AI_PROVIDER_UNAVAILABLE` | 503 | Provider AI tidak tersedia atau timeout/network failure. |
 | webhooks | `INVALID_WEBHOOK_TOKEN` | 401 | Token webhook tidak valid. |
 | webhooks | `INVALID_WEBHOOK_PAYLOAD` | 400 | Field wajib webhook tidak lengkap. |
 | webhooks | `WEBHOOK_USER_NOT_FOUND` | 422 | Email customer tidak bisa dipetakan ke user lokal. |

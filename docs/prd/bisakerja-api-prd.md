@@ -98,6 +98,7 @@ PRD ini sengaja dipadatkan. Detail dipisahkan agar lebih maintainable.
 - Preferences: [`../api/preferences.md`](../api/preferences.md)
 - Billing: [`../api/billing.md`](../api/billing.md)
 - Growth: [`../api/growth.md`](../api/growth.md)
+- AI: [`../api/ai.md`](../api/ai.md)
 - Admin: [`../api/admin.md`](../api/admin.md)
 - Webhooks: [`../api/webhooks.md`](../api/webhooks.md)
 - Error Codes: [`../api/errors.md`](../api/errors.md)

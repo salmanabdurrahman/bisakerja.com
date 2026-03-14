@@ -30,6 +30,12 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "")
 	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "")
 	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "")
+	t.Setenv("AI_PROVIDER_BASE_URL", "")
+	t.Setenv("AI_PROVIDER_API_KEY", "")
+	t.Setenv("AI_PROVIDER_MODEL_DEFAULT", "")
+	t.Setenv("AI_PROVIDER_TIMEOUT", "")
+	t.Setenv("AI_DAILY_QUOTA_FREE", "")
+	t.Setenv("AI_DAILY_QUOTA_PREMIUM", "")
 
 	cfg := Load()
 
@@ -130,6 +136,30 @@ func TestLoad_DefaultValues(t *testing.T) {
 	if cfg.BillingUserRateLimitWindow != 10*time.Second {
 		t.Fatalf("expected default billing user rate limit window 10s, got %s", cfg.BillingUserRateLimitWindow)
 	}
+
+	if cfg.AIProviderBaseURL != "https://api.openai.com/v1" {
+		t.Fatalf("expected default ai provider base url, got %q", cfg.AIProviderBaseURL)
+	}
+
+	if cfg.AIProviderAPIKey != "" {
+		t.Fatalf("expected default ai provider api key empty, got %q", cfg.AIProviderAPIKey)
+	}
+
+	if cfg.AIProviderModelDefault != "gpt-4.1-mini" {
+		t.Fatalf("expected default ai provider model, got %q", cfg.AIProviderModelDefault)
+	}
+
+	if cfg.AIProviderTimeout != 10*time.Second {
+		t.Fatalf("expected default ai provider timeout 10s, got %s", cfg.AIProviderTimeout)
+	}
+
+	if cfg.AIDailyQuotaFree != 5 {
+		t.Fatalf("expected default ai daily free quota 5, got %d", cfg.AIDailyQuotaFree)
+	}
+
+	if cfg.AIDailyQuotaPremium != 30 {
+		t.Fatalf("expected default ai daily premium quota 30, got %d", cfg.AIDailyQuotaPremium)
+	}
 }
 
 func TestLoad_EnvOverrides(t *testing.T) {
@@ -157,6 +187,12 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,staging.bisakerja.com")
 	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "20m")
 	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "12s")
+	t.Setenv("AI_PROVIDER_BASE_URL", "https://openrouter.ai/api/v1")
+	t.Setenv("AI_PROVIDER_API_KEY", "test-ai-key")
+	t.Setenv("AI_PROVIDER_MODEL_DEFAULT", "gpt-4.1")
+	t.Setenv("AI_PROVIDER_TIMEOUT", "12s")
+	t.Setenv("AI_DAILY_QUOTA_FREE", "7")
+	t.Setenv("AI_DAILY_QUOTA_PREMIUM", "42")
 
 	cfg := Load()
 
@@ -256,5 +292,29 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.BillingUserRateLimitWindow != 12*time.Second {
 		t.Fatalf("expected billing user rate limit window 12s, got %s", cfg.BillingUserRateLimitWindow)
+	}
+
+	if cfg.AIProviderBaseURL != "https://openrouter.ai/api/v1" {
+		t.Fatalf("expected ai provider base url override, got %q", cfg.AIProviderBaseURL)
+	}
+
+	if cfg.AIProviderAPIKey != "test-ai-key" {
+		t.Fatalf("expected ai provider api key override, got %q", cfg.AIProviderAPIKey)
+	}
+
+	if cfg.AIProviderModelDefault != "gpt-4.1" {
+		t.Fatalf("expected ai provider model override, got %q", cfg.AIProviderModelDefault)
+	}
+
+	if cfg.AIProviderTimeout != 12*time.Second {
+		t.Fatalf("expected ai provider timeout 12s, got %s", cfg.AIProviderTimeout)
+	}
+
+	if cfg.AIDailyQuotaFree != 7 {
+		t.Fatalf("expected ai daily free quota 7, got %d", cfg.AIDailyQuotaFree)
+	}
+
+	if cfg.AIDailyQuotaPremium != 42 {
+		t.Fatalf("expected ai daily premium quota 42, got %d", cfg.AIDailyQuotaPremium)
 	}
 }

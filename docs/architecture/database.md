@@ -67,6 +67,7 @@ erDiagram
     users ||--o{ user_preferences : has
     users ||--o{ transactions : makes
     users ||--o{ notifications : receives
+    users ||--o{ ai_usage_logs : records
     jobs ||--o{ notifications : triggers
     transactions ||--o{ webhook_deliveries : references
 ```
@@ -265,6 +266,31 @@ Queue state persisten untuk task pengiriman notifikasi.
 | location | text | lokasi |
 | url | text | URL job |
 | created_at | timestamp | default now |
+
+### 3.11 `ai_usage_logs`
+
+Audit log penggunaan fitur AI per user untuk quota enforcement dan observability.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | FK -> users.id |
+| feature | text | enum saat ini: `search_assistant`, `job_fit_summary`, `cover_letter_draft`, `interview_prep` |
+| tier | text | `free` / `premium` |
+| provider | text | nama provider (contoh: `openai_compatible`) |
+| model | text | model AI yang digunakan |
+| tokens_in | integer | prompt tokens |
+| tokens_out | integer | completion tokens |
+| prompt_hash | text | hash prompt (tanpa menyimpan prompt mentah) |
+| metadata | jsonb | metadata non-sensitif (contoh panjang prompt) |
+| created_at | timestamp | default now |
+
+Index utama:
+
+```sql
+CREATE INDEX idx_ai_usage_logs_user_feature_created
+ON ai_usage_logs (user_id, feature, created_at DESC);
+```
 
 ## 4. SQL DDL Contoh
 

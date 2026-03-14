@@ -17,6 +17,7 @@ type Dependencies struct {
 	AuthHandler         *handler.AuthHandler
 	PreferencesHandler  *handler.PreferencesHandler
 	BillingHandler      *handler.BillingHandler
+	AIHandler           *handler.AIHandler
 	GrowthHandler       *handler.GrowthHandler
 	NotificationHandler *handler.NotificationHandler
 	AuthMiddleware      *middleware.Authenticator
@@ -72,6 +73,16 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 	}
 	if deps.BillingHandler != nil {
 		mux.HandleFunc("POST /api/v1/webhook/mayar", deps.BillingHandler.HandleMayarWebhook)
+	}
+	if deps.AIHandler != nil && deps.AuthMiddleware != nil {
+		mux.Handle(
+			"POST /api/v1/ai/search-assistant",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GenerateSearchAssistant)),
+		)
+		mux.Handle(
+			"GET /api/v1/ai/usage",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GetUsage)),
+		)
 	}
 	if deps.GrowthHandler != nil && deps.AuthMiddleware != nil {
 		mux.Handle(

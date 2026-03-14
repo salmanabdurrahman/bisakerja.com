@@ -17,6 +17,7 @@ Dokumen ini merinci fitur tambahan yang tidak wajib untuk MVP, tetapi bernilai t
 - ✅ In-App Notification Center
 - ✅ Company Watchlist
 - 🟡 Phase 4 increment started: coupon-enabled checkout (`coupon_code` -> Mayar `/coupon/validate`)
+- 🟡 Phase 5 increment started: AI search assistant (`POST /api/v1/ai/search-assistant`) + usage quota read model (`GET /api/v1/ai/usage`)
 
 Catatan implementasi saat ini:
 
@@ -123,8 +124,8 @@ Catatan implementasi saat ini:
   - `POST /api/v1/ai/cover-letter-draft` (premium),
   - `POST /api/v1/ai/interview-prep` (free basic + premium advanced).
 - **Dampak DB**:
-  - tabel `ai_usage_logs` (user_id, feature, tokens_in, tokens_out, cost_estimate, created_at),
-  - tabel `ai_quota_counters` (user_id, period_key, used_count, tier).
+  - tabel `ai_usage_logs` (user_id, feature, tier, provider, model, tokens_in, tokens_out, prompt_hash, metadata, created_at) **sudah aktif di increment 1**,
+  - tabel `ai_quota_counters` opsional untuk hardening phase lanjutan jika ingin pre-aggregated counters.
 
 ### 11) Value Matrix Free vs Premium (AI + Non-AI)
 

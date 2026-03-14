@@ -33,6 +33,12 @@ type Config struct {
 	BillingRedirectAllowlist   []string
 	BillingIdempotencyWindow   time.Duration
 	BillingUserRateLimitWindow time.Duration
+	AIProviderBaseURL          string
+	AIProviderAPIKey           string
+	AIProviderModelDefault     string
+	AIProviderTimeout          time.Duration
+	AIDailyQuotaFree           int
+	AIDailyQuotaPremium        int
 }
 
 // Load loads configuration values from environment variables.
@@ -62,6 +68,12 @@ func Load() Config {
 		BillingRedirectAllowlist:   parseCSVList(getenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,localhost:3000")),
 		BillingIdempotencyWindow:   parseDuration(getenv("BILLING_IDEMPOTENCY_WINDOW", "15m"), 15*time.Minute),
 		BillingUserRateLimitWindow: parseDuration(getenv("BILLING_USER_RATE_LIMIT_WINDOW", "10s"), 10*time.Second),
+		AIProviderBaseURL:          getenv("AI_PROVIDER_BASE_URL", "https://api.openai.com/v1"),
+		AIProviderAPIKey:           getenv("AI_PROVIDER_API_KEY", ""),
+		AIProviderModelDefault:     getenv("AI_PROVIDER_MODEL_DEFAULT", "gpt-4.1-mini"),
+		AIProviderTimeout:          parseDuration(getenv("AI_PROVIDER_TIMEOUT", "10s"), 10*time.Second),
+		AIDailyQuotaFree:           parseInt(getenv("AI_DAILY_QUOTA_FREE", "5"), 5),
+		AIDailyQuotaPremium:        parseInt(getenv("AI_DAILY_QUOTA_PREMIUM", "30"), 30),
 	}
 }
 

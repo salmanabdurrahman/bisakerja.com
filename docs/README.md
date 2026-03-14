@@ -26,6 +26,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 - [`api/preferences.md`](./api/preferences.md)
 - [`api/billing.md`](./api/billing.md)
 - [`api/growth.md`](./api/growth.md)
+- [`api/ai.md`](./api/ai.md)
 - [`api/admin.md`](./api/admin.md)
 - [`api/webhooks.md`](./api/webhooks.md)
 - [`api/errors.md`](./api/errors.md)

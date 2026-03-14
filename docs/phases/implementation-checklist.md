@@ -42,7 +42,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | M3 | English migration (UI + API user-facing messages) | ✅ Complete |
 | M4 | Frontend redesign + growth hardening | ✅ Complete |
 | M5 | Phase 4 backend execution | 🟡 In Progress |
-| M6 | Phase 5 AI value layer (backend + frontend) | 📝 Documented |
+| M6 | Phase 5 AI value layer (backend + frontend) | 🟡 In Progress |
 
 Catatan progress M1 saat ini:
 
@@ -170,12 +170,12 @@ Catatan progress M4 saat ini:
 
 | Item                                                                    | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | ----------------------------------------------------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
-| OpenAI-compatible gateway (`base_url` configurable)                     | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
-| usage metering + quota enforcement per tier (free/premium)              | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md`, `docs/standards/security-observability-standards.md` |
-| AI search assistant (query rewrite/expansion)                           | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| OpenAI-compatible gateway (`base_url` configurable)                     | 🟡     | `apps/api/internal/adapter/ai/openai/client.go`, `apps/api/internal/platform/config/config.go`, `apps/api/.env.example`, `apps/api/cmd/api/main.go` | `apps/api/internal/adapter/ai/openai/client_test.go`, `apps/api/internal/platform/config/config_test.go` | local gate pass: `make -C apps/api lint test build check-migrations` | `docs/api/ai.md`, `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
+| usage metering + quota enforcement per tier (free/premium)              | 🟡     | `apps/api/migrations/000005_phase5_ai_usage_logs.up.sql`, `apps/api/internal/domain/ai/ai.go`, `apps/api/internal/app/ai/service.go`, `apps/api/internal/adapter/persistence/postgres/ai_repository.go`, `apps/api/internal/adapter/persistence/memory/ai_repository.go` | `apps/api/internal/app/ai/service_test.go`, `apps/api/internal/adapter/http/handler/ai_handler_test.go`, `apps/api/internal/adapter/http/router/router_test.go` | local gate pass: `make -C apps/api lint test build check-migrations` | `docs/api/ai.md`, `docs/features/optional-features.md`, `docs/architecture/database.md`, `docs/standards/security-observability-standards.md` |
+| AI search assistant (query rewrite/expansion)                           | 🟡     | `apps/api/internal/adapter/http/handler/ai_handler.go`, `apps/api/internal/app/ai/service.go`, `apps/api/internal/adapter/http/router/router.go` | `apps/api/internal/adapter/http/handler/ai_handler_test.go`, `apps/api/internal/app/ai/service_test.go`, `apps/api/internal/adapter/http/router/router_test.go` | local gate pass: `make -C apps/api lint test build check-migrations` | `docs/api/ai.md`, `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
 | AI job-fit summary (premium insight)                                    | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
 | AI cover letter + interview prep APIs (tier-based capability)           | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
-| AI safety guardrails (prompt redaction, moderation, anti-abuse limits)  | 📝     | -             | -             | -           | `docs/phases/implementation-roadmap.md`, `docs/standards/security-observability-standards.md` |
+| AI safety guardrails (prompt redaction, moderation, anti-abuse limits)  | 🟡     | `apps/api/internal/app/ai/service.go`, `apps/api/internal/adapter/persistence/postgres/ai_repository.go`, `apps/api/internal/adapter/http/handler/ai_handler.go` | `apps/api/internal/app/ai/service_test.go`, `apps/api/internal/adapter/http/handler/ai_handler_test.go` | local gate pass: `make -C apps/api lint test build check-migrations` | `docs/api/ai.md`, `docs/standards/security-observability-standards.md` |
 | ADR arsitektur AI provider, fallback strategy, dan cost governance       | 📝     | -             | -             | -           | `docs/standards/adr-guidelines.md`, `docs/phases/implementation-roadmap.md` |
 
 ## 5) Cara Pakai

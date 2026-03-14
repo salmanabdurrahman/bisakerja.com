@@ -114,6 +114,7 @@ Contoh:
 - [User Preferences](./preferences.md)
 - [Billing](./billing.md)
 - [Growth (Saved Searches, Watchlist, Notifications)](./growth.md)
+- [AI (Search Assistant & Usage)](./ai.md)
 - [Admin](./admin.md)
 - [Webhooks](./webhooks.md)
 - [Error Codes](./errors.md)
