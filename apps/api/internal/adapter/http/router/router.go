@@ -12,11 +12,13 @@ import (
 )
 
 type Dependencies struct {
-	JobsHandler        *handler.JobsHandler
-	AuthHandler        *handler.AuthHandler
-	PreferencesHandler *handler.PreferencesHandler
-	BillingHandler     *handler.BillingHandler
-	AuthMiddleware     *middleware.Authenticator
+	JobsHandler         *handler.JobsHandler
+	AuthHandler         *handler.AuthHandler
+	PreferencesHandler  *handler.PreferencesHandler
+	BillingHandler      *handler.BillingHandler
+	GrowthHandler       *handler.GrowthHandler
+	NotificationHandler *handler.NotificationHandler
+	AuthMiddleware      *middleware.Authenticator
 }
 
 func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
@@ -47,6 +49,10 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 	if deps.PreferencesHandler != nil && deps.AuthMiddleware != nil {
 		mux.Handle("GET /api/v1/preferences", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.GetPreferences)))
 		mux.Handle("PUT /api/v1/preferences", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.UpdatePreferences)))
+		mux.Handle(
+			"PUT /api/v1/preferences/notification",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.UpdateNotificationPreferences)),
+		)
 	}
 	if deps.BillingHandler != nil && deps.AuthMiddleware != nil {
 		mux.Handle(
@@ -64,6 +70,42 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 	}
 	if deps.BillingHandler != nil {
 		mux.HandleFunc("POST /api/v1/webhook/mayar", deps.BillingHandler.HandleMayarWebhook)
+	}
+	if deps.GrowthHandler != nil && deps.AuthMiddleware != nil {
+		mux.Handle(
+			"POST /api/v1/saved-searches",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.GrowthHandler.CreateSavedSearch)),
+		)
+		mux.Handle(
+			"GET /api/v1/saved-searches",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.GrowthHandler.ListSavedSearches)),
+		)
+		mux.Handle(
+			"DELETE /api/v1/saved-searches/{id}",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.GrowthHandler.DeleteSavedSearch)),
+		)
+		mux.Handle(
+			"POST /api/v1/watchlist/companies",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.GrowthHandler.CreateWatchlistCompany)),
+		)
+		mux.Handle(
+			"GET /api/v1/watchlist/companies",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.GrowthHandler.ListWatchlistCompanies)),
+		)
+		mux.Handle(
+			"DELETE /api/v1/watchlist/companies/{company_slug}",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.GrowthHandler.DeleteWatchlistCompany)),
+		)
+	}
+	if deps.NotificationHandler != nil && deps.AuthMiddleware != nil {
+		mux.Handle(
+			"GET /api/v1/notifications",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.NotificationHandler.ListNotifications)),
+		)
+		mux.Handle(
+			"PATCH /api/v1/notifications/{id}/read",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.NotificationHandler.MarkNotificationRead)),
+		)
 	}
 
 	return observability.RequestID(withRecovery(logger, mux))

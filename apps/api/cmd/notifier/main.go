@@ -63,6 +63,7 @@ func main() {
 			"job_events_processed", matchSummary.ProcessedEvents,
 			"matched_users", matchSummary.MatchedUsers,
 			"deliveries_enqueued", matchSummary.EnqueuedDeliveries,
+			"digest_deferred", matchSummary.DeferredDigest,
 			"duplicate_notifications", matchSummary.DuplicateCount,
 			"delivery_tasks_processed", notifySummary.ProcessedTasks,
 			"notifications_sent", notifySummary.SentCount,

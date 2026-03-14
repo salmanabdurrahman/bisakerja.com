@@ -113,6 +113,7 @@ Contoh:
 - [Jobs](./jobs.md)
 - [User Preferences](./preferences.md)
 - [Billing](./billing.md)
+- [Growth (Saved Searches, Watchlist, Notifications)](./growth.md)
 - [Admin](./admin.md)
 - [Webhooks](./webhooks.md)
 - [Error Codes](./errors.md)

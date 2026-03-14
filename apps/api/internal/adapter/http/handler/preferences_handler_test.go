@@ -107,3 +107,30 @@ func TestPreferencesHandler_UpdatePreferences_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", response.Code)
 	}
 }
+
+func TestPreferencesHandler_UpdateNotificationPreferences_Success(t *testing.T) {
+	handler, _, userID := setupPreferencesHandler(t)
+
+	requestBody := map[string]any{
+		"alert_mode":  "daily_digest",
+		"digest_hour": 8,
+	}
+	var body bytes.Buffer
+	if err := json.NewEncoder(&body).Encode(requestBody); err != nil {
+		t.Fatalf("encode request body: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodPut, "/api/v1/preferences/notification", &body)
+	request = request.WithContext(observability.WithRequestID(request.Context(), "req_update_notification_preferences_success"))
+	request = request.WithContext(middleware.WithAuthUser(request.Context(), middleware.AuthUser{
+		UserID: userID,
+		Role:   "user",
+	}))
+	response := httptest.NewRecorder()
+
+	handler.UpdateNotificationPreferences(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", response.Code, response.Body.String())
+	}
+}

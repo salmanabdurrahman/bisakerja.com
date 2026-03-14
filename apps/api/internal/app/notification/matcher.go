@@ -27,6 +27,7 @@ type MatchSummary struct {
 	ProcessedEvents    int
 	MatchedUsers       int
 	EnqueuedDeliveries int
+	DeferredDigest     int
 	DuplicateCount     int
 	SkippedNonPremium  int
 	SkippedNotMatching int
@@ -109,6 +110,10 @@ func (m *Matcher) RunOnce(ctx context.Context) (MatchSummary, error) {
 			}
 
 			summary.MatchedUsers++
+			if shouldDeferToDigest(preferences.AlertMode) {
+				summary.DeferredDigest++
+				continue
+			}
 			task := notification.DeliveryTask{
 				NotificationID: created.ID,
 				UserID:         user.ID,
@@ -135,10 +140,20 @@ func (m *Matcher) RunOnce(ctx context.Context) (MatchSummary, error) {
 			"events", summary.ProcessedEvents,
 			"matched_users", summary.MatchedUsers,
 			"deliveries_enqueued", summary.EnqueuedDeliveries,
+			"deferred_digest", summary.DeferredDigest,
 			"duplicates", summary.DuplicateCount,
 		)
 	}
 	return summary, nil
+}
+
+func shouldDeferToDigest(mode identity.NotificationAlertMode) bool {
+	switch mode {
+	case identity.NotificationAlertModeDailyDigest, identity.NotificationAlertModeWeeklyDigest:
+		return true
+	default:
+		return false
+	}
 }
 
 func isPremiumActive(user identity.User, now time.Time) bool {

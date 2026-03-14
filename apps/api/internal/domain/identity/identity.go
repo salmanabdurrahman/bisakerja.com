@@ -43,13 +43,23 @@ type User struct {
 }
 
 type Preferences struct {
-	UserID    string
-	Keywords  []string
-	Locations []string
-	JobTypes  []string
-	SalaryMin int64
-	UpdatedAt *time.Time
+	UserID     string
+	Keywords   []string
+	Locations  []string
+	JobTypes   []string
+	SalaryMin  int64
+	AlertMode  NotificationAlertMode
+	DigestHour *int
+	UpdatedAt  *time.Time
 }
+
+type NotificationAlertMode string
+
+const (
+	NotificationAlertModeInstant      NotificationAlertMode = "instant"
+	NotificationAlertModeDailyDigest  NotificationAlertMode = "daily_digest"
+	NotificationAlertModeWeeklyDigest NotificationAlertMode = "weekly_digest"
+)
 
 type CreateUserInput struct {
 	Email            string

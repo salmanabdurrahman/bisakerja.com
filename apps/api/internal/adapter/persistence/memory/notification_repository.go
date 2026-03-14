@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +53,7 @@ func (r *NotificationRepository) CreatePending(_ context.Context, input notifica
 	}
 	r.byID[record.ID] = record
 	r.byUniqKey[uniqueKey] = record.ID
-	return record, nil
+	return cloneNotification(record), nil
 }
 
 func (r *NotificationRepository) GetByID(_ context.Context, notificationID string) (notification.Notification, error) {
@@ -63,7 +64,35 @@ func (r *NotificationRepository) GetByID(_ context.Context, notificationID strin
 	if !ok {
 		return notification.Notification{}, notification.ErrNotificationNotFound
 	}
-	return record, nil
+	return cloneNotification(record), nil
+}
+
+func (r *NotificationRepository) ListByUser(_ context.Context, userID string) ([]notification.Notification, error) {
+	normalizedUserID := strings.TrimSpace(userID)
+	if normalizedUserID == "" {
+		return []notification.Notification{}, nil
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]notification.Notification, 0)
+	for _, item := range r.byID {
+		if item.UserID != normalizedUserID {
+			continue
+		}
+		result = append(result, cloneNotification(item))
+	}
+	slices.SortFunc(result, func(left, right notification.Notification) int {
+		if left.CreatedAt.Equal(right.CreatedAt) {
+			return strings.Compare(right.ID, left.ID)
+		}
+		if left.CreatedAt.After(right.CreatedAt) {
+			return -1
+		}
+		return 1
+	})
+	return result, nil
 }
 
 func (r *NotificationRepository) MarkSent(_ context.Context, notificationID string, sentAt time.Time) (notification.Notification, error) {
@@ -81,7 +110,7 @@ func (r *NotificationRepository) MarkSent(_ context.Context, notificationID stri
 	record.ErrorMessage = ""
 	record.UpdatedAt = sentTime
 	r.byID[record.ID] = record
-	return record, nil
+	return cloneNotification(record), nil
 }
 
 func (r *NotificationRepository) MarkFailed(_ context.Context, notificationID, errorMessage string) (notification.Notification, error) {
@@ -97,9 +126,54 @@ func (r *NotificationRepository) MarkFailed(_ context.Context, notificationID, e
 	record.ErrorMessage = strings.TrimSpace(errorMessage)
 	record.UpdatedAt = time.Now().UTC()
 	r.byID[record.ID] = record
-	return record, nil
+	return cloneNotification(record), nil
+}
+
+func (r *NotificationRepository) MarkRead(
+	_ context.Context,
+	notificationID string,
+	userID string,
+	readAt time.Time,
+) (notification.Notification, error) {
+	normalizedNotificationID := strings.TrimSpace(notificationID)
+	normalizedUserID := strings.TrimSpace(userID)
+	if normalizedNotificationID == "" || normalizedUserID == "" {
+		return notification.Notification{}, notification.ErrNotificationNotFound
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	record, ok := r.byID[normalizedNotificationID]
+	if !ok || record.UserID != normalizedUserID {
+		return notification.Notification{}, notification.ErrNotificationNotFound
+	}
+	if record.ReadAt != nil {
+		return cloneNotification(record), nil
+	}
+
+	readTime := readAt.UTC()
+	record.ReadAt = &readTime
+	record.UpdatedAt = readTime
+	r.byID[record.ID] = record
+	return cloneNotification(record), nil
 }
 
 func notificationUniqueKey(userID, jobID string, channel notification.Channel) string {
 	return userID + "|" + jobID + "|" + string(channel)
+}
+
+func cloneNotification(value notification.Notification) notification.Notification {
+	result := value
+	result.SentAt = cloneNotificationTime(value.SentAt)
+	result.ReadAt = cloneNotificationTime(value.ReadAt)
+	return result
+}
+
+func cloneNotificationTime(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	cloned := value.UTC()
+	return &cloned
 }

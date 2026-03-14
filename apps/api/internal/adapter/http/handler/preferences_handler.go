@@ -23,6 +23,11 @@ type updatePreferencesRequest struct {
 	SalaryMin *int64    `json:"salary_min"`
 }
 
+type updateNotificationPreferencesRequest struct {
+	AlertMode  *string `json:"alert_mode"`
+	DigestHour *int    `json:"digest_hour"`
+}
+
 func NewPreferencesHandler(service *identityapp.Service) *PreferencesHandler {
 	return &PreferencesHandler{service: service}
 }
@@ -55,12 +60,14 @@ func (h *PreferencesHandler) GetPreferences(w http.ResponseWriter, r *http.Reque
 	}
 
 	response.WriteSuccess(w, http.StatusOK, "Preferences retrieved", requestID, map[string]any{
-		"user_id":    preferences.UserID,
-		"keywords":   preferences.Keywords,
-		"locations":  preferences.Locations,
-		"job_types":  preferences.JobTypes,
-		"salary_min": preferences.SalaryMin,
-		"updated_at": preferences.UpdatedAt,
+		"user_id":     preferences.UserID,
+		"keywords":    preferences.Keywords,
+		"locations":   preferences.Locations,
+		"job_types":   preferences.JobTypes,
+		"salary_min":  preferences.SalaryMin,
+		"alert_mode":  preferences.AlertMode,
+		"digest_hour": preferences.DigestHour,
+		"updated_at":  preferences.UpdatedAt,
 	})
 }
 
@@ -150,11 +157,80 @@ func (h *PreferencesHandler) UpdatePreferences(w http.ResponseWriter, r *http.Re
 	}
 
 	response.WriteSuccess(w, http.StatusOK, "Preferences updated", requestID, map[string]any{
-		"user_id":    preferences.UserID,
-		"keywords":   preferences.Keywords,
-		"locations":  preferences.Locations,
-		"job_types":  preferences.JobTypes,
-		"salary_min": preferences.SalaryMin,
-		"updated_at": preferences.UpdatedAt,
+		"user_id":     preferences.UserID,
+		"keywords":    preferences.Keywords,
+		"locations":   preferences.Locations,
+		"job_types":   preferences.JobTypes,
+		"salary_min":  preferences.SalaryMin,
+		"alert_mode":  preferences.AlertMode,
+		"digest_hour": preferences.DigestHour,
+		"updated_at":  preferences.UpdatedAt,
+	})
+}
+
+func (h *PreferencesHandler) UpdateNotificationPreferences(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	authUser, ok := middleware.AuthUserFromContext(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+			Code:    errcode.Unauthorized,
+			Message: "authentication context missing",
+		}})
+		return
+	}
+
+	var request updateNotificationPreferencesRequest
+	if err := decodeJSONBody(r, &request); err != nil {
+		response.WriteError(w, http.StatusBadRequest, "Invalid request body", requestID, []response.ErrorItem{{
+			Code:    errcode.BadRequest,
+			Message: "request body must be valid JSON",
+		}})
+		return
+	}
+
+	input := identityapp.UpdateNotificationPreferencesInput{}
+	if request.AlertMode != nil {
+		input.AlertMode = *request.AlertMode
+		input.AlertModeSet = true
+	}
+	if request.DigestHour != nil {
+		input.DigestHour = *request.DigestHour
+		input.DigestHourSet = true
+	}
+
+	preferences, err := h.service.UpdateNotificationPreferences(r.Context(), authUser.UserID, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, identityapp.ErrInvalidAlertMode):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "alert_mode",
+				Code:    errcode.BadRequest,
+				Message: "alert_mode must be one of instant, daily_digest, weekly_digest",
+			}})
+		case errors.Is(err, identityapp.ErrInvalidDigestHour):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "digest_hour",
+				Code:    errcode.BadRequest,
+				Message: "digest_hour must be 0..23 and only set for digest mode",
+			}})
+		case errors.Is(err, domain.ErrUserNotFound):
+			response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+				Code:    errcode.Unauthorized,
+				Message: "user not found",
+			}})
+		default:
+			response.WriteError(w, http.StatusInternalServerError, "Internal server error", requestID, []response.ErrorItem{{
+				Code:    errcode.InternalServerError,
+				Message: "failed to update notification preferences",
+			}})
+		}
+		return
+	}
+
+	response.WriteSuccess(w, http.StatusOK, "Notification preferences updated", requestID, map[string]any{
+		"user_id":     preferences.UserID,
+		"alert_mode":  preferences.AlertMode,
+		"digest_hour": preferences.DigestHour,
+		"updated_at":  preferences.UpdatedAt,
 	})
 }

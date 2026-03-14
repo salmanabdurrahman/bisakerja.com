@@ -25,6 +25,8 @@ var (
 	ErrInvalidLocation      = errors.New("locations contains invalid value")
 	ErrInvalidJobType       = errors.New("job_types contains invalid value")
 	ErrInvalidSalaryMin     = errors.New("salary_min is invalid")
+	ErrInvalidAlertMode     = errors.New("alert_mode is invalid")
+	ErrInvalidDigestHour    = errors.New("digest_hour is invalid")
 	ErrPreferencesUserEmpty = errors.New("user id is required")
 )
 
@@ -91,6 +93,13 @@ type UpdatePreferencesInput struct {
 	JobTypesSet  bool
 	SalaryMin    int64
 	SalaryMinSet bool
+}
+
+type UpdateNotificationPreferencesInput struct {
+	AlertMode     string
+	AlertModeSet  bool
+	DigestHour    int
+	DigestHourSet bool
 }
 
 func NewService(repository domain.Repository, tokenManager TokenManager) *Service {
@@ -279,15 +288,83 @@ func (s *Service) UpdatePreferences(ctx context.Context, userID string, input Up
 
 	updatedAt := s.now()
 	updated, err := s.repository.SavePreferences(ctx, domain.Preferences{
-		UserID:    trimmedUserID,
-		Keywords:  keywords,
-		Locations: locations,
-		JobTypes:  jobTypes,
-		SalaryMin: salaryMin,
-		UpdatedAt: &updatedAt,
+		UserID:     trimmedUserID,
+		Keywords:   keywords,
+		Locations:  locations,
+		JobTypes:   jobTypes,
+		SalaryMin:  salaryMin,
+		AlertMode:  normalizeAlertModeOrDefault(string(current.AlertMode)),
+		DigestHour: cloneInt(current.DigestHour),
+		UpdatedAt:  &updatedAt,
 	})
 	if err != nil {
 		return domain.Preferences{}, fmt.Errorf("save preferences: %w", err)
+	}
+
+	return updated, nil
+}
+
+func (s *Service) UpdateNotificationPreferences(
+	ctx context.Context,
+	userID string,
+	input UpdateNotificationPreferencesInput,
+) (domain.Preferences, error) {
+	trimmedUserID := strings.TrimSpace(userID)
+	if trimmedUserID == "" {
+		return domain.Preferences{}, ErrPreferencesUserEmpty
+	}
+
+	current, err := s.repository.GetPreferences(ctx, trimmedUserID)
+	if err != nil {
+		return domain.Preferences{}, fmt.Errorf("get existing preferences: %w", err)
+	}
+
+	targetMode := normalizeAlertModeOrDefault(string(current.AlertMode))
+	if input.AlertModeSet {
+		parsedMode, ok := parseAlertMode(input.AlertMode)
+		if !ok {
+			return domain.Preferences{}, ErrInvalidAlertMode
+		}
+		targetMode = parsedMode
+	}
+
+	var targetDigestHour *int
+	switch targetMode {
+	case domain.NotificationAlertModeInstant:
+		if input.DigestHourSet {
+			return domain.Preferences{}, ErrInvalidDigestHour
+		}
+		targetDigestHour = nil
+	case domain.NotificationAlertModeDailyDigest, domain.NotificationAlertModeWeeklyDigest:
+		if input.DigestHourSet {
+			if input.DigestHour < 0 || input.DigestHour > 23 {
+				return domain.Preferences{}, ErrInvalidDigestHour
+			}
+			digestHour := input.DigestHour
+			targetDigestHour = &digestHour
+		} else if current.DigestHour != nil {
+			targetDigestHour = cloneInt(current.DigestHour)
+		} else {
+			defaultDigestHour := 9
+			targetDigestHour = &defaultDigestHour
+		}
+	default:
+		return domain.Preferences{}, ErrInvalidAlertMode
+	}
+
+	updatedAt := s.now()
+	updated, saveErr := s.repository.SavePreferences(ctx, domain.Preferences{
+		UserID:     trimmedUserID,
+		Keywords:   append([]string(nil), current.Keywords...),
+		Locations:  append([]string(nil), current.Locations...),
+		JobTypes:   append([]string(nil), current.JobTypes...),
+		SalaryMin:  current.SalaryMin,
+		AlertMode:  targetMode,
+		DigestHour: targetDigestHour,
+		UpdatedAt:  &updatedAt,
+	})
+	if saveErr != nil {
+		return domain.Preferences{}, fmt.Errorf("save notification preferences: %w", saveErr)
 	}
 
 	return updated, nil
@@ -376,4 +453,32 @@ func normalizeJobTypes(values []string) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+func parseAlertMode(raw string) (domain.NotificationAlertMode, bool) {
+	switch strings.TrimSpace(strings.ToLower(raw)) {
+	case string(domain.NotificationAlertModeInstant):
+		return domain.NotificationAlertModeInstant, true
+	case string(domain.NotificationAlertModeDailyDigest):
+		return domain.NotificationAlertModeDailyDigest, true
+	case string(domain.NotificationAlertModeWeeklyDigest):
+		return domain.NotificationAlertModeWeeklyDigest, true
+	default:
+		return "", false
+	}
+}
+
+func normalizeAlertModeOrDefault(raw string) domain.NotificationAlertMode {
+	if parsed, ok := parseAlertMode(raw); ok {
+		return parsed
+	}
+	return domain.NotificationAlertModeInstant
+}
+
+func cloneInt(value *int) *int {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	return &cloned
 }

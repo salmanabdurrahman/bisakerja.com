@@ -13,8 +13,10 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/router"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
+	growthapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/growth"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/jobs"
+	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
@@ -43,6 +45,13 @@ func main() {
 	authHandler := handler.NewAuthHandler(identityService)
 	preferencesHandler := handler.NewPreferencesHandler(identityService)
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
+	growthRepository := memory.NewGrowthRepository()
+	growthService := growthapp.NewService(identityRepository, growthRepository)
+	growthHandler := handler.NewGrowthHandler(growthService)
+
+	notificationRepository := memory.NewNotificationRepository()
+	notificationCenterService := notificationapp.NewCenterService(identityRepository, notificationRepository)
+	notificationHandler := handler.NewNotificationHandler(notificationCenterService)
 
 	billingRepository := memory.NewBillingRepository()
 	mayarClient := mayar.NewClient(mayar.ClientConfig{
@@ -59,11 +68,13 @@ func main() {
 	billingHandler := handler.NewBillingHandler(billingService, cfg.BillingWebhookToken)
 
 	httpHandler := router.New(appLogger, router.Dependencies{
-		JobsHandler:        jobsHandler,
-		AuthHandler:        authHandler,
-		PreferencesHandler: preferencesHandler,
-		BillingHandler:     billingHandler,
-		AuthMiddleware:     authMiddleware,
+		JobsHandler:         jobsHandler,
+		AuthHandler:         authHandler,
+		PreferencesHandler:  preferencesHandler,
+		BillingHandler:      billingHandler,
+		GrowthHandler:       growthHandler,
+		NotificationHandler: notificationHandler,
+		AuthMiddleware:      authMiddleware,
 	})
 	httpServer := server.NewHTTP(cfg, httpHandler, appLogger)
 	if err = httpServer.Run(ctx); err != nil {

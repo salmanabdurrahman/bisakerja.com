@@ -25,6 +25,8 @@ Endpoint ini dipakai untuk bootstrap halaman preferences di frontend dan read mo
     "locations": ["jakarta", "remote"],
     "job_types": ["fulltime", "contract"],
     "salary_min": 10000000,
+    "alert_mode": "instant",
+    "digest_hour": null,
     "updated_at": "2026-03-13T18:00:00Z"
   }
 }
@@ -37,6 +39,8 @@ Endpoint ini dipakai untuk bootstrap halaman preferences di frontend dan read mo
   - `locations: []`
   - `job_types: []`
   - `salary_min: 0`
+  - `alert_mode: "instant"`
+  - `digest_hour: null`
   - `updated_at: null`
 
 ### Error
@@ -94,6 +98,8 @@ Endpoint ini menyimpan preferensi user untuk mesin notifikasi.
     "locations": ["jakarta", "remote"],
     "job_types": ["fulltime", "contract"],
     "salary_min": 10000000,
+    "alert_mode": "instant",
+    "digest_hour": null,
     "updated_at": "2026-03-13T18:00:00Z"
   }
 }
@@ -104,6 +110,60 @@ Endpoint ini menyimpan preferensi user untuk mesin notifikasi.
 - `400 BAD_REQUEST` (`INVALID_JOB_TYPE`, `BAD_REQUEST`) jika payload tidak valid.
 - `401 UNAUTHORIZED` jika token tidak valid.
 - `403 FORBIDDEN` jika terjadi pelanggaran ownership (mis-konfigurasi middleware).
+
+## 3) Update Notification Preferences
+
+- **Method**: `PUT`
+- **Path**: `/preferences/notification`
+- **Auth**: Bearer Token (User login)
+- **Ownership**: hanya boleh mengubah preference user dari `JWT.sub`.
+
+Endpoint ini dipakai untuk kontrol frekuensi notifikasi (`instant` vs digest) tanpa mengubah keyword/filter utama.
+
+### Request Body
+
+```json
+{
+  "alert_mode": "daily_digest",
+  "digest_hour": 8
+}
+```
+
+### Validation
+
+| Field | Rules |
+|---|---|
+| `alert_mode` | opsional, enum: `instant`, `daily_digest`, `weekly_digest`. |
+| `digest_hour` | opsional, integer `0..23`, hanya boleh dikirim jika `alert_mode` mode digest. |
+
+### Behavior
+
+- Jika mode digest dipilih tanpa `digest_hour`, backend default ke `9`.
+- Jika mode `instant`, `digest_hour` akan diset `null`.
+
+### Response `200 OK`
+
+```json
+{
+  "meta": {
+    "code": 200,
+    "status": "success",
+    "message": "Notification preferences updated",
+    "request_id": "req_01J..."
+  },
+  "data": {
+    "user_id": "2f2d5b4f-4ad8-4379-88df-d03790d1e9df",
+    "alert_mode": "daily_digest",
+    "digest_hour": 8,
+    "updated_at": "2026-03-14T13:30:00Z"
+  }
+}
+```
+
+### Error
+
+- `400 BAD_REQUEST` (`BAD_REQUEST`) untuk `alert_mode`/`digest_hour` tidak valid.
+- `401 UNAUTHORIZED` jika token tidak valid.
 
 ## Catatan
 

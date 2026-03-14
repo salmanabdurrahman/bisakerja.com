@@ -6,6 +6,7 @@ Dokumen flow dipisah per proses bisnis agar mudah dibaca dan dipelihara.
 - [Scraping & Matching Flow](./scraping-matching-flow.md)
 - [Search Serving Flow](./search-serving-flow.md)
 - [Admin Operations Flow](./admin-ops-flow.md)
+- [Growth Engagement Flow](./growth-engagement-flow.md)
 
 Dokumen ringkas lama tetap tersedia di [`system_flows.md`](./system_flows.md).
 

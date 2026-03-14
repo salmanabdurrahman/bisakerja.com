@@ -18,8 +18,9 @@ Implementasi backend saat ini:
 - **Iteration 2.1 backend** sudah diimplementasikan (checkout orchestration endpoint + adapter Mayar customer/invoice + pending transaction persistence + idempotency replay + rate-limit protection).
 - **Iteration 2.2 backend** sudah diimplementasikan (webhook receiver + token validation + idempotency delivery key + transaction status update + premium activation + duplicate handling tests).
 - **Iteration 2.3 backend** sudah diimplementasikan (`GET /billing/status` + `GET /billing/transactions`, reconciliation ke Mayar `GET /invoice/{id}`, retry-aware recovery path, dan anomaly warning pada billing worker).
+- **Phase 3 backend** sudah diimplementasikan (saved searches, company watchlist, notification center, dan preference digest control).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete**, siap lanjut ke phase berikutnya.
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete**, siap lanjut ke phase berikutnya.
 
 ## Prinsip Eksekusi
 
@@ -147,7 +148,7 @@ Meningkatkan retensi dan engagement user tanpa merusak core experience.
 
 ### Scope
 
-- saved searches + scheduled alerts,
+- saved searches + alert rules (siap di-hook ke scheduler),
 - in-app notification center,
 - company watchlist,
 - notification frequency/digest control.

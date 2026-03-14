@@ -117,3 +117,41 @@ func TestService_UpdatePreferences_NormalizesAndValidates(t *testing.T) {
 		t.Fatalf("expected invalid job type error, got %v", err)
 	}
 }
+
+func TestService_UpdateNotificationPreferences_ValidatesAndPersists(t *testing.T) {
+	service := newIdentityServiceForTest(t)
+	user, err := service.Register(context.Background(), RegisterInput{
+		Email:    "notify-prefs@example.com",
+		Password: "StrongPass1",
+		Name:     "Rina",
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+
+	updated, err := service.UpdateNotificationPreferences(context.Background(), user.ID, UpdateNotificationPreferencesInput{
+		AlertMode:     "daily_digest",
+		AlertModeSet:  true,
+		DigestHour:    7,
+		DigestHourSet: true,
+	})
+	if err != nil {
+		t.Fatalf("update notification preferences: %v", err)
+	}
+	if updated.AlertMode != domain.NotificationAlertModeDailyDigest {
+		t.Fatalf("expected daily_digest alert mode, got %s", updated.AlertMode)
+	}
+	if updated.DigestHour == nil || *updated.DigestHour != 7 {
+		t.Fatalf("expected digest_hour=7, got %+v", updated.DigestHour)
+	}
+
+	_, err = service.UpdateNotificationPreferences(context.Background(), user.ID, UpdateNotificationPreferencesInput{
+		AlertMode:     "instant",
+		AlertModeSet:  true,
+		DigestHour:    9,
+		DigestHourSet: true,
+	})
+	if !errors.Is(err, ErrInvalidDigestHour) {
+		t.Fatalf("expected invalid digest hour for instant mode, got %v", err)
+	}
+}

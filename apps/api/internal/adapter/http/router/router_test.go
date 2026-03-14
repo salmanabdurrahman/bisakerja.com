@@ -15,8 +15,10 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
+	growthapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/growth"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/jobs"
+	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
 	billingdomain "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
@@ -210,6 +212,44 @@ func TestNew_RegistersWebhookRouteWhenBillingDependencyProvided(t *testing.T) {
 
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("expected webhook route to return 401 (registered + token protected), got %d", response.Code)
+	}
+}
+
+func TestNew_RegistersGrowthAndNotificationRoutesWhenDependencyProvided(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tokenManager, err := platformauth.NewManager("router-growth-secret", 15*time.Minute, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("create token manager: %v", err)
+	}
+
+	identityRepository := memory.NewIdentityRepository()
+	growthService := growthapp.NewService(identityRepository, memory.NewGrowthRepository())
+	notificationService := notificationapp.NewCenterService(identityRepository, memory.NewNotificationRepository())
+	authMiddleware := middleware.NewAuthenticator(tokenManager)
+
+	appHandler := New(logger, Dependencies{
+		GrowthHandler:       handler.NewGrowthHandler(growthService),
+		NotificationHandler: handler.NewNotificationHandler(notificationService),
+		AuthMiddleware:      authMiddleware,
+	})
+
+	savedSearchRequest := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/saved-searches",
+		strings.NewReader(`{"query":"golang backend","frequency":"instant"}`),
+	)
+	savedSearchRequest.Header.Set("Content-Type", "application/json")
+	savedSearchResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(savedSearchResponse, savedSearchRequest)
+	if savedSearchResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected saved-searches route to be protected with 401, got %d", savedSearchResponse.Code)
+	}
+
+	notificationsRequest := httptest.NewRequest(http.MethodGet, "/api/v1/notifications", nil)
+	notificationsResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(notificationsResponse, notificationsRequest)
+	if notificationsResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected notifications route to be protected with 401, got %d", notificationsResponse.Code)
 	}
 }
 

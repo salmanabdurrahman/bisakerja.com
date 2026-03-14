@@ -31,6 +31,17 @@ func TestMatcher_RunOnce_MatchesPremiumUserAndEnqueuesDelivery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create premium user: %v", err)
 	}
+	digestUser, err := identityRepository.CreateUser(ctx, identity.CreateUserInput{
+		Email:            "digest@example.com",
+		PasswordHash:     "hash",
+		Name:             "Digest User",
+		Role:             identity.RoleUser,
+		IsPremium:        true,
+		PremiumExpiredAt: &expiredAt,
+	})
+	if err != nil {
+		t.Fatalf("create digest user: %v", err)
+	}
 	_, err = identityRepository.CreateUser(ctx, identity.CreateUserInput{
 		Email:        "free@example.com",
 		PasswordHash: "hash",
@@ -53,6 +64,19 @@ func TestMatcher_RunOnce_MatchesPremiumUserAndEnqueuesDelivery(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("save preferences: %v", err)
+	}
+	_, err = identityRepository.SavePreferences(ctx, identity.Preferences{
+		UserID:     digestUser.ID,
+		Keywords:   []string{"golang"},
+		Locations:  []string{"jakarta"},
+		JobTypes:   []string{"fulltime"},
+		SalaryMin:  5000000,
+		AlertMode:  identity.NotificationAlertModeDailyDigest,
+		DigestHour: nil,
+		UpdatedAt:  &now,
+	})
+	if err != nil {
+		t.Fatalf("save digest preferences: %v", err)
 	}
 
 	salaryMin := int64(12000000)
@@ -81,7 +105,7 @@ func TestMatcher_RunOnce_MatchesPremiumUserAndEnqueuesDelivery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run matcher: %v", err)
 	}
-	if summary.ProcessedEvents != 1 || summary.MatchedUsers != 1 || summary.EnqueuedDeliveries != 1 {
+	if summary.ProcessedEvents != 1 || summary.MatchedUsers != 2 || summary.EnqueuedDeliveries != 1 || summary.DeferredDigest != 1 {
 		t.Fatalf("unexpected matcher summary: %+v", summary)
 	}
 
@@ -103,7 +127,7 @@ func TestMatcher_RunOnce_MatchesPremiumUserAndEnqueuesDelivery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run matcher duplicate: %v", err)
 	}
-	if duplicateSummary.DuplicateCount != 1 {
-		t.Fatalf("expected duplicate count 1, got %+v", duplicateSummary)
+	if duplicateSummary.DuplicateCount != 2 {
+		t.Fatalf("expected duplicate count 2, got %+v", duplicateSummary)
 	}
 }

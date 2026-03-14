@@ -65,3 +65,45 @@ func TestNotificationRepository_MarkSentAndFailed(t *testing.T) {
 		t.Fatalf("expected error message smtp timeout, got %s", failed.ErrorMessage)
 	}
 }
+
+func TestNotificationRepository_ListByUserAndMarkRead(t *testing.T) {
+	repository := NewNotificationRepository()
+	first, err := repository.CreatePending(context.Background(), notification.CreateInput{
+		UserID:  "usr_read",
+		JobID:   "job_1",
+		Channel: notification.ChannelEmail,
+	})
+	if err != nil {
+		t.Fatalf("create first notification: %v", err)
+	}
+	_, err = repository.CreatePending(context.Background(), notification.CreateInput{
+		UserID:  "usr_read",
+		JobID:   "job_2",
+		Channel: notification.ChannelEmail,
+	})
+	if err != nil {
+		t.Fatalf("create second notification: %v", err)
+	}
+
+	userNotifications, err := repository.ListByUser(context.Background(), "usr_read")
+	if err != nil {
+		t.Fatalf("list notifications by user: %v", err)
+	}
+	if len(userNotifications) != 2 {
+		t.Fatalf("expected two notifications, got %d", len(userNotifications))
+	}
+
+	readAt := time.Now().UTC()
+	marked, err := repository.MarkRead(context.Background(), first.ID, "usr_read", readAt)
+	if err != nil {
+		t.Fatalf("mark notification read: %v", err)
+	}
+	if marked.ReadAt == nil {
+		t.Fatal("expected read_at to be set")
+	}
+
+	_, err = repository.MarkRead(context.Background(), first.ID, "usr_other", readAt)
+	if !errors.Is(err, notification.ErrNotificationNotFound) {
+		t.Fatalf("expected not found for different owner, got %v", err)
+	}
+}

@@ -10,6 +10,18 @@ Dokumen ini merinci fitur tambahan yang tidak wajib untuk MVP, tetapi bernilai t
 2. Reuse komponen yang sudah ada (jobs, preference, notification, billing).
 3. Tidak mengganggu stabilitas pipeline scraper dan search.
 
+## Status Implementasi Backend (Phase 3)
+
+- ✅ Saved Search & Alert Rules
+- ✅ Notification Frequency Control (Instant/Digest)
+- ✅ In-App Notification Center
+- ✅ Company Watchlist
+
+Catatan implementasi saat ini:
+
+- backend sudah menyediakan kontrak CRUD/read model dan preference control untuk fitur growth,
+- delivery terjadwal berbasis saved-search/watchlist masih mengikuti orchestrasi matcher/worker yang ada (hook scheduler batch lanjutan bisa dilanjutkan di phase berikutnya).
+
 ## Daftar Fitur Opsional
 
 ### 1) Saved Search & Alert Rules

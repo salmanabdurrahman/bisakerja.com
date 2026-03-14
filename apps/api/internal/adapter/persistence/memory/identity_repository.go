@@ -155,12 +155,14 @@ func (r *IdentityRepository) GetPreferences(_ context.Context, userID string) (i
 	}
 
 	return identity.Preferences{
-		UserID:    trimmedUserID,
-		Keywords:  []string{},
-		Locations: []string{},
-		JobTypes:  []string{},
-		SalaryMin: 0,
-		UpdatedAt: nil,
+		UserID:     trimmedUserID,
+		Keywords:   []string{},
+		Locations:  []string{},
+		JobTypes:   []string{},
+		SalaryMin:  0,
+		AlertMode:  identity.NotificationAlertModeInstant,
+		DigestHour: nil,
+		UpdatedAt:  nil,
 	}, nil
 }
 
@@ -181,12 +183,14 @@ func (r *IdentityRepository) SavePreferences(_ context.Context, preferences iden
 	}
 
 	snapshot := identity.Preferences{
-		UserID:    trimmedUserID,
-		Keywords:  append([]string(nil), preferences.Keywords...),
-		Locations: append([]string(nil), preferences.Locations...),
-		JobTypes:  append([]string(nil), preferences.JobTypes...),
-		SalaryMin: preferences.SalaryMin,
-		UpdatedAt: preferences.UpdatedAt,
+		UserID:     trimmedUserID,
+		Keywords:   append([]string(nil), preferences.Keywords...),
+		Locations:  append([]string(nil), preferences.Locations...),
+		JobTypes:   append([]string(nil), preferences.JobTypes...),
+		SalaryMin:  preferences.SalaryMin,
+		AlertMode:  preferences.AlertMode,
+		DigestHour: cloneInt(preferences.DigestHour),
+		UpdatedAt:  preferences.UpdatedAt,
 	}
 	r.preferencesByID[trimmedUserID] = snapshot
 	return clonePreferences(snapshot), nil
@@ -194,12 +198,25 @@ func (r *IdentityRepository) SavePreferences(_ context.Context, preferences iden
 
 func clonePreferences(value identity.Preferences) identity.Preferences {
 	result := identity.Preferences{
-		UserID:    value.UserID,
-		Keywords:  append([]string(nil), value.Keywords...),
-		Locations: append([]string(nil), value.Locations...),
-		JobTypes:  append([]string(nil), value.JobTypes...),
-		SalaryMin: value.SalaryMin,
-		UpdatedAt: value.UpdatedAt,
+		UserID:     value.UserID,
+		Keywords:   append([]string(nil), value.Keywords...),
+		Locations:  append([]string(nil), value.Locations...),
+		JobTypes:   append([]string(nil), value.JobTypes...),
+		SalaryMin:  value.SalaryMin,
+		AlertMode:  value.AlertMode,
+		DigestHour: cloneInt(value.DigestHour),
+		UpdatedAt:  value.UpdatedAt,
+	}
+	if result.AlertMode == "" {
+		result.AlertMode = identity.NotificationAlertModeInstant
 	}
 	return result
+}
+
+func cloneInt(value *int) *int {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	return &cloned
 }

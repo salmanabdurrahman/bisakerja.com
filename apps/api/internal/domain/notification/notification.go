@@ -33,6 +33,7 @@ type Notification struct {
 	Status       Status
 	ErrorMessage string
 	SentAt       *time.Time
+	ReadAt       *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -63,8 +64,10 @@ type DeliveryTask struct {
 type Repository interface {
 	CreatePending(ctx context.Context, input CreateInput) (Notification, error)
 	GetByID(ctx context.Context, notificationID string) (Notification, error)
+	ListByUser(ctx context.Context, userID string) ([]Notification, error)
 	MarkSent(ctx context.Context, notificationID string, sentAt time.Time) (Notification, error)
 	MarkFailed(ctx context.Context, notificationID, errorMessage string) (Notification, error)
+	MarkRead(ctx context.Context, notificationID, userID string, readAt time.Time) (Notification, error)
 }
 
 type Queue interface {

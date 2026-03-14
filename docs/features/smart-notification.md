@@ -21,7 +21,7 @@ Mengirim notifikasi lowongan baru yang relevan ke user premium secepat mungkin d
 
 - AI semantic matching.
 - Pengiriman multi-channel paralel.
-- Digest harian/mingguan.
+- Digest harian/mingguan sebagai channel pengiriman penuh (phase 3 saat ini sudah menambahkan kontrol mode/frekuensi di preference).
 
 ## Aturan Bisnis
 
