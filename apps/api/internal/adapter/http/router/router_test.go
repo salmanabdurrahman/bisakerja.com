@@ -9,11 +9,15 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
+	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/jobs"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
+	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/observability"
 )
 
@@ -97,5 +101,40 @@ func TestNew_RegistersJobsRoutesWhenDependencyProvided(t *testing.T) {
 	}
 	if payload.Meta.Pagination == nil || payload.Meta.Pagination.TotalRecords != 1 {
 		t.Fatalf("unexpected pagination payload: %+v", payload.Meta.Pagination)
+	}
+}
+
+func TestNew_RegistersAuthRoutesWhenDependencyProvided(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tokenManager, err := platformauth.NewManager("router-test-secret", 15*time.Minute, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("create token manager: %v", err)
+	}
+
+	identityRepository := memory.NewIdentityRepository()
+	identityService := identityapp.NewService(identityRepository, tokenManager)
+	authHandler := handler.NewAuthHandler(identityService)
+	preferencesHandler := handler.NewPreferencesHandler(identityService)
+	authMiddleware := middleware.NewAuthenticator(tokenManager)
+
+	appHandler := New(logger, Dependencies{
+		AuthHandler:        authHandler,
+		PreferencesHandler: preferencesHandler,
+		AuthMiddleware:     authMiddleware,
+	})
+
+	registerReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(`{"email":"user@example.com","password":"StrongPass1","name":"Budi"}`))
+	registerReq.Header.Set("Content-Type", "application/json")
+	registerResp := httptest.NewRecorder()
+	appHandler.ServeHTTP(registerResp, registerReq)
+	if registerResp.Code != http.StatusCreated {
+		t.Fatalf("expected register status 201, got %d", registerResp.Code)
+	}
+
+	meReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	meResp := httptest.NewRecorder()
+	appHandler.ServeHTTP(meResp, meReq)
+	if meResp.Code != http.StatusUnauthorized {
+		t.Fatalf("expected /auth/me status 401 without bearer token, got %d", meResp.Code)
 	}
 }

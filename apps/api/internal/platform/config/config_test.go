@@ -13,6 +13,9 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("WORKER_TICK_INTERVAL", "")
 	t.Setenv("SCRAPER_PAGE_SIZE", "")
 	t.Setenv("SCRAPER_MAX_PAGES", "")
+	t.Setenv("AUTH_JWT_SECRET", "")
+	t.Setenv("AUTH_ACCESS_TOKEN_TTL", "")
+	t.Setenv("AUTH_REFRESH_TOKEN_TTL", "")
 
 	cfg := Load()
 
@@ -43,6 +46,18 @@ func TestLoad_DefaultValues(t *testing.T) {
 	if cfg.ScraperMaxPages != 1 {
 		t.Fatalf("expected default scraper max pages 1, got %d", cfg.ScraperMaxPages)
 	}
+
+	if cfg.AuthJWTSecret != "bisakerja-dev-secret" {
+		t.Fatalf("expected default auth jwt secret, got %q", cfg.AuthJWTSecret)
+	}
+
+	if cfg.AuthAccessTokenTTL != 15*time.Minute {
+		t.Fatalf("expected default access ttl 15m, got %s", cfg.AuthAccessTokenTTL)
+	}
+
+	if cfg.AuthRefreshTokenTTL != 168*time.Hour {
+		t.Fatalf("expected default refresh ttl 168h, got %s", cfg.AuthRefreshTokenTTL)
+	}
 }
 
 func TestLoad_EnvOverrides(t *testing.T) {
@@ -53,6 +68,9 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("WORKER_TICK_INTERVAL", "9")
 	t.Setenv("SCRAPER_PAGE_SIZE", "45")
 	t.Setenv("SCRAPER_MAX_PAGES", "3")
+	t.Setenv("AUTH_JWT_SECRET", "super-secret")
+	t.Setenv("AUTH_ACCESS_TOKEN_TTL", "25m")
+	t.Setenv("AUTH_REFRESH_TOKEN_TTL", "336h")
 
 	cfg := Load()
 
@@ -82,5 +100,17 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.ScraperMaxPages != 3 {
 		t.Fatalf("expected scraper max pages 3, got %d", cfg.ScraperMaxPages)
+	}
+
+	if cfg.AuthJWTSecret != "super-secret" {
+		t.Fatalf("expected auth jwt secret super-secret, got %q", cfg.AuthJWTSecret)
+	}
+
+	if cfg.AuthAccessTokenTTL != 25*time.Minute {
+		t.Fatalf("expected access ttl 25m, got %s", cfg.AuthAccessTokenTTL)
+	}
+
+	if cfg.AuthRefreshTokenTTL != 336*time.Hour {
+		t.Fatalf("expected refresh ttl 336h, got %s", cfg.AuthRefreshTokenTTL)
 	}
 }

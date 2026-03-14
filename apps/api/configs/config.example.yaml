@@ -9,3 +9,6 @@ scraper_keywords:
   - backend
   - frontend
   - intern
+auth_jwt_secret: change-this-jwt-secret
+auth_access_token_ttl: 15m
+auth_refresh_token_ttl: 168h

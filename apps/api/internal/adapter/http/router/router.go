@@ -5,13 +5,17 @@ import (
 	"net/http"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/observability"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/errcode"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
 type Dependencies struct {
-	JobsHandler *handler.JobsHandler
+	JobsHandler        *handler.JobsHandler
+	AuthHandler        *handler.AuthHandler
+	PreferencesHandler *handler.PreferencesHandler
+	AuthMiddleware     *middleware.Authenticator
 }
 
 func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
@@ -25,9 +29,23 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 	mux.HandleFunc("/readyz", handler.Readyz)
 	mux.HandleFunc("/api/v1/healthz", handler.Healthz)
 	mux.HandleFunc("/api/v1/readyz", handler.Readyz)
+
+	if deps.AuthHandler != nil {
+		mux.HandleFunc("POST /api/v1/auth/register", deps.AuthHandler.Register)
+		mux.HandleFunc("POST /api/v1/auth/login", deps.AuthHandler.Login)
+		mux.HandleFunc("POST /api/v1/auth/refresh", deps.AuthHandler.Refresh)
+		if deps.AuthMiddleware != nil {
+			mux.Handle("GET /api/v1/auth/me", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AuthHandler.Me)))
+		}
+	}
+
 	if deps.JobsHandler != nil {
 		mux.HandleFunc("GET /api/v1/jobs", deps.JobsHandler.ListJobs)
 		mux.HandleFunc("GET /api/v1/jobs/{id}", deps.JobsHandler.GetJobByID)
+	}
+	if deps.PreferencesHandler != nil && deps.AuthMiddleware != nil {
+		mux.Handle("GET /api/v1/preferences", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.GetPreferences)))
+		mux.Handle("PUT /api/v1/preferences", deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.PreferencesHandler.UpdatePreferences)))
 	}
 
 	return observability.RequestID(withRecovery(logger, mux))
