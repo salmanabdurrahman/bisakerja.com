@@ -61,7 +61,7 @@ export function NotificationDigestControl({
   }, [digestHourInput, isDigestMode]);
 
   const digestHourError = Number.isNaN(normalizedDigestHour)
-    ? "Digest hour harus integer 0-23."
+    ? "Digest hour must be an integer from 0 to 23."
     : null;
 
   const isDirty =
@@ -78,7 +78,7 @@ export function NotificationDigestControl({
     }
 
     if (!isDirty) {
-      setFormMessage("Belum ada perubahan untuk disimpan.");
+      setFormMessage("No changes to save.");
       return;
     }
 
@@ -103,7 +103,7 @@ export function NotificationDigestControl({
           : "",
       );
       setLastUpdatedAt(response.updated_at ?? null);
-      setFormMessage("Pengaturan notifikasi berhasil disimpan.");
+      setFormMessage("Notification settings saved successfully.");
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
@@ -112,14 +112,14 @@ export function NotificationDigestControl({
         }
         if (error.status === 429) {
           setFormMessage(
-            "Terlalu banyak percobaan simpan. Tunggu sebentar lalu coba lagi.",
+            "Too many save attempts. Please wait a moment and try again.",
           );
           return;
         }
         setFormMessage(error.message);
         return;
       }
-      setFormMessage("Gagal menyimpan pengaturan notifikasi.");
+      setFormMessage("Failed to save notification settings.");
     } finally {
       setIsSubmitting(false);
     }
@@ -132,7 +132,7 @@ export function NotificationDigestControl({
       aria-label="Notification digest control form"
     >
       <h3 className="text-lg font-semibold text-gray-900">
-        Pengaturan frekuensi notifikasi
+        Notification frequency settings
       </h3>
 
       <label className="grid gap-1 text-sm">
@@ -153,7 +153,7 @@ export function NotificationDigestControl({
       {isDigestMode ? (
         <label className="grid gap-1 text-sm">
           <span className="font-medium text-gray-700">
-            Digest hour (opsional, 0-23)
+            Digest hour (optional, 0-23)
           </span>
           <input
             type="number"
@@ -168,7 +168,7 @@ export function NotificationDigestControl({
             <span className="text-sm text-red-600">{digestHourError}</span>
           ) : (
             <span className="text-xs text-gray-500">
-              Jika dikosongkan, backend menggunakan default hour `9`.
+              If left empty, backend uses the default hour `9`.
             </span>
           )}
         </label>

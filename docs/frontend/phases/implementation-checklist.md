@@ -59,7 +59,7 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete |
 | M1 | Stabilitas persistence backend (PostgreSQL) sebagai fondasi | ✅ Complete |
 | M2 | Comments/TSDoc pass pada area frontend kritikal | ✅ Complete |
-| M3 | Migrasi seluruh UI copy + message user-facing ke English | 📝 Documented |
+| M3 | Migrasi seluruh UI copy + message user-facing ke English | ✅ Complete |
 | M4 | Redesign SaaS + penutupan web vitals dan growth e2e | 📝 Documented |
 | M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 📝 Documented |
 

@@ -50,7 +50,7 @@ export default async function AccountPreferencesPage() {
       redirect(buildLoginHref("/account/preferences"));
     }
     infoMessage =
-      "Status premium belum bisa diverifikasi dari billing/status. Menggunakan fallback sementara.";
+      "Premium status could not be verified from billing/status. Using temporary fallback.";
     if (!profileSubscriptionState && !fallbackPremium) {
       subscriptionState = "status_unavailable";
     }
@@ -93,7 +93,7 @@ export default async function AccountPreferencesPage() {
 
   if (cookieDraft) {
     infoMessage =
-      "Draft lokal berhasil dipulihkan. Simpan ulang preferences untuk sinkronisasi ke server.";
+      "Local draft restored successfully. Save preferences again to sync with the server.";
   }
 
   if (!initialPreferences) {
@@ -103,23 +103,23 @@ export default async function AccountPreferencesPage() {
           <div className="grid gap-1">
             <h2 className="text-xl font-semibold">Preferences</h2>
             <p className="text-sm text-gray-600">
-              Atur keyword, lokasi, dan tipe kerja untuk personalisasi
-              notifikasi.
+              Configure keywords, location, and job type for personalized
+              notifications.
             </p>
           </div>
           <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
             <h3 className="text-lg font-semibold text-red-900">
-              Gagal memuat preferences
+              Failed to load preferences
             </h3>
             <p className="text-sm text-red-800">
-              Data preferences belum bisa diambil dari server. Coba refresh
-              halaman.
+              Preferences data is currently unavailable. Please refresh
+              the page.
             </p>
             <a
               href="/account/preferences"
               className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
-              Coba lagi
+              Try again
             </a>
           </section>
         </main>
@@ -133,7 +133,7 @@ export default async function AccountPreferencesPage() {
         <div className="grid gap-1">
           <h2 className="text-xl font-semibold">Preferences</h2>
           <p className="text-sm text-gray-600">
-            Atur keyword, lokasi, dan tipe kerja untuk personalisasi notifikasi.
+            Configure keywords, location, and job type for personalized notifications.
           </p>
         </div>
         <AccountPreferencesClient

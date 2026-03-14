@@ -32,7 +32,7 @@ export default async function BillingSuccessPage() {
   return (
     <AppShell>
       <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Verifikasi pembayaran</h2>
+        <h2 className="text-xl font-semibold">Payment verification</h2>
         {renderVerifyState(verifyState)}
       </main>
     </AppShell>
@@ -71,16 +71,16 @@ function renderVerifyState(state: VerifyState) {
     return (
       <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
         <h3 className="text-lg font-semibold text-red-900">
-          Verifikasi belum tersedia
+          Verification unavailable
         </h3>
         <p className="text-sm text-red-800">
-          Kami belum bisa memverifikasi status pembayaran saat ini.
+          We are unable to verify your payment status right now.
         </p>
         <a
           href="/billing/success"
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
-          Coba lagi
+          Try again
         </a>
       </section>
     );
@@ -95,13 +95,13 @@ function renderVerifyState(state: VerifyState) {
           premiumExpiredAt={state.status.premium_expired_at}
         />
         <p className="text-sm text-emerald-700">
-          Pembayaran terverifikasi. Premium kamu sudah aktif.
+          Payment verified. Your premium subscription is now active.
         </p>
         <a
           href="/account/subscription"
           className="text-sm text-blue-700 underline"
         >
-          Lihat detail subscription
+          View subscription details
         </a>
       </section>
     );
@@ -116,10 +116,10 @@ function renderVerifyState(state: VerifyState) {
           premiumExpiredAt={state.status.premium_expired_at}
         />
         <p className="text-sm text-amber-700">
-          Pembayaran belum berhasil. Kamu bisa memulai checkout baru.
+          Payment has not completed yet. You can start a new checkout.
         </p>
         <a href="/pricing" className="text-sm text-blue-700 underline">
-          Kembali ke pricing
+          Back to pricing
         </a>
       </section>
     );
@@ -132,10 +132,10 @@ function renderVerifyState(state: VerifyState) {
         lastTransactionStatus={state.status.last_transaction_status}
         premiumExpiredAt={state.status.premium_expired_at}
       />
-      <p className="text-sm text-amber-700">
-        Pembayaran masih diproses. Cek ulang status dalam beberapa saat.
-      </p>
-      <a href="/billing/success" className="text-sm text-blue-700 underline">
+        <p className="text-sm text-amber-700">
+          Payment is still being processed. Check the status again shortly.
+        </p>
+        <a href="/billing/success" className="text-sm text-blue-700 underline">
         Refresh status
       </a>
     </section>

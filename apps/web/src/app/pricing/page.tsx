@@ -77,7 +77,7 @@ async function loadPricingViewState(
       subscriptionState: profileFallbackState,
       source: "profile_fallback",
       warningMessage:
-        "Status billing belum tersedia. Menampilkan fallback sementara dari profile.",
+        "Billing status is unavailable. Showing temporary fallback from profile.",
     };
   }
 }
@@ -90,7 +90,7 @@ function renderPricingView(viewState: PricingViewState) {
           Pricing unavailable
         </h3>
         <p className="text-sm text-red-800">
-          Data pricing belum bisa dimuat. Coba lagi beberapa saat.
+          Pricing data is currently unavailable. Please try again shortly.
         </p>
         <a
           href="/pricing"

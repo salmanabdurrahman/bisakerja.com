@@ -92,7 +92,7 @@ describe("AccountNotificationsClient", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Tandai dibaca" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark as read" }));
 
     await waitFor(() => {
       expect(markReadMock).toHaveBeenCalledWith("notif_1");

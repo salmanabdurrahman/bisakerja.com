@@ -28,7 +28,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete | Detail rollout sudah ditetapkan sebelum coding lanjutan |
 | M1 | Fondasi PostgreSQL backend | ✅ Complete | Adapter PostgreSQL backend + wiring runtime + queue persistence sudah aktif |
 | M2 | Comments/docstrings quality pass | ✅ Complete | TSDoc untuk exported service/lib + doc comment backend exported API sudah dipenuhi |
-| M3 | English-only copy migration | ⬜ Pending | Seluruh UI copy, feedback state, dan message user-facing API |
+| M3 | English-only copy migration | ✅ Complete | UI copy, feedback states, dan test assertions frontend sudah dimigrasikan ke English |
 | M4 | SaaS redesign + hardening growth | ⬜ Pending | Menutup item pending: web vitals observability + growth e2e |
 | M5 | Phase 4 backend follow-up | ⬜ Pending | Frontend mengikuti contract Phase 4 setelah backend siap |
 

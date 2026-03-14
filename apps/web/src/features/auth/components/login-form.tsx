@@ -40,7 +40,7 @@ export function LoginForm({
     if (!registered) {
       return null;
     }
-    return "Pendaftaran berhasil. Silakan login untuk melanjutkan.";
+    return "Registration successful. Please sign in to continue.";
   }, [registered]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -75,7 +75,7 @@ export function LoginForm({
         setFieldErrors(extractFieldErrors(error));
         setFormError(toLoginMessage(error));
       } else {
-        setFormError("Login gagal. Coba lagi dalam beberapa saat.");
+        setFormError("Login failed. Please try again shortly.");
       }
     } finally {
       setIsSubmitting(false);
@@ -142,9 +142,9 @@ export function LoginForm({
       </button>
 
       <p className="text-sm text-gray-600" aria-live="polite">
-        Belum punya akun?{" "}
+        Don&apos;t have an account?{" "}
         <a href="/auth/register" className="text-blue-700 underline">
-          Daftar di sini
+          Register here
         </a>
       </p>
     </form>
@@ -169,10 +169,10 @@ function toLoginMessage(error: APIRequestError): string {
     return "Email atau password salah.";
   }
   if (error.status === 429) {
-    return "Terlalu banyak percobaan login. Tunggu sebentar lalu coba lagi.";
+    return "Too many login attempts. Please wait a moment and try again.";
   }
   if (error.status === 400 && error.errors.length > 0) {
-    return "Input login belum valid. Periksa lagi email dan password.";
+    return "Login input is invalid. Please check your email and password.";
   }
   return error.message;
 }

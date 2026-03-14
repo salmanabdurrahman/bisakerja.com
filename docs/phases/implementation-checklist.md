@@ -39,7 +39,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete |
 | M1 | Migrasi fondasi persistence ke PostgreSQL | ✅ Complete |
 | M2 | Comments/docstrings pass sesuai standar | ✅ Complete |
-| M3 | English migration (UI + API user-facing messages) | 📝 Documented |
+| M3 | English migration (UI + API user-facing messages) | ✅ Complete |
 | M4 | Frontend redesign + growth hardening | 📝 Documented |
 | M5 | Phase 4 backend execution | 📝 Documented |
 
@@ -57,6 +57,13 @@ Catatan progress M2 saat ini:
 - doc comment untuk simbol exported Go sudah ditambahkan pada layer adapter/app/domain/platform,
 - TSDoc untuk exported API frontend pada `apps/web/src/services/*` dan `apps/web/src/lib/*` sudah ditambahkan,
 - validasi non-fungsional pass: `make -C apps/api lint test build check-migrations` dan root `pnpm lint test build`.
+
+Catatan progress M3 saat ini:
+
+- seluruh copy user-facing di `apps/web/src` sudah dimigrasikan ke English (page headings, CTA, error/success/help text),
+- pesan user-facing backend notifier (`apps/api/internal/app/notification/notifier.go`) sudah dimigrasikan ke English,
+- test assertion frontend yang terdampak copy migration sudah disinkronkan,
+- validasi pass: `make -C apps/api lint test build` dan root `pnpm lint test build`.
 
 ## 4) Checklist per Phase & Iteration
 

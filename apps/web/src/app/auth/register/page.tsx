@@ -7,7 +7,7 @@ export default function RegisterPage() {
       <main className="grid gap-4" role="main">
         <h2 className="text-xl font-semibold">Register</h2>
         <p className="text-sm text-gray-600">
-          Buat akun baru untuk menyimpan preferences dan mengakses fitur
+          Create a new account to save preferences and access premium
           premium.
         </p>
         <RegisterForm />

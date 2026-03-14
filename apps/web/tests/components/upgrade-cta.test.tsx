@@ -77,7 +77,7 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
-    fireEvent.click(screen.getByRole("button", { name: "Upgrade ke Pro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
       expect(createCheckoutSessionMock).toHaveBeenCalledTimes(1);
@@ -112,12 +112,12 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
-    fireEvent.click(screen.getByRole("button", { name: "Upgrade ke Pro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          "Payment provider sedang bermasalah. Coba lagi beberapa saat.",
+          "The payment provider is currently unavailable. Please try again shortly.",
         ),
       ).toBeInTheDocument();
     });

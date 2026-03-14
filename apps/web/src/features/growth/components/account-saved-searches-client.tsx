@@ -52,7 +52,7 @@ export function AccountSavedSearchesClient({
 
     const normalizedQuery = queryInput.trim();
     if (normalizedQuery.length < 2 || normalizedQuery.length > 200) {
-      setStatusMessage("Query wajib 2-200 karakter.");
+      setStatusMessage("Query must be 2-200 characters.");
       return;
     }
 
@@ -61,7 +61,7 @@ export function AccountSavedSearchesClient({
     if (salaryRaw.length > 0) {
       const parsed = Number.parseInt(salaryRaw, 10);
       if (!Number.isFinite(parsed) || parsed < 0) {
-        setStatusMessage("Salary minimum harus angka >= 0.");
+        setStatusMessage("Salary minimum must be a number >= 0.");
         return;
       }
       salaryMin = parsed;
@@ -83,7 +83,7 @@ export function AccountSavedSearchesClient({
       setSourceInput("");
       setSalaryMinInput("");
       setFrequencyInput("instant");
-      setStatusMessage("Saved search berhasil ditambahkan.");
+      setStatusMessage("Saved search added successfully.");
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
@@ -93,7 +93,7 @@ export function AccountSavedSearchesClient({
         setStatusMessage(error.message);
         return;
       }
-      setStatusMessage("Gagal menyimpan saved search. Coba lagi.");
+      setStatusMessage("Failed to save saved search. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +105,7 @@ export function AccountSavedSearchesClient({
     try {
       await sessionClient.deleteSavedSearch(id);
       setSavedSearches((previous) => previous.filter((item) => item.id !== id));
-      setStatusMessage("Saved search berhasil dihapus.");
+      setStatusMessage("Saved search deleted successfully.");
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
@@ -115,7 +115,7 @@ export function AccountSavedSearchesClient({
         setStatusMessage(error.message);
         return;
       }
-      setStatusMessage("Gagal menghapus saved search.");
+      setStatusMessage("Failed to delete saved search.");
     } finally {
       setDeletingID(null);
     }
@@ -129,7 +129,7 @@ export function AccountSavedSearchesClient({
         aria-label="Saved search form"
       >
         <h3 className="text-lg font-semibold text-gray-900">
-          Tambah saved search
+          Add saved search
         </h3>
 
         <label className="grid gap-1 text-sm">
@@ -147,7 +147,7 @@ export function AccountSavedSearchesClient({
         <div className="grid gap-3 md:grid-cols-2">
           <label className="grid gap-1 text-sm">
             <span className="font-medium text-gray-700">
-              Location (opsional)
+              Location (optional)
             </span>
             <input
               type="text"
@@ -159,7 +159,7 @@ export function AccountSavedSearchesClient({
           </label>
 
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-gray-700">Source (opsional)</span>
+            <span className="font-medium text-gray-700">Source (optional)</span>
             <select
               value={sourceInput}
               onChange={(event) =>
@@ -167,7 +167,7 @@ export function AccountSavedSearchesClient({
               }
               className="rounded-md border border-gray-300 px-3 py-2"
             >
-              <option value="">Semua source</option>
+              <option value="">All sources</option>
               {sourceOptions.map((source) => (
                 <option key={source} value={source}>
                   {source}
@@ -178,7 +178,7 @@ export function AccountSavedSearchesClient({
 
           <label className="grid gap-1 text-sm">
             <span className="font-medium text-gray-700">
-              Salary minimum (opsional)
+              Salary minimum (optional)
             </span>
             <input
               type="number"
@@ -191,7 +191,7 @@ export function AccountSavedSearchesClient({
           </label>
 
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-gray-700">Frekuensi alert</span>
+            <span className="font-medium text-gray-700">Alert frequency</span>
             <select
               value={frequencyInput}
               onChange={(event) =>
@@ -213,7 +213,7 @@ export function AccountSavedSearchesClient({
           disabled={isSubmitting}
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? "Menyimpan..." : "Tambah saved search"}
+          {isSubmitting ? "Saving..." : "Add saved search"}
         </button>
 
         {statusMessage ? (
@@ -225,11 +225,11 @@ export function AccountSavedSearchesClient({
 
       <section className="grid gap-3 rounded-lg border border-gray-200 p-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          Daftar saved search
+          Saved searches list
         </h3>
         {savedSearches.length === 0 ? (
           <p className="text-sm text-gray-600">
-            Belum ada saved search. Tambahkan query pertama kamu.
+            No saved searches yet. Add your first query.
           </p>
         ) : (
           <ul className="grid gap-2">
@@ -242,9 +242,9 @@ export function AccountSavedSearchesClient({
                 <p className="text-xs text-gray-500">
                   {item.location
                     ? `Location: ${item.location}`
-                    : "Location: semua"}
+                    : "Location: all"}
                   {" · "}
-                  {item.source ? `Source: ${item.source}` : "Source: semua"}
+                  {item.source ? `Source: ${item.source}` : "Source: all"}
                   {" · "}
                   Frequency: {item.frequency}
                 </p>
@@ -258,7 +258,7 @@ export function AccountSavedSearchesClient({
                     disabled={deletingID === item.id}
                     className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {deletingID === item.id ? "Menghapus..." : "Hapus"}
+                    {deletingID === item.id ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </li>

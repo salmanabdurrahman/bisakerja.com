@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <main className="grid gap-4" role="main">
         <h2 className="text-xl font-semibold">Login</h2>
         <p className="text-sm text-gray-600">
-          Masuk untuk mengelola akun dan preferences notifikasi lowongan.
+          Sign in to manage your account and job notification preferences.
         </p>
         <LoginForm
           redirectPath={redirectPath}

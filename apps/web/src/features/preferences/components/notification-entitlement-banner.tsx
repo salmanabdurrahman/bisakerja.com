@@ -11,11 +11,11 @@ export function NotificationEntitlementBanner({
     return (
       <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <h3 className="text-base font-semibold text-emerald-900">
-          Notifikasi premium aktif
+          Premium notifications are active
         </h3>
         <p className="mt-1 text-sm text-emerald-800">
-          Preferensi yang disimpan akan dipakai untuk matching lowongan
-          otomatis.
+          Saved preferences are used for job matching
+          automatically.
         </p>
       </section>
     );
@@ -25,16 +25,16 @@ export function NotificationEntitlementBanner({
     return (
       <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
         <h3 className="text-base font-semibold text-amber-900">
-          Pembayaran masih diproses
+          Payment is being processed
         </h3>
         <p className="mt-1 text-sm text-amber-800">
-          Notifikasi akan aktif setelah pembayaran berhasil.
+          Notifications will be enabled after successful payment.
         </p>
         <a
           href="/pricing"
           className="mt-3 inline-flex text-sm text-blue-700 underline"
         >
-          Lanjutkan pembayaran
+          Continue payment
         </a>
       </section>
     );
@@ -44,16 +44,16 @@ export function NotificationEntitlementBanner({
     return (
       <section className="rounded-lg border border-orange-200 bg-orange-50 p-4">
         <h3 className="text-base font-semibold text-orange-900">
-          Premium sudah berakhir
+          Premium has expired
         </h3>
         <p className="mt-1 text-sm text-orange-800">
-          Perbarui langganan untuk mengaktifkan kembali notifikasi matching.
+          Renew your subscription to reactivate matching notifications.
         </p>
         <a
           href="/pricing"
           className="mt-3 inline-flex text-sm text-blue-700 underline"
         >
-          Upgrade kembali
+          Upgrade again
         </a>
       </section>
     );
@@ -63,11 +63,11 @@ export function NotificationEntitlementBanner({
     return (
       <section className="rounded-lg border border-red-200 bg-red-50 p-4">
         <h3 className="text-base font-semibold text-red-900">
-          Status premium belum tersedia
+          Premium status unavailable
         </h3>
         <p className="mt-1 text-sm text-red-800">
-          Kami belum bisa mengambil status billing terbaru. Coba refresh
-          halaman.
+          We couldn&apos;t fetch the latest billing status. Please refresh
+          the page.
         </p>
       </section>
     );
@@ -76,17 +76,17 @@ export function NotificationEntitlementBanner({
   return (
     <section className="rounded-lg border border-gray-200 bg-gray-50 p-4">
       <h3 className="text-base font-semibold text-gray-900">
-        Notifikasi untuk premium
+        Premium notifications
       </h3>
       <p className="mt-1 text-sm text-gray-700">
-        User free tetap bisa menyimpan preferensi, tetapi notifikasi matching
-        hanya aktif untuk premium.
+        Free users can still save preferences, but matching notifications
+        are only active for premium users.
       </p>
       <a
         href="/pricing"
         className="mt-3 inline-flex text-sm text-blue-700 underline"
       >
-        Lihat paket premium
+        View premium plans
       </a>
     </section>
   );

@@ -16,7 +16,7 @@ export function BillingHistoryList({
         {warningMessage ? (
           <p className="mt-2 text-sm text-amber-700">{warningMessage}</p>
         ) : (
-          <p className="mt-2 text-sm text-gray-600">Belum ada transaksi.</p>
+          <p className="mt-2 text-sm text-gray-600">No transactions yet.</p>
         )}
       </section>
     );

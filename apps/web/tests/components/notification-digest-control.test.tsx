@@ -66,7 +66,7 @@ describe("NotificationDigestControl", () => {
     );
 
     expect(
-      screen.getByText("Digest hour harus integer 0-23."),
+      screen.getByText("Digest hour must be an integer from 0 to 23."),
     ).toBeInTheDocument();
     expect(submitMock).not.toHaveBeenCalled();
   });

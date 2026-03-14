@@ -28,7 +28,7 @@ export default async function AccountSavedSearchesPage() {
         <div className="grid gap-1">
           <h2 className="text-xl font-semibold">Saved searches</h2>
           <p className="text-sm text-gray-600">
-            Simpan query favorit agar proses pencarian lowongan lebih cepat.
+            Save favorite queries to speed up job discovery.
           </p>
         </div>
         {renderSavedSearchesView(viewState)}
@@ -59,17 +59,17 @@ function renderSavedSearchesView(viewState: SavedSearchesPageViewState) {
     return (
       <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
         <h3 className="text-lg font-semibold text-red-900">
-          Gagal memuat saved searches
+          Failed to load saved searches
         </h3>
         <p className="text-sm text-red-800">
-          Data saved searches belum bisa diambil dari server. Coba refresh
-          halaman.
+          Saved searches are currently unavailable. Please refresh
+          the page.
         </p>
         <a
           href="/account/saved-searches"
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
-          Coba lagi
+          Try again
         </a>
       </section>
     );

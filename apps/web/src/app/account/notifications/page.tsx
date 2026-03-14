@@ -30,7 +30,7 @@ export default async function AccountNotificationsPage() {
         <div className="grid gap-1">
           <h2 className="text-xl font-semibold">Notifications</h2>
           <p className="text-sm text-gray-600">
-            Lihat histori notifikasi dan tandai update yang sudah dibaca.
+            View notification history and mark updates as read.
           </p>
         </div>
         {renderNotificationsView(viewState)}
@@ -65,16 +65,16 @@ function renderNotificationsView(viewState: NotificationsPageViewState) {
     return (
       <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
         <h3 className="text-lg font-semibold text-red-900">
-          Gagal memuat notifikasi
+          Failed to load notifications
         </h3>
         <p className="text-sm text-red-800">
-          Notifikasi belum bisa diambil dari server. Coba refresh halaman.
+          Notifications are currently unavailable. Please refresh the page.
         </p>
         <a
           href="/account/notifications"
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
-          Coba lagi
+          Try again
         </a>
       </section>
     );

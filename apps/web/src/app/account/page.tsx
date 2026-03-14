@@ -65,7 +65,7 @@ async function loadAccountViewState(
         redirect(buildLoginHref("/account"));
       }
       warningMessage =
-        "Status langganan belum bisa diverifikasi dari billing/status. Menampilkan fallback dari profile.";
+        "Subscription status could not be verified from billing/status. Showing fallback from profile.";
       badgeSource = "profile_fallback";
     }
 
@@ -89,16 +89,16 @@ function renderAccountView(viewState: AccountPageViewState) {
     return (
       <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
         <h3 className="text-lg font-semibold text-red-900">
-          Gagal memuat akun
+          Failed to load account
         </h3>
         <p className="text-sm text-red-800">
-          Data akun belum bisa diambil dari server. Coba refresh halaman.
+          Account data is currently unavailable. Please refresh the page.
         </p>
         <a
           href="/account"
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
-          Coba lagi
+          Try again
         </a>
       </section>
     );

@@ -65,7 +65,7 @@ export function UpgradeCTA({
 
       saveCheckoutSession(response.data);
       setCachedCheckout(loadCheckoutSession());
-      setMessage("Checkout dibuat. Mengarahkan ke halaman pembayaran...");
+      setMessage("Checkout created. Redirecting to the payment page...");
       redirectToExternalURL(response.data.checkout_url);
     } catch (error) {
       if (error instanceof APIRequestError) {
@@ -77,25 +77,27 @@ export function UpgradeCTA({
         }
         if (error.status === 409) {
           setMessage(
-            "Akun kamu sudah premium aktif. Silakan cek status terbaru.",
+            "Your account is already premium active. Please check the latest status.",
           );
           clearCheckoutSession();
           setCachedCheckout(null);
           return;
         }
         if (error.status === 429) {
-          setMessage("Terlalu banyak permintaan checkout. Coba lagi sebentar.");
+          setMessage(
+            "Too many checkout requests. Please try again shortly.",
+          );
           return;
         }
         if (error.status === 400) {
           setMessage(
-            "Permintaan checkout tidak valid. Pastikan data paket dan redirect URL benar.",
+            "Invalid checkout request. Please ensure the plan and redirect URL are correct.",
           );
           return;
         }
         if (error.status === 502 || error.status === 503) {
           setMessage(
-            "Payment provider sedang bermasalah. Coba lagi beberapa saat.",
+            "The payment provider is currently unavailable. Please try again shortly.",
           );
           return;
         }
@@ -103,7 +105,7 @@ export function UpgradeCTA({
         return;
       }
 
-      setMessage("Gagal membuat checkout. Coba lagi beberapa saat.");
+      setMessage("Failed to create checkout. Please try again shortly.");
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +115,7 @@ export function UpgradeCTA({
     <section className="grid gap-3 rounded-lg border border-gray-200 p-4">
       <h3 className="text-lg font-semibold text-gray-900">Upgrade premium</h3>
       <p className="text-sm text-gray-700">
-        Entitlement premium selalu mengikuti{" "}
+        Premium entitlement always follows{" "}
         <code>billing/status.subscription_state</code>.
       </p>
       <button
@@ -139,23 +141,23 @@ function getButtonLabel(
   lastTransactionStatus?: TransactionStatus,
 ): string {
   if (state === "premium_active") {
-    return "Premium aktif";
+    return "Premium active";
   }
   if (state === "pending_payment") {
     return hasPendingContinueLink
-      ? "Lanjutkan Pembayaran"
-      : "Buat checkout baru";
+      ? "Continue payment"
+      : "Create a new checkout";
   }
   if (state === "premium_expired") {
-    return "Upgrade ulang";
+    return "Upgrade again";
   }
   if (lastTransactionStatus === "failed") {
-    return "Coba checkout lagi";
+    return "Retry checkout";
   }
   if (state === "status_unavailable") {
-    return "Coba checkout premium";
+    return "Try premium checkout";
   }
-  return "Upgrade ke Pro";
+  return "Upgrade to Pro";
 }
 
 function createIdempotencyKey(): string {

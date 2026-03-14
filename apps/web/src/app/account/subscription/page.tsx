@@ -56,7 +56,7 @@ async function loadSubscriptionViewState(
         redirect(buildLoginHref("/account/subscription"));
       }
       warningMessage =
-        "Riwayat transaksi belum tersedia saat ini. Coba refresh beberapa saat lagi.";
+        "Transaction history is currently unavailable. Please refresh shortly.";
     }
 
     return {
@@ -81,7 +81,7 @@ function renderSubscriptionView(viewState: SubscriptionViewState) {
           Subscription data unavailable
         </h3>
         <p className="text-sm text-red-800">
-          Status subscription belum dapat dimuat. Coba lagi beberapa saat.
+          Subscription status could not be loaded. Please try again shortly.
         </p>
         <a
           href="/account/subscription"

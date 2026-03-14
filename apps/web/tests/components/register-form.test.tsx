@@ -40,7 +40,7 @@ describe("RegisterForm", () => {
 
     render(<RegisterForm />);
 
-    fireEvent.change(screen.getByLabelText("Nama"), {
+    fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "New User" },
     });
     fireEvent.change(screen.getByLabelText("Email"), {

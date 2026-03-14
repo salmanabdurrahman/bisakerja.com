@@ -78,7 +78,7 @@ describe("AccountSavedSearchesClient", () => {
       target: { value: "golang backend" },
     });
     fireEvent.click(
-      screen.getByRole("button", { name: "Tambah saved search" }),
+      screen.getByRole("button", { name: "Add saved search" }),
     );
 
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe("AccountSavedSearchesClient", () => {
     });
     expect(screen.getByText("golang backend")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Hapus" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     await waitFor(() => {
       expect(deleteSavedSearchMock).toHaveBeenCalledWith("ss_1");
     });

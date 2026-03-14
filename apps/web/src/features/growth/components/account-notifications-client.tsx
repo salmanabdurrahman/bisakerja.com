@@ -61,7 +61,7 @@ export function AccountNotificationsClient({
         setStatusMessage(error.message);
         return;
       }
-      setStatusMessage("Gagal memuat notifikasi. Coba lagi.");
+      setStatusMessage("Failed to load notifications. Try again.");
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +87,7 @@ export function AccountNotificationsClient({
         setStatusMessage(error.message);
         return;
       }
-      setStatusMessage("Gagal menandai notifikasi sebagai dibaca.");
+      setStatusMessage("Failed to mark notification as read.");
     } finally {
       setMarkingID(null);
     }
@@ -126,7 +126,7 @@ export function AccountNotificationsClient({
 
       {notifications.length === 0 ? (
         <p className="text-sm text-gray-600">
-          Belum ada notifikasi untuk filter saat ini.
+          No notifications found for the current filter.
         </p>
       ) : (
         <ul className="grid gap-2">
@@ -153,7 +153,7 @@ export function AccountNotificationsClient({
                     ? `Read at: ${new Date(notification.read_at).toLocaleString(
                         "id-ID",
                       )}`
-                    : "Belum dibaca"}
+                    : "Unread"}
                 </p>
                 {isUnread ? (
                   <button
@@ -164,7 +164,7 @@ export function AccountNotificationsClient({
                   >
                     {markingID === notification.id
                       ? "Menyimpan..."
-                      : "Tandai dibaca"}
+                      : "Mark as read"}
                   </button>
                 ) : null}
               </li>

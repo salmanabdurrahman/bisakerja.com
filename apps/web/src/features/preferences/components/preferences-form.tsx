@@ -84,12 +84,12 @@ export function PreferencesForm({
     setFormMessage(null);
 
     if (!isValid) {
-      setFormMessage("Input preferences belum valid.");
+      setFormMessage("Preferences input is invalid.");
       return;
     }
 
     if (!isDirty) {
-      setFormMessage("Belum ada perubahan untuk disimpan.");
+      setFormMessage("No changes to save.");
       return;
     }
 
@@ -99,32 +99,32 @@ export function PreferencesForm({
       setBaseline(normalizedInput);
       setLastUpdatedAt(response.updated_at ?? null);
       setFieldErrors({});
-      setFormMessage("Preferences berhasil disimpan.");
+      setFormMessage("Preferences saved successfully.");
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
           onUnauthorized(normalizedInput);
           setFormMessage(
-            "Sesi berakhir. Silakan login ulang untuk melanjutkan.",
+            "Session expired. Please sign in again to continue.",
           );
           return;
         }
         if (error.status === 429) {
           setFormMessage(
-            "Terlalu banyak percobaan simpan. Tunggu sebentar lalu coba lagi.",
+            "Too many save attempts. Please wait a moment and try again.",
           );
           return;
         }
         if (error.status === 400) {
           setFieldErrors(toFieldErrors(error));
-          setFormMessage("Data preferences belum valid.");
+          setFormMessage("Preferences data is invalid.");
           return;
         }
         setFormMessage(error.message);
         return;
       }
 
-      setFormMessage("Gagal menyimpan preferences. Coba lagi beberapa saat.");
+      setFormMessage("Failed to save preferences. Please try again shortly.");
     } finally {
       setIsSubmitting(false);
     }
@@ -280,31 +280,31 @@ function validateNormalizedInput(input: UpdatePreferencesInput): FieldErrors {
   const errors: FieldErrors = {};
 
   if (input.keywords.length < 1 || input.keywords.length > 10) {
-    errors.keywords = "Keywords wajib 1-10 item.";
+    errors.keywords = "Keywords must contain 1-10 items.";
   } else if (
     input.keywords.some((keyword) => keyword.length < 2 || keyword.length > 50)
   ) {
-    errors.keywords = "Panjang keyword harus 2-50 karakter.";
+    errors.keywords = "Each keyword must be 2-50 characters.";
   }
 
   if (input.locations.length > 5) {
-    errors.locations = "Locations maksimal 5 item.";
+    errors.locations = "Locations can contain at most 5 items.";
   } else if (
     input.locations.some(
       (location) => location.length < 2 || location.length > 100,
     )
   ) {
-    errors.locations = "Panjang location harus 2-100 karakter.";
+    errors.locations = "Each location must be 2-100 characters.";
   }
 
   if (input.job_types.length > 4) {
-    errors.job_types = "Job types maksimal 4 item.";
+    errors.job_types = "Job types can contain at most 4 items.";
   } else if (
     input.job_types.some(
       (jobType) => !preferenceJobTypeOptions.includes(jobType),
     )
   ) {
-    errors.job_types = "Job types tidak valid.";
+    errors.job_types = "Invalid job types.";
   }
 
   if (
@@ -312,7 +312,7 @@ function validateNormalizedInput(input: UpdatePreferencesInput): FieldErrors {
     input.salary_min < 0 ||
     input.salary_min > maxSalary
   ) {
-    errors.salary_min = "Salary minimum harus 0 sampai 999000000.";
+    errors.salary_min = "Salary minimum must be between 0 and 999000000.";
   }
 
   return errors;

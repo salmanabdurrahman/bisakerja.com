@@ -12,14 +12,14 @@ const subscriptionDescriptions: Record<
   SubscriptionStatusCardProps["subscriptionState"],
   string
 > = {
-  free: "Akun saat ini masih free. Upgrade untuk mengaktifkan notifikasi premium.",
+  free: "Your account is currently on the free plan. Upgrade to enable premium notifications.",
   pending_payment:
-    "Pembayaran masih pending. Lanjutkan pembayaran atau tunggu sinkronisasi webhook.",
-  premium_active: "Premium aktif. Kamu bisa memakai semua fitur premium.",
+    "Payment is still pending. Continue payment or wait for webhook synchronization.",
+  premium_active: "Premium is active. You can use all premium features.",
   premium_expired:
-    "Premium sudah berakhir. Lakukan upgrade ulang untuk mengaktifkan premium kembali.",
+    "Premium has expired. Upgrade again to reactivate premium features.",
   status_unavailable:
-    "Status langganan belum bisa diverifikasi dari billing/status saat ini.",
+    "Subscription status cannot be verified from billing/status right now.",
 };
 
 export function SubscriptionStatusCard({
@@ -47,7 +47,7 @@ export function SubscriptionStatusCard({
       ) : null}
       {premiumExpiredAt ? (
         <p className="text-sm text-gray-700">
-          Premium expiry: {new Date(premiumExpiredAt).toLocaleString("id-ID")}
+          Premium expiry: {new Date(premiumExpiredAt).toLocaleString("en-US")}
         </p>
       ) : null}
       <p className="text-xs text-gray-500">Source: {source}</p>

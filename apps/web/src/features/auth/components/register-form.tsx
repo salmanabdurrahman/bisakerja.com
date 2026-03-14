@@ -42,7 +42,7 @@ export function RegisterForm() {
         setFieldErrors(extractFieldErrors(error));
         setFormError(toRegisterMessage(error));
       } else {
-        setFormError("Pendaftaran gagal. Coba lagi dalam beberapa saat.");
+        setFormError("Registration failed. Please try again shortly.");
       }
     } finally {
       setIsSubmitting(false);
@@ -56,7 +56,7 @@ export function RegisterForm() {
       aria-label="Register form"
     >
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Nama</span>
+        <span className="font-medium text-gray-700">Name</span>
         <input
           type="text"
           name="name"
@@ -121,9 +121,9 @@ export function RegisterForm() {
       </button>
 
       <p className="text-sm text-gray-600">
-        Sudah punya akun?{" "}
+        Already have an account?{" "}
         <a href="/auth/login" className="text-blue-700 underline">
-          Login di sini
+          Sign in here
         </a>
       </p>
     </form>
@@ -148,13 +148,13 @@ function extractFieldErrors(error: APIRequestError): RegisterFieldErrors {
 
 function toRegisterMessage(error: APIRequestError): string {
   if (error.status === 409) {
-    return "Email sudah terdaftar. Silakan login atau gunakan email lain.";
+    return "Email is already registered. Please sign in or use another email.";
   }
   if (error.status === 429) {
-    return "Permintaan terlalu sering. Tunggu sebentar lalu coba lagi.";
+    return "Too many requests. Please wait a moment and try again.";
   }
   if (error.status === 400 && error.errors.length > 0) {
-    return "Data pendaftaran belum valid. Mohon periksa kembali.";
+    return "Registration data is invalid. Please review and try again.";
   }
   return error.message;
 }

@@ -112,15 +112,15 @@ func (n *Notifier) RunOnce(ctx context.Context) (NotifySummary, error) {
 }
 
 func buildEmailSubject(task notification.DeliveryTask) string {
-	return "Lowongan baru cocok: " + task.JobTitle
+	return "New matching job: " + task.JobTitle
 }
 
 func buildEmailBody(task notification.DeliveryTask) string {
-	return "Halo " + task.UserName + ",\n\n" +
-		"Lowongan baru yang cocok untukmu:\n" +
-		"- Posisi: " + task.JobTitle + "\n" +
-		"- Perusahaan: " + task.Company + "\n" +
-		"- Lokasi: " + task.Location + "\n" +
+	return "Hi " + task.UserName + ",\n\n" +
+		"A new job matches your preferences:\n" +
+		"- Position: " + task.JobTitle + "\n" +
+		"- Company: " + task.Company + "\n" +
+		"- Location: " + task.Location + "\n" +
 		"- Link: " + task.URL + "\n\n" +
-		"Semoga membantu pencarian kerjamu."
+		"Hope this helps your job search."
 }

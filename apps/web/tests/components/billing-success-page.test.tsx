@@ -51,7 +51,7 @@ describe("Billing success page", () => {
     render(page);
 
     expect(
-      screen.getByText("Pembayaran terverifikasi. Premium kamu sudah aktif."),
+      screen.getByText("Payment verified. Your premium subscription is now active."),
     ).toBeInTheDocument();
   });
 
@@ -74,7 +74,7 @@ describe("Billing success page", () => {
 
     expect(
       screen.getByText(
-        "Pembayaran masih diproses. Cek ulang status dalam beberapa saat.",
+        "Payment is still being processed. Check the status again shortly.",
       ),
     ).toBeInTheDocument();
   });
@@ -98,11 +98,11 @@ describe("Billing success page", () => {
 
     expect(
       screen.getByText(
-        "Pembayaran belum berhasil. Kamu bisa memulai checkout baru.",
+        "Payment has not completed yet. You can start a new checkout.",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Kembali ke pricing" }),
+      screen.getByRole("link", { name: "Back to pricing" }),
     ).toHaveAttribute("href", "/pricing");
   });
 });
