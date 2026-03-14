@@ -11,9 +11,10 @@ Implementasi **Phase 0 frontend** sudah dimulai:
 - baseline `apps/web` (Next.js App Router) sudah terbentuk,
 - struktur domain awal (`features`, `components`, `services`, `lib`) sudah tersedia,
 - baseline lint/typecheck/test/build lulus pada validasi lokal,
-- workflow `ci-web` tervalidasi lewat run lokal `act`.
+- workflow `ci-web` tervalidasi lewat run lokal `act`,
+- **Iteration 1.1 frontend** sudah diimplementasikan (`/jobs` list/filter/pagination + `/jobs/[id]` detail + loading/error/empty/429 states + discovery tests).
 
-Status saat ini: **Phase 0 frontend baseline complete**, siap lanjut ke iterasi Phase 1.
+Status saat ini: **Phase 0 frontend baseline complete + Phase 1 Iteration 1.1 frontend complete**, siap lanjut ke Iteration 1.2 frontend.
 
 ## Prinsip Eksekusi
 

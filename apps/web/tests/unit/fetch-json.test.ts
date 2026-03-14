@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { fetchJSON } from "@/lib/utils/fetch-json";
+import { APIRequestError, fetchJSON } from "@/lib/utils/fetch-json";
 
 describe("fetchJSON", () => {
   it("returns parsed payload for successful response", async () => {
@@ -42,6 +42,25 @@ describe("fetchJSON", () => {
 
     await expect(fetchJSON("/api/v1/fail")).rejects.toThrow(
       "Request failed with status 503",
+    );
+  });
+
+  it("parses API error envelope for non-ok response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            meta: { code: 429, status: "error", message: "Too many requests" },
+            errors: [{ code: "TOO_MANY_REQUESTS", message: "slow down" }],
+          }),
+          { status: 429 },
+        ),
+      ),
+    );
+
+    await expect(fetchJSON("/api/v1/jobs")).rejects.toBeInstanceOf(
+      APIRequestError,
     );
   });
 });
