@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +16,7 @@ import (
 
 var (
 	ErrInvalidPlanCode    = errors.New("invalid plan code")
+	ErrInvalidCouponCode  = errors.New("invalid coupon code")
 	ErrInvalidRedirectURL = errors.New("invalid redirect url")
 	ErrAlreadyPremium     = errors.New("already premium")
 	ErrTooManyRequests    = errors.New("too many requests")
@@ -48,6 +50,7 @@ type Service struct {
 type CreateCheckoutSessionInput struct {
 	UserID         string
 	PlanCode       string
+	CouponCode     string
 	RedirectURL    string
 	IdempotencyKey string
 }
@@ -55,9 +58,14 @@ type CreateCheckoutSessionInput struct {
 // CheckoutSession represents checkout session.
 type CheckoutSession struct {
 	Provider          billingdomain.PaymentProvider
+	PlanCode          billingdomain.PlanCode
 	InvoiceID         string
 	TransactionID     string
 	CheckoutURL       string
+	OriginalAmount    int64
+	DiscountAmount    int64
+	FinalAmount       int64
+	CouponCode        string
 	ExpiredAt         time.Time
 	SubscriptionState identity.SubscriptionState
 	TransactionStatus billingdomain.TransactionStatus
@@ -128,6 +136,10 @@ func (s *Service) CreateCheckoutSession(
 	if !ok {
 		return CheckoutSession{}, ErrInvalidPlanCode
 	}
+	couponCode := normalizeCouponCode(input.CouponCode)
+	if couponCode != "" && !isCouponCodeValid(couponCode) {
+		return CheckoutSession{}, ErrInvalidCouponCode
+	}
 
 	redirectURL := strings.TrimSpace(input.RedirectURL)
 	if !isRedirectURLAllowed(redirectURL, s.redirectHosts) {
@@ -164,6 +176,37 @@ func (s *Service) CreateCheckoutSession(
 		return CheckoutSession{}, ErrTooManyRequests
 	}
 
+	discountAmount := int64(0)
+	finalAmount := plan.Amount
+	appliedCouponCode := ""
+	if couponCode != "" {
+		couponValidator, ok := s.provider.(billingdomain.CouponValidator)
+		if !ok {
+			return CheckoutSession{}, ErrServiceUnavailable
+		}
+		coupon, couponErr := couponValidator.ValidateCoupon(ctx, billingdomain.ValidateCouponInput{
+			Code:   couponCode,
+			Amount: plan.Amount,
+		})
+		if couponErr != nil {
+			switch {
+			case errors.Is(couponErr, billingdomain.ErrCouponInvalid):
+				return CheckoutSession{}, ErrInvalidCouponCode
+			default:
+				return CheckoutSession{}, mapProviderError("validate coupon", couponErr)
+			}
+		}
+		var normalizeErr error
+		discountAmount, finalAmount, normalizeErr = normalizeCouponAmounts(plan.Amount, coupon)
+		if normalizeErr != nil {
+			return CheckoutSession{}, mapProviderError("validate coupon", normalizeErr)
+		}
+		appliedCouponCode = normalizeCouponCode(coupon.Code)
+		if appliedCouponCode == "" {
+			appliedCouponCode = couponCode
+		}
+	}
+
 	customer, err := s.provider.EnsureCustomer(ctx, billingdomain.EnsureCustomerInput{
 		Name:  user.Name,
 		Email: user.Email,
@@ -175,7 +218,7 @@ func (s *Service) CreateCheckoutSession(
 	invoice, err := s.provider.CreateInvoice(ctx, billingdomain.CreateInvoiceInput{
 		CustomerID:  customer.ID,
 		PlanCode:    plan.Code,
-		Amount:      plan.Amount,
+		Amount:      finalAmount,
 		Description: plan.Description,
 		RedirectURL: redirectURL,
 		ExternalID:  buildExternalID(userID, idempotencyKey, now),
@@ -190,6 +233,25 @@ func (s *Service) CreateCheckoutSession(
 		expiredAt = &defaultExpiry
 	}
 
+	effectiveFinalAmount := invoice.Amount
+	if effectiveFinalAmount <= 0 {
+		effectiveFinalAmount = finalAmount
+	}
+	if plan.Amount > effectiveFinalAmount {
+		discountAmount = plan.Amount - effectiveFinalAmount
+	}
+
+	metadata := map[string]any{
+		"redirect_url":    redirectURL,
+		"customer_id":     customer.ID,
+		"original_amount": plan.Amount,
+		"discount_amount": discountAmount,
+		"final_amount":    effectiveFinalAmount,
+	}
+	if appliedCouponCode != "" {
+		metadata["coupon_code"] = appliedCouponCode
+	}
+
 	created, err := s.repository.CreatePending(ctx, billingdomain.CreatePendingTransactionInput{
 		UserID:             userID,
 		Provider:           billingdomain.PaymentProviderMayar,
@@ -197,13 +259,10 @@ func (s *Service) CreateCheckoutSession(
 		MayarTransactionID: invoice.TransactionID,
 		InvoiceID:          invoice.ID,
 		CheckoutURL:        invoice.CheckoutURL,
-		Amount:             invoice.Amount,
+		Amount:             effectiveFinalAmount,
 		IdempotencyKey:     idempotencyKey,
 		ExpiresAt:          expiredAt,
-		Metadata: map[string]any{
-			"redirect_url": redirectURL,
-			"customer_id":  customer.ID,
-		},
+		Metadata:           metadata,
 	})
 	if err != nil {
 		return CheckoutSession{}, fmt.Errorf("create pending transaction: %w", err)
@@ -297,14 +356,118 @@ func mapTransactionToCheckout(
 		expiredAt = transaction.ExpiresAt.UTC()
 	}
 
+	originalAmount := transaction.Amount
+	if value, ok := metadataNumber(transaction.Metadata, "original_amount"); ok && value > 0 {
+		originalAmount = value
+	}
+	finalAmount := transaction.Amount
+	if value, ok := metadataNumber(transaction.Metadata, "final_amount"); ok && value > 0 {
+		finalAmount = value
+	}
+	discountAmount := int64(0)
+	if value, ok := metadataNumber(transaction.Metadata, "discount_amount"); ok && value >= 0 {
+		discountAmount = value
+	}
+	if discountAmount == 0 && originalAmount > finalAmount {
+		discountAmount = originalAmount - finalAmount
+	}
+	if discountAmount < 0 {
+		discountAmount = 0
+	}
+	couponCode := normalizeCouponCode(metadataString(transaction.Metadata, "coupon_code"))
+
 	return CheckoutSession{
 		Provider:          transaction.Provider,
+		PlanCode:          transaction.PlanCode,
 		InvoiceID:         transaction.InvoiceID,
 		TransactionID:     transaction.MayarTransactionID,
 		CheckoutURL:       transaction.CheckoutURL,
+		OriginalAmount:    originalAmount,
+		DiscountAmount:    discountAmount,
+		FinalAmount:       finalAmount,
+		CouponCode:        couponCode,
 		ExpiredAt:         expiredAt,
 		SubscriptionState: identity.SubscriptionStatePendingPayment,
 		TransactionStatus: transaction.Status,
 		Reused:            reused,
 	}
+}
+
+func normalizeCouponCode(raw string) string {
+	return strings.ToUpper(strings.TrimSpace(raw))
+}
+
+func isCouponCodeValid(code string) bool {
+	if len(code) < 3 || len(code) > 64 {
+		return false
+	}
+	for _, character := range code {
+		isUpper := character >= 'A' && character <= 'Z'
+		isDigit := character >= '0' && character <= '9'
+		if isUpper || isDigit || character == '-' || character == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func normalizeCouponAmounts(planAmount int64, coupon billingdomain.Coupon) (int64, int64, error) {
+	discountAmount := coupon.DiscountAmount
+	finalAmount := coupon.FinalAmount
+
+	if finalAmount > 0 {
+		if finalAmount > planAmount {
+			return 0, 0, fmt.Errorf("%w: coupon final amount exceeds plan amount", billingdomain.ErrProviderUpstream)
+		}
+		expectedDiscount := planAmount - finalAmount
+		if discountAmount == 0 {
+			discountAmount = expectedDiscount
+		} else if discountAmount != expectedDiscount {
+			return 0, 0, fmt.Errorf("%w: coupon amount mismatch", billingdomain.ErrProviderUpstream)
+		}
+	}
+	if discountAmount < 0 || discountAmount >= planAmount {
+		return 0, 0, fmt.Errorf("%w: coupon discount amount out of range", billingdomain.ErrProviderUpstream)
+	}
+	return discountAmount, planAmount - discountAmount, nil
+}
+
+func metadataString(metadata map[string]any, key string) string {
+	if metadata == nil {
+		return ""
+	}
+	value, ok := metadata[key]
+	if !ok {
+		return ""
+	}
+	raw, ok := value.(string)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(raw)
+}
+
+func metadataNumber(metadata map[string]any, key string) (int64, bool) {
+	if metadata == nil {
+		return 0, false
+	}
+	value, ok := metadata[key]
+	if !ok {
+		return 0, false
+	}
+	switch typed := value.(type) {
+	case int:
+		return int64(typed), true
+	case int64:
+		return typed, true
+	case float64:
+		return int64(typed), true
+	case string:
+		parsed, err := strconv.ParseInt(strings.TrimSpace(typed), 10, 64)
+		if err == nil {
+			return parsed, true
+		}
+	}
+	return 0, false
 }

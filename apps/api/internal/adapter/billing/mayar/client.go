@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -209,6 +210,109 @@ func (c *Client) CreateInvoice(
 		CheckoutURL:   checkoutURL,
 		Amount:        amount,
 		ExpiresAt:     expiredAt,
+	}, nil
+}
+
+// ValidateCoupon validates coupon code.
+func (c *Client) ValidateCoupon(
+	ctx context.Context,
+	input billingdomain.ValidateCouponInput,
+) (billingdomain.Coupon, error) {
+	couponCode := strings.ToUpper(strings.TrimSpace(input.Code))
+	if couponCode == "" {
+		return billingdomain.Coupon{}, billingdomain.ErrCouponInvalid
+	}
+	if input.Amount <= 0 {
+		return billingdomain.Coupon{}, fmt.Errorf("%w: coupon validation amount must be > 0", billingdomain.ErrProviderUpstream)
+	}
+
+	queryValues := url.Values{}
+	queryValues.Set("code", couponCode)
+	queryValues.Set("coupon_code", couponCode)
+	queryValues.Set("amount", strconv.FormatInt(input.Amount, 10))
+	responseBody, err := c.getCouponValidation(ctx, "/coupon/validate?"+queryValues.Encode())
+	if err != nil {
+		return billingdomain.Coupon{}, err
+	}
+
+	isValid, hasValidFlag := extractBool(
+		responseBody,
+		"data.valid",
+		"data.isValid",
+		"data.is_valid",
+		"valid",
+		"isValid",
+		"is_valid",
+	)
+	if hasValidFlag && !isValid {
+		return billingdomain.Coupon{}, billingdomain.ErrCouponInvalid
+	}
+
+	discountAmount, hasDiscount := extractNonNegativeNumber(
+		responseBody,
+		"data.discount_amount",
+		"data.discountAmount",
+		"data.discount",
+		"discount_amount",
+		"discountAmount",
+		"discount",
+	)
+	finalAmount, hasFinal := extractNonNegativeNumber(
+		responseBody,
+		"data.final_amount",
+		"data.finalAmount",
+		"final_amount",
+		"finalAmount",
+		"data.amount_after_discount",
+		"data.amountAfterDiscount",
+	)
+
+	if !hasValidFlag && !hasDiscount && !hasFinal {
+		return billingdomain.Coupon{}, billingdomain.ErrCouponInvalid
+	}
+	if hasFinal {
+		if finalAmount > input.Amount {
+			return billingdomain.Coupon{}, fmt.Errorf("%w: coupon final amount exceeds plan amount", billingdomain.ErrProviderUpstream)
+		}
+		if !hasDiscount {
+			discountAmount = input.Amount - finalAmount
+			hasDiscount = true
+		}
+	}
+	if !hasFinal {
+		if hasDiscount {
+			if discountAmount >= input.Amount {
+				return billingdomain.Coupon{}, fmt.Errorf("%w: coupon discount amount out of range", billingdomain.ErrProviderUpstream)
+			}
+			finalAmount = input.Amount - discountAmount
+		} else {
+			finalAmount = input.Amount
+		}
+	}
+	if !hasDiscount {
+		discountAmount = 0
+	}
+	if discountAmount < 0 || discountAmount >= input.Amount {
+		return billingdomain.Coupon{}, fmt.Errorf("%w: coupon discount amount out of range", billingdomain.ErrProviderUpstream)
+	}
+
+	normalizedCode := strings.ToUpper(extractString(
+		responseBody,
+		"data.code",
+		"data.coupon_code",
+		"data.couponCode",
+		"code",
+		"coupon_code",
+		"couponCode",
+	))
+	if normalizedCode == "" {
+		normalizedCode = couponCode
+	}
+
+	return billingdomain.Coupon{
+		Code:           normalizedCode,
+		DiscountAmount: discountAmount,
+		FinalAmount:    finalAmount,
 	}, nil
 }
 
@@ -453,6 +557,84 @@ func (c *Client) get(ctx context.Context, path string) (map[string]any, error) {
 	}
 }
 
+func (c *Client) getCouponValidation(ctx context.Context, path string) (map[string]any, error) {
+	if strings.TrimSpace(c.apiKey) == "" {
+		return nil, fmt.Errorf("%w: mayar api key is empty", billingdomain.ErrProviderUnavailable)
+	}
+
+	endpoint := c.baseURL + path
+	for attempt := 0; ; attempt++ {
+		request, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+		if reqErr != nil {
+			return nil, fmt.Errorf("%w: build request: %v", billingdomain.ErrProviderUpstream, reqErr)
+		}
+		request.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+		response, doErr := c.httpClient.Do(request)
+		if doErr != nil {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf("%w: request failed: %v", billingdomain.ErrProviderUnavailable, doErr)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderUnavailable)
+			}
+			continue
+		}
+
+		responseBody, readErr := readResponseBody(response.Body)
+		if readErr != nil {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf("%w: read response body: %v", billingdomain.ErrProviderUnavailable, readErr)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderUnavailable)
+			}
+			continue
+		}
+
+		if response.StatusCode == http.StatusTooManyRequests {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf("%w: mayar returned 429", billingdomain.ErrProviderRateLimited)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderRateLimited)
+			}
+			continue
+		}
+		if response.StatusCode >= http.StatusInternalServerError {
+			if attempt >= c.maxRetries {
+				return nil, fmt.Errorf(
+					"%w: mayar returned status %d",
+					billingdomain.ErrProviderUnavailable,
+					response.StatusCode,
+				)
+			}
+			if !c.waitForRetry(attempt + 1) {
+				return nil, fmt.Errorf("%w: request canceled while retrying", billingdomain.ErrProviderUnavailable)
+			}
+			continue
+		}
+		if response.StatusCode == http.StatusBadRequest || response.StatusCode == http.StatusNotFound {
+			return nil, billingdomain.ErrCouponInvalid
+		}
+		if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+			return nil, fmt.Errorf(
+				"%w: mayar returned status %d",
+				billingdomain.ErrProviderUpstream,
+				response.StatusCode,
+			)
+		}
+
+		decoded := map[string]any{}
+		if len(responseBody) > 0 {
+			if decodeErr := json.Unmarshal(responseBody, &decoded); decodeErr != nil {
+				return nil, fmt.Errorf("%w: invalid response JSON", billingdomain.ErrProviderUpstream)
+			}
+		}
+		return decoded, nil
+	}
+}
+
 func (c *Client) waitForRetry(retryNumber int) bool {
 	delay := retryDelay(retryNumber, c.randIntn)
 	if delay <= 0 {
@@ -540,6 +722,79 @@ func extractNumber(payload map[string]any, paths ...string) (int64, bool) {
 	return 0, false
 }
 
+func extractNonNegativeNumber(payload map[string]any, paths ...string) (int64, bool) {
+	for _, path := range paths {
+		value, ok := lookupPath(payload, path)
+		if !ok {
+			continue
+		}
+		switch typed := value.(type) {
+		case float64:
+			if typed < 0 {
+				return 0, false
+			}
+			return int64(typed), true
+		case int64:
+			if typed < 0 {
+				return 0, false
+			}
+			return typed, true
+		case int:
+			if typed < 0 {
+				return 0, false
+			}
+			return int64(typed), true
+		case json.Number:
+			parsed, err := typed.Int64()
+			if err == nil && parsed >= 0 {
+				return parsed, true
+			}
+		case string:
+			parsed, err := strconv.ParseInt(strings.TrimSpace(typed), 10, 64)
+			if err == nil && parsed >= 0 {
+				return parsed, true
+			}
+		}
+	}
+	return 0, false
+}
+
+func extractBool(payload map[string]any, paths ...string) (bool, bool) {
+	for _, path := range paths {
+		value, ok := lookupPath(payload, path)
+		if !ok {
+			continue
+		}
+		switch typed := value.(type) {
+		case bool:
+			return typed, true
+		case string:
+			normalized := strings.TrimSpace(strings.ToLower(typed))
+			switch normalized {
+			case "true", "1", "yes", "valid", "applied":
+				return true, true
+			case "false", "0", "no", "invalid", "not_found", "not-found":
+				return false, true
+			}
+		case float64:
+			if typed == 1 {
+				return true, true
+			}
+			if typed == 0 {
+				return false, true
+			}
+		case int:
+			if typed == 1 {
+				return true, true
+			}
+			if typed == 0 {
+				return false, true
+			}
+		}
+	}
+	return false, false
+}
+
 func lookupPath(payload map[string]any, path string) (any, bool) {
 	current := any(payload)
 	segments := strings.Split(path, ".")
@@ -572,3 +827,4 @@ func parseOptionalRFC3339(raw string) (*time.Time, error) {
 
 var _ billingdomain.Provider = (*Client)(nil)
 var _ billingdomain.ReconciliationProvider = (*Client)(nil)
+var _ billingdomain.CouponValidator = (*Client)(nil)

@@ -27,6 +27,7 @@ Endpoint ini:
 ```json
 {
   "plan_code": "pro_monthly",
+  "coupon_code": "SAVE10",
   "redirect_url": "https://app.bisakerja.com/billing/success"
 }
 ```
@@ -36,7 +37,14 @@ Endpoint ini:
 | Field | Rules |
 |---|---|
 | `plan_code` | wajib, enum MVP: `pro_monthly`. |
+| `coupon_code` | opsional, jika diisi harus alfanumerik (`A-Z`, `0-9`, `-`, `_`) panjang `3..64`, dan valid di Mayar. |
 | `redirect_url` | wajib, URL HTTPS valid, host harus ada di allowlist backend. |
+
+Jika `coupon_code` dikirim:
+
+1. backend memvalidasi kode ke Mayar (`GET /hl/v1/coupon/validate`),
+2. nominal invoice checkout memakai `final_amount` setelah diskon,
+3. response tetap canonical dengan tambahan metadata amount.
 
 ### Response `201 Created`
 
@@ -50,9 +58,14 @@ Endpoint ini:
   },
   "data": {
     "provider": "mayar",
+    "plan_code": "pro_monthly",
     "invoice_id": "f774034d-d9cc-43a0-97d8-a2520c127f03",
     "transaction_id": "23fa41c5-c6ed-45d4-8302-5fac4a165dfa",
     "checkout_url": "https://andiak.myr.id/invoices/ibzfrf4880",
+    "original_amount": 49000,
+    "discount_amount": 10000,
+    "final_amount": 39000,
+    "coupon_code": "SAVE10",
     "expired_at": "2026-03-20T10:00:00Z",
     "subscription_state": "pending_payment",
     "transaction_status": "pending"
@@ -74,9 +87,14 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
   },
   "data": {
     "provider": "mayar",
+    "plan_code": "pro_monthly",
     "invoice_id": "f774034d-d9cc-43a0-97d8-a2520c127f03",
     "transaction_id": "23fa41c5-c6ed-45d4-8302-5fac4a165dfa",
     "checkout_url": "https://andiak.myr.id/invoices/ibzfrf4880",
+    "original_amount": 49000,
+    "discount_amount": 10000,
+    "final_amount": 39000,
+    "coupon_code": "SAVE10",
     "expired_at": "2026-03-20T10:00:00Z",
     "subscription_state": "pending_payment",
     "transaction_status": "pending"
@@ -86,7 +104,7 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
 
 ### Error
 
-- `400 BAD_REQUEST` (`INVALID_PLAN_CODE`, `INVALID_REDIRECT_URL`).
+- `400 BAD_REQUEST` (`INVALID_PLAN_CODE`, `INVALID_COUPON_CODE`, `INVALID_REDIRECT_URL`).
 - `401 UNAUTHORIZED` token user invalid.
 - `409 CONFLICT` (`ALREADY_PREMIUM`) user masih premium aktif.
 - `429 TOO_MANY_REQUESTS` (`TOO_MANY_REQUESTS`) rate limit user terlampaui.

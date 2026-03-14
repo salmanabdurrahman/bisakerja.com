@@ -40,6 +40,7 @@ type BillingHandler struct {
 
 type createCheckoutSessionRequest struct {
 	PlanCode    string `json:"plan_code"`
+	CouponCode  string `json:"coupon_code"`
 	RedirectURL string `json:"redirect_url"`
 }
 
@@ -85,6 +86,7 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 	checkout, err := h.service.CreateCheckoutSession(r.Context(), billingapp.CreateCheckoutSessionInput{
 		UserID:         authUser.UserID,
 		PlanCode:       request.PlanCode,
+		CouponCode:     request.CouponCode,
 		RedirectURL:    request.RedirectURL,
 		IdempotencyKey: strings.TrimSpace(r.Header.Get("Idempotency-Key")),
 	})
@@ -101,6 +103,12 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 				Field:   "redirect_url",
 				Code:    errcode.InvalidRedirectURL,
 				Message: "redirect_url must be https and in allowlist",
+			}})
+		case errors.Is(err, billingapp.ErrInvalidCouponCode):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "coupon_code",
+				Code:    errcode.InvalidCouponCode,
+				Message: "coupon_code is invalid or not applicable",
 			}})
 		case errors.Is(err, billingapp.ErrAlreadyPremium):
 			response.WriteError(w, http.StatusConflict, "Conflict", requestID, []response.ErrorItem{{
@@ -148,15 +156,24 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 		message = "Checkout session reused"
 	}
 
-	response.WriteSuccess(w, statusCode, message, requestID, map[string]any{
+	payload := map[string]any{
 		"provider":           checkout.Provider,
+		"plan_code":          checkout.PlanCode,
 		"invoice_id":         checkout.InvoiceID,
 		"transaction_id":     checkout.TransactionID,
 		"checkout_url":       checkout.CheckoutURL,
+		"original_amount":    checkout.OriginalAmount,
+		"discount_amount":    checkout.DiscountAmount,
+		"final_amount":       checkout.FinalAmount,
 		"expired_at":         checkout.ExpiredAt,
 		"subscription_state": checkout.SubscriptionState,
 		"transaction_status": checkout.TransactionStatus,
-	})
+	}
+	if checkout.CouponCode != "" {
+		payload["coupon_code"] = checkout.CouponCode
+	}
+
+	response.WriteSuccess(w, statusCode, message, requestID, payload)
 }
 
 // HandleMayarWebhook handles handle mayar webhook.

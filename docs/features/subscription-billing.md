@@ -26,6 +26,8 @@ Mengelola upgrade user dari Free ke Pro melalui integrasi Mayar yang aman, idemp
 - Refund/chargeback automation.
 - Kupon, cicilan, QR checkout lanjutan (opsional post-MVP).
 
+Catatan progress post-MVP: increment awal Phase 4 sudah menambahkan dukungan `coupon_code` pada checkout invoice. Mode installment/payment request/qrcode tetap backlog.
+
 ## Kontrak Mayar yang Dipakai (MVP)
 
 | Use Case | Endpoint Mayar |

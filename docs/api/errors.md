@@ -53,6 +53,7 @@ Dokumen ini menetapkan standar error lintas endpoint.
 | jobs | `INVALID_LIMIT` | 400 | `limit <= 0` atau bukan integer valid. |
 | preferences | `INVALID_JOB_TYPE` | 400 | Nilai `job_types` tidak masuk enum. |
 | billing | `INVALID_PLAN_CODE` | 400 | `plan_code` tidak didukung. |
+| billing | `INVALID_COUPON_CODE` | 400 | `coupon_code` tidak valid/tidak berlaku di Mayar. |
 | billing | `INVALID_REDIRECT_URL` | 400 | URL tidak HTTPS/di luar allowlist. |
 | billing | `ALREADY_PREMIUM` | 409 | User masih premium aktif. |
 | billing | `MAYAR_RATE_LIMITED` | 503 | Mayar `429` setelah retry exhausted. |
@@ -65,8 +66,12 @@ Dokumen ini menetapkan standar error lintas endpoint.
 
 | Kondisi dari Mayar | Respons Internal Bisakerja |
 |---|---|
-| `400` bad payload | `502 BAD_GATEWAY` + `MAYAR_UPSTREAM_ERROR` |
+| `400` bad payload | `502 BAD_GATEWAY` + `MAYAR_UPSTREAM_ERROR` (kecuali validasi kupon) |
 | `401` API key invalid | `502 BAD_GATEWAY` + `MAYAR_UPSTREAM_ERROR` + alert konfigurasi |
-| `404` resource not found | `502 BAD_GATEWAY` (untuk call outbound) |
+| `404` resource not found | `502 BAD_GATEWAY` (kecuali endpoint validasi kupon) |
 | `429` rate limit | retry policy, lalu `503 SERVICE_UNAVAILABLE` + `MAYAR_RATE_LIMITED` |
 | `500` error upstream | retry policy, lalu `503 SERVICE_UNAVAILABLE` |
+
+Catatan khusus validasi kupon:
+
+- untuk call `GET /hl/v1/coupon/validate`, respons `400/404` dari Mayar dipetakan menjadi `400 BAD_REQUEST` dengan code `INVALID_COUPON_CODE`.

@@ -19,8 +19,9 @@ Implementasi backend saat ini:
 - **Iteration 2.2 backend** sudah diimplementasikan (webhook receiver + token validation + idempotency delivery key + transaction status update + premium activation + duplicate handling tests).
 - **Iteration 2.3 backend** sudah diimplementasikan (`GET /billing/status` + `GET /billing/transactions`, reconciliation ke Mayar `GET /invoice/{id}`, retry-aware recovery path, dan anomaly warning pada billing worker).
 - **Phase 3 backend** sudah diimplementasikan (saved searches, company watchlist, notification center, dan preference digest control).
+- **Phase 4 backend increment 1** sudah mulai diimplementasikan (coupon-enabled checkout: validasi `coupon_code` ke Mayar + invoice amount diskon + metadata amount response).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete**, siap lanjut ke phase berikutnya.
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1)**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -33,7 +34,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | M2 | Pass komentar/docstrings sesuai standar | ✅ Complete | Doc comments Go untuk simbol exported + TSDoc pada service/lib frontend sudah ditambahkan |
 | M3 | Migrasi copy UI + API user-facing ke English | ✅ Complete | Seluruh copy user-facing frontend + pesan notifier backend sudah di-English-kan tanpa mengubah kontrak |
 | M4 | Redesign frontend ala SaaS + hardening growth | ✅ Complete | UI frontend sudah direfresh berbasis design tokens + observability web vitals + e2e growth coverage + refinement visual pass ala Paper sudah ditutup |
-| M5 | Eksekusi Phase 4 backend | ⬜ Pending | Dimulai hanya setelah M1-M4 lulus gate |
+| M5 | Eksekusi Phase 4 backend | 🟡 In Progress | Increment 1 aktif: coupon-enabled checkout pada billing |
 
 Aturan eksekusi:
 

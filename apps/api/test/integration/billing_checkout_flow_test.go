@@ -22,6 +22,8 @@ import (
 func TestBillingCheckoutFlow(t *testing.T) {
 	var customerCreateCalls int64
 	var invoiceCreateCalls int64
+	var couponValidateCalls int64
+	var invoiceCreateAmount int64
 
 	mayarServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -34,13 +36,33 @@ func TestBillingCheckoutFlow(t *testing.T) {
 			})
 		case "/hl/v1/invoice/create":
 			atomic.AddInt64(&invoiceCreateCalls, 1)
+			requestBody := map[string]any{}
+			if err := json.NewDecoder(r.Body).Decode(&requestBody); err == nil {
+				if amount, ok := requestBody["amount"].(float64); ok {
+					atomic.StoreInt64(&invoiceCreateAmount, int64(amount))
+				}
+			}
+			amount := atomic.LoadInt64(&invoiceCreateAmount)
+			if amount <= 0 {
+				amount = 49_000
+			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": map[string]any{
 					"id":            "inv_123",
 					"transactionId": "trx_123",
 					"invoiceUrl":    "https://pay.example.com/inv_123",
 					"expiredAt":     "2026-03-20T10:00:00Z",
-					"amount":        49000,
+					"amount":        amount,
+				},
+			})
+		case "/hl/v1/coupon/validate":
+			atomic.AddInt64(&couponValidateCalls, 1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": map[string]any{
+					"valid":           true,
+					"coupon_code":     "SAVE10",
+					"discount_amount": 10000,
+					"final_amount":    39000,
 				},
 			})
 		default:
@@ -110,6 +132,7 @@ func TestBillingCheckoutFlow(t *testing.T) {
 
 	checkoutPayload := map[string]any{
 		"plan_code":    "pro_monthly",
+		"coupon_code":  "save10",
 		"redirect_url": "https://app.bisakerja.com/billing/success",
 	}
 	checkoutResponse := performJSONRequest(t, appHandler, http.MethodPost, "/api/v1/billing/checkout-session", checkoutPayload, loginResult.Data.AccessToken)
@@ -120,8 +143,13 @@ func TestBillingCheckoutFlow(t *testing.T) {
 	var checkoutResult struct {
 		Data struct {
 			Provider          string `json:"provider"`
+			PlanCode          string `json:"plan_code"`
 			InvoiceID         string `json:"invoice_id"`
 			TransactionID     string `json:"transaction_id"`
+			OriginalAmount    int64  `json:"original_amount"`
+			DiscountAmount    int64  `json:"discount_amount"`
+			FinalAmount       int64  `json:"final_amount"`
+			CouponCode        string `json:"coupon_code"`
 			SubscriptionState string `json:"subscription_state"`
 			TransactionStatus string `json:"transaction_status"`
 		} `json:"data"`
@@ -135,6 +163,17 @@ func TestBillingCheckoutFlow(t *testing.T) {
 	if checkoutResult.Data.InvoiceID == "" || checkoutResult.Data.TransactionID == "" {
 		t.Fatalf("expected invoice and transaction id, got %+v", checkoutResult.Data)
 	}
+	if checkoutResult.Data.PlanCode != "pro_monthly" {
+		t.Fatalf("expected plan code pro_monthly, got %q", checkoutResult.Data.PlanCode)
+	}
+	if checkoutResult.Data.OriginalAmount != 49_000 ||
+		checkoutResult.Data.DiscountAmount != 10_000 ||
+		checkoutResult.Data.FinalAmount != 39_000 {
+		t.Fatalf("unexpected amount details: %+v", checkoutResult.Data)
+	}
+	if checkoutResult.Data.CouponCode != "SAVE10" {
+		t.Fatalf("expected coupon code SAVE10, got %q", checkoutResult.Data.CouponCode)
+	}
 	if checkoutResult.Data.SubscriptionState != "pending_payment" {
 		t.Fatalf("expected pending_payment state, got %q", checkoutResult.Data.SubscriptionState)
 	}
@@ -147,5 +186,11 @@ func TestBillingCheckoutFlow(t *testing.T) {
 	}
 	if atomic.LoadInt64(&invoiceCreateCalls) != 1 {
 		t.Fatalf("expected invoice/create called once, got %d", atomic.LoadInt64(&invoiceCreateCalls))
+	}
+	if atomic.LoadInt64(&couponValidateCalls) != 1 {
+		t.Fatalf("expected coupon/validate called once, got %d", atomic.LoadInt64(&couponValidateCalls))
+	}
+	if atomic.LoadInt64(&invoiceCreateAmount) != 39_000 {
+		t.Fatalf("expected invoice/create amount 39000, got %d", atomic.LoadInt64(&invoiceCreateAmount))
 	}
 }

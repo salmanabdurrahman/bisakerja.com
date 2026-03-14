@@ -14,8 +14,11 @@ import (
 type fakeProvider struct {
 	ensureCustomerFn func(context.Context, billingdomain.EnsureCustomerInput) (billingdomain.Customer, error)
 	createInvoiceFn  func(context.Context, billingdomain.CreateInvoiceInput) (billingdomain.Invoice, error)
+	validateCouponFn func(context.Context, billingdomain.ValidateCouponInput) (billingdomain.Coupon, error)
 	ensureCalls      int
 	invoiceCalls     int
+	couponCalls      int
+	lastInvoiceInput billingdomain.CreateInvoiceInput
 }
 
 func (f *fakeProvider) EnsureCustomer(
@@ -34,6 +37,7 @@ func (f *fakeProvider) CreateInvoice(
 	input billingdomain.CreateInvoiceInput,
 ) (billingdomain.Invoice, error) {
 	f.invoiceCalls++
+	f.lastInvoiceInput = input
 	if f.createInvoiceFn != nil {
 		return f.createInvoiceFn(ctx, input)
 	}
@@ -44,6 +48,21 @@ func (f *fakeProvider) CreateInvoice(
 		CheckoutURL:   "https://pay.example.com/checkout",
 		Amount:        input.Amount,
 		ExpiresAt:     &expiresAt,
+	}, nil
+}
+
+func (f *fakeProvider) ValidateCoupon(
+	ctx context.Context,
+	input billingdomain.ValidateCouponInput,
+) (billingdomain.Coupon, error) {
+	f.couponCalls++
+	if f.validateCouponFn != nil {
+		return f.validateCouponFn(ctx, input)
+	}
+	return billingdomain.Coupon{
+		Code:           input.Code,
+		DiscountAmount: 0,
+		FinalAmount:    input.Amount,
 	}, nil
 }
 
@@ -72,6 +91,9 @@ func TestService_CreateCheckoutSession_Success(t *testing.T) {
 	if checkout.Provider != billingdomain.PaymentProviderMayar {
 		t.Fatalf("expected provider mayar, got %s", checkout.Provider)
 	}
+	if checkout.PlanCode != billingdomain.PlanCodeProMonthly {
+		t.Fatalf("expected plan code pro_monthly, got %s", checkout.PlanCode)
+	}
 	if checkout.InvoiceID == "" || checkout.TransactionID == "" || checkout.CheckoutURL == "" {
 		t.Fatalf("expected checkout ids and url to be set, got %+v", checkout)
 	}
@@ -81,8 +103,82 @@ func TestService_CreateCheckoutSession_Success(t *testing.T) {
 	if checkout.TransactionStatus != billingdomain.TransactionStatusPending {
 		t.Fatalf("expected transaction status pending, got %s", checkout.TransactionStatus)
 	}
+	if checkout.OriginalAmount != 49_000 || checkout.DiscountAmount != 0 || checkout.FinalAmount != 49_000 {
+		t.Fatalf("unexpected checkout amount details: %+v", checkout)
+	}
+	if checkout.CouponCode != "" {
+		t.Fatalf("expected empty coupon code, got %q", checkout.CouponCode)
+	}
 	if checkout.Reused {
 		t.Fatal("expected first checkout to not be reused")
+	}
+}
+
+func TestService_CreateCheckoutSession_WithCoupon(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user := seedUser(t, identityRepository, false, nil)
+	transactionRepository := memory.NewBillingRepository()
+	provider := &fakeProvider{
+		validateCouponFn: func(context.Context, billingdomain.ValidateCouponInput) (billingdomain.Coupon, error) {
+			return billingdomain.Coupon{
+				Code:           "SAVE10",
+				DiscountAmount: 10_000,
+				FinalAmount:    39_000,
+			}, nil
+		},
+	}
+
+	service := NewService(identityRepository, transactionRepository, provider, Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+		IdempotencyWindow: 15 * time.Minute,
+		RateLimitWindow:   10 * time.Second,
+	})
+
+	checkout, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		CouponCode:     "save10",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		IdempotencyKey: "idem-coupon",
+	})
+	if err != nil {
+		t.Fatalf("create checkout session with coupon: %v", err)
+	}
+	if provider.lastInvoiceInput.Amount != 39_000 {
+		t.Fatalf("expected invoice amount 39000, got %d", provider.lastInvoiceInput.Amount)
+	}
+	if checkout.OriginalAmount != 49_000 || checkout.DiscountAmount != 10_000 || checkout.FinalAmount != 39_000 {
+		t.Fatalf("unexpected checkout amount details: %+v", checkout)
+	}
+	if checkout.CouponCode != "SAVE10" {
+		t.Fatalf("expected coupon code SAVE10, got %q", checkout.CouponCode)
+	}
+}
+
+func TestService_CreateCheckoutSession_InvalidCoupon(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user := seedUser(t, identityRepository, false, nil)
+	transactionRepository := memory.NewBillingRepository()
+	provider := &fakeProvider{
+		validateCouponFn: func(context.Context, billingdomain.ValidateCouponInput) (billingdomain.Coupon, error) {
+			return billingdomain.Coupon{}, billingdomain.ErrCouponInvalid
+		},
+	}
+
+	service := NewService(identityRepository, transactionRepository, provider, Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+		IdempotencyWindow: 15 * time.Minute,
+		RateLimitWindow:   10 * time.Second,
+	})
+
+	_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:      user.ID,
+		PlanCode:    "pro_monthly",
+		CouponCode:  "bad-code",
+		RedirectURL: "https://app.bisakerja.com/billing/success",
+	})
+	if !errors.Is(err, ErrInvalidCouponCode) {
+		t.Fatalf("expected ErrInvalidCouponCode, got %v", err)
 	}
 }
 

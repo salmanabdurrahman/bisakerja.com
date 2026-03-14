@@ -56,6 +56,8 @@ Dokumen ini menyelaraskan kebutuhan Bisakerja dengan dokumentasi resmi Mayar (`/
 | SaaS license verify | `POST` | `https://api.mayar.id/saas/v1/license/verify` |
 | SaaS license activate/deactivate | `POST` | `https://api.mayar.id/saas/v1/license/activate`, `https://api.mayar.id/saas/v1/license/deactivate` |
 
+Catatan progress saat ini: increment awal Phase 4 sudah mulai memakai `GET /coupon/validate` pada flow internal `POST /api/v1/billing/checkout-session` ketika request menyertakan `coupon_code`.
+
 ## 4) Webhook Event yang Relevan
 
 Berdasarkan dokumentasi integration webhook Mayar:

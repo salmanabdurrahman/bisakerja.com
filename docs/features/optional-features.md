@@ -16,11 +16,13 @@ Dokumen ini merinci fitur tambahan yang tidak wajib untuk MVP, tetapi bernilai t
 - ✅ Notification Frequency Control (Instant/Digest)
 - ✅ In-App Notification Center
 - ✅ Company Watchlist
+- 🟡 Phase 4 increment started: coupon-enabled checkout (`coupon_code` -> Mayar `/coupon/validate`)
 
 Catatan implementasi saat ini:
 
 - backend sudah menyediakan kontrak CRUD/read model dan preference control untuk fitur growth,
 - delivery terjadwal berbasis saved-search/watchlist masih mengikuti orchestrasi matcher/worker yang ada (hook scheduler batch lanjutan bisa dilanjutkan di phase berikutnya).
+- advanced billing baru masuk increment pertama (coupon validation + discounted invoice amount); installment/payment request/qrcode belum diaktifkan.
 
 ## Daftar Fitur Opsional
 

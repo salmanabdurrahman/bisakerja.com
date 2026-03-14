@@ -20,6 +20,9 @@ import (
 type handlerProviderStub struct {
 	ensureCustomerErr error
 	createInvoiceErr  error
+	validateCouponErr error
+	validateCoupon    billingdomain.Coupon
+	lastInvoiceInput  billingdomain.CreateInvoiceInput
 }
 
 func (s *handlerProviderStub) EnsureCustomer(
@@ -40,6 +43,7 @@ func (s *handlerProviderStub) CreateInvoice(
 	_ context.Context,
 	input billingdomain.CreateInvoiceInput,
 ) (billingdomain.Invoice, error) {
+	s.lastInvoiceInput = input
 	if s.createInvoiceErr != nil {
 		return billingdomain.Invoice{}, s.createInvoiceErr
 	}
@@ -50,6 +54,23 @@ func (s *handlerProviderStub) CreateInvoice(
 		CheckoutURL:   "https://pay.example.com/checkout",
 		Amount:        input.Amount,
 		ExpiresAt:     &expiredAt,
+	}, nil
+}
+
+func (s *handlerProviderStub) ValidateCoupon(
+	_ context.Context,
+	input billingdomain.ValidateCouponInput,
+) (billingdomain.Coupon, error) {
+	if s.validateCouponErr != nil {
+		return billingdomain.Coupon{}, s.validateCouponErr
+	}
+	if s.validateCoupon.Code != "" || s.validateCoupon.DiscountAmount > 0 || s.validateCoupon.FinalAmount > 0 {
+		return s.validateCoupon, nil
+	}
+	return billingdomain.Coupon{
+		Code:           input.Code,
+		DiscountAmount: 0,
+		FinalAmount:    input.Amount,
 	}, nil
 }
 
@@ -68,6 +89,10 @@ func TestBillingHandler_CreateCheckoutSession_Success(t *testing.T) {
 
 	var payload struct {
 		Data struct {
+			PlanCode          string `json:"plan_code"`
+			OriginalAmount    int64  `json:"original_amount"`
+			DiscountAmount    int64  `json:"discount_amount"`
+			FinalAmount       int64  `json:"final_amount"`
 			Provider          string `json:"provider"`
 			TransactionStatus string `json:"transaction_status"`
 			SubscriptionState string `json:"subscription_state"`
@@ -78,6 +103,12 @@ func TestBillingHandler_CreateCheckoutSession_Success(t *testing.T) {
 	}
 	if payload.Data.Provider != "mayar" {
 		t.Fatalf("expected provider mayar, got %q", payload.Data.Provider)
+	}
+	if payload.Data.PlanCode != "pro_monthly" {
+		t.Fatalf("expected plan code pro_monthly, got %q", payload.Data.PlanCode)
+	}
+	if payload.Data.OriginalAmount != 49_000 || payload.Data.DiscountAmount != 0 || payload.Data.FinalAmount != 49_000 {
+		t.Fatalf("unexpected checkout amount details: %+v", payload.Data)
 	}
 	if payload.Data.TransactionStatus != "pending" {
 		t.Fatalf("expected pending status, got %q", payload.Data.TransactionStatus)
@@ -133,6 +164,12 @@ func TestBillingHandler_CreateCheckoutSession_ErrorMatrix(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
+			name:         "invalid coupon code",
+			payload:      map[string]any{"plan_code": "pro_monthly", "coupon_code": "SAVE99", "redirect_url": "https://app.bisakerja.com/billing/success"},
+			provider:     &handlerProviderStub{validateCouponErr: billingdomain.ErrCouponInvalid},
+			expectedCode: http.StatusBadRequest,
+		},
+		{
 			name:          "already premium",
 			isPremiumUser: true,
 			payload:       map[string]any{"plan_code": "pro_monthly", "redirect_url": "https://app.bisakerja.com/billing/success"},
@@ -181,6 +218,47 @@ func TestBillingHandler_CreateCheckoutSession_ErrorMatrix(t *testing.T) {
 				t.Fatalf("expected status %d, got %d (%s)", testCase.expectedCode, recorder.Code, recorder.Body.String())
 			}
 		})
+	}
+}
+
+func TestBillingHandler_CreateCheckoutSession_WithCoupon(t *testing.T) {
+	provider := &handlerProviderStub{
+		validateCoupon: billingdomain.Coupon{
+			Code:           "SAVE10",
+			DiscountAmount: 10_000,
+			FinalAmount:    39_000,
+		},
+	}
+	handler, userID := setupBillingHandler(t, false, provider)
+
+	requestBody := map[string]any{
+		"plan_code":    "pro_monthly",
+		"coupon_code":  "save10",
+		"redirect_url": "https://app.bisakerja.com/billing/success",
+	}
+	recorder := performCheckoutRequest(t, handler, requestBody, userID, "idem-coupon")
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d (%s)", recorder.Code, recorder.Body.String())
+	}
+	if provider.lastInvoiceInput.Amount != 39_000 {
+		t.Fatalf("expected invoice amount 39000, got %d", provider.lastInvoiceInput.Amount)
+	}
+
+	var payload struct {
+		Data struct {
+			CouponCode     string `json:"coupon_code"`
+			DiscountAmount int64  `json:"discount_amount"`
+			FinalAmount    int64  `json:"final_amount"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.Data.CouponCode != "SAVE10" {
+		t.Fatalf("expected coupon_code SAVE10, got %q", payload.Data.CouponCode)
+	}
+	if payload.Data.DiscountAmount != 10_000 || payload.Data.FinalAmount != 39_000 {
+		t.Fatalf("unexpected discount/final amount: %+v", payload.Data)
 	}
 }
 

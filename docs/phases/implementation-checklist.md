@@ -41,7 +41,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | M2 | Comments/docstrings pass sesuai standar | ✅ Complete |
 | M3 | English migration (UI + API user-facing messages) | ✅ Complete |
 | M4 | Frontend redesign + growth hardening | ✅ Complete |
-| M5 | Phase 4 backend execution | 📝 Documented |
+| M5 | Phase 4 backend execution | 🟡 In Progress |
 
 Catatan progress M1 saat ini:
 
@@ -159,7 +159,7 @@ Catatan progress M4 saat ini:
 
 | Item                                         | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | -------------------------------------------- | ------ | ------------- | ------------- | ----------- | ----------------- |
-| advanced billing (coupon/installment/qrcode) | ⬜     | -             | -             | -           | -                 |
+| advanced billing (coupon/installment/qrcode) | 🟡     | `apps/api/internal/app/billing/service.go`, `apps/api/internal/adapter/http/handler/billing_handler.go`, `apps/api/internal/adapter/billing/mayar/client.go`, `apps/api/internal/domain/billing/billing.go`, `apps/api/pkg/errcode/codes.go` | `apps/api/internal/app/billing/service_test.go`, `apps/api/internal/adapter/http/handler/billing_handler_test.go`, `apps/api/internal/adapter/billing/mayar/client_test.go`, `apps/api/test/integration/billing_checkout_flow_test.go` | local gate pass: `make -C apps/api lint test build check-migrations` | `docs/api/billing.md`, `docs/api/errors.md`, `docs/features/optional-features.md`, `docs/phases/implementation-roadmap.md` |
 | salary normalization lanjutan                | ⬜     | -             | -             | -           | -                 |
 | semantic recommendation                      | ⬜     | -             | -             | -           | -                 |
 | B2B team subscription                        | ⬜     | -             | -             | -           | -                 |

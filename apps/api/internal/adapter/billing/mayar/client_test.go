@@ -204,3 +204,81 @@ func TestClient_GetInvoiceByID_ExhaustedRateLimit(t *testing.T) {
 		t.Fatalf("expected 3 attempts with maxRetries=2, got %d", atomic.LoadInt64(&attempts))
 	}
 }
+
+func TestClient_ValidateCoupon_Success(t *testing.T) {
+	var calls int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/hl/v1/coupon/validate" {
+			http.NotFound(w, r)
+			return
+		}
+		atomic.AddInt64(&calls, 1)
+		if r.URL.Query().Get("amount") != "49000" {
+			t.Fatalf("unexpected amount query: %s", r.URL.Query().Get("amount"))
+		}
+		if r.URL.Query().Get("code") == "" && r.URL.Query().Get("coupon_code") == "" {
+			t.Fatal("expected coupon query parameter to be present")
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"valid":           true,
+				"coupon_code":     "SAVE10",
+				"discount_amount": 10000,
+				"final_amount":    39000,
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(ClientConfig{
+		BaseURL:    server.URL + "/hl/v1",
+		APIKey:     "test-key",
+		MaxRetries: 2,
+		Sleep:      func(time.Duration) {},
+		RandIntn:   func(int) int { return 0 },
+	})
+
+	coupon, err := client.ValidateCoupon(context.Background(), billingdomain.ValidateCouponInput{
+		Code:   "save10",
+		Amount: 49_000,
+	})
+	if err != nil {
+		t.Fatalf("validate coupon: %v", err)
+	}
+	if coupon.Code != "SAVE10" {
+		t.Fatalf("expected coupon code SAVE10, got %s", coupon.Code)
+	}
+	if coupon.DiscountAmount != 10_000 || coupon.FinalAmount != 39_000 {
+		t.Fatalf("unexpected coupon payload: %+v", coupon)
+	}
+	if atomic.LoadInt64(&calls) != 1 {
+		t.Fatalf("expected 1 validate call, got %d", atomic.LoadInt64(&calls))
+	}
+}
+
+func TestClient_ValidateCoupon_InvalidCode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/hl/v1/coupon/validate" {
+			http.NotFound(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer server.Close()
+
+	client := NewClient(ClientConfig{
+		BaseURL:    server.URL + "/hl/v1",
+		APIKey:     "test-key",
+		MaxRetries: 2,
+		Sleep:      func(time.Duration) {},
+		RandIntn:   func(int) int { return 0 },
+	})
+
+	_, err := client.ValidateCoupon(context.Background(), billingdomain.ValidateCouponInput{
+		Code:   "bad-code",
+		Amount: 49_000,
+	})
+	if !errors.Is(err, billingdomain.ErrCouponInvalid) {
+		t.Fatalf("expected ErrCouponInvalid, got %v", err)
+	}
+}

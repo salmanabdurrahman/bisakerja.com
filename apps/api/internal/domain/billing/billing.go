@@ -34,6 +34,7 @@ var (
 	ErrTransactionNotFound          = errors.New("transaction not found")
 	ErrWebhookDeliveryNotFound      = errors.New("webhook delivery not found")
 	ErrWebhookDeliveryAlreadyExists = errors.New("webhook delivery already exists")
+	ErrCouponInvalid                = errors.New("coupon invalid")
 	ErrProviderRateLimited          = errors.New("provider rate limited")
 	ErrProviderUpstream             = errors.New("provider upstream error")
 	ErrProviderUnavailable          = errors.New("provider unavailable")
@@ -150,10 +151,28 @@ type Invoice struct {
 	ExpiresAt     *time.Time
 }
 
+// ValidateCouponInput contains input parameters for coupon validation.
+type ValidateCouponInput struct {
+	Code   string
+	Amount int64
+}
+
+// Coupon represents normalized coupon validation result.
+type Coupon struct {
+	Code           string
+	DiscountAmount int64
+	FinalAmount    int64
+}
+
 // Provider defines behavior for provider.
 type Provider interface {
 	EnsureCustomer(ctx context.Context, input EnsureCustomerInput) (Customer, error)
 	CreateInvoice(ctx context.Context, input CreateInvoiceInput) (Invoice, error)
+}
+
+// CouponValidator defines behavior for coupon validation provider.
+type CouponValidator interface {
+	ValidateCoupon(ctx context.Context, input ValidateCouponInput) (Coupon, error)
 }
 
 // InvoiceSnapshot represents invoice snapshot.

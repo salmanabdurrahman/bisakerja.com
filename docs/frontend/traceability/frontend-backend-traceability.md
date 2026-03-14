@@ -29,6 +29,7 @@ Matriks ini memetakan modul/journey frontend user-facing ke kontrak API backend,
 
 - **Auth login/refresh**: `access_token`, `refresh_token`, `expires_in`, `token_type`.
 - **Auth me**: `id`, `email`, `name`, `role`, `is_premium`, `premium_expired_at`.
+- **Billing checkout session**: `checkout_url`, `subscription_state`, `transaction_status`, dan amount breakdown (`original_amount`, `discount_amount`, `final_amount`); `coupon_code` bersifat opsional.
 - **Billing status**: `subscription_state` (source of truth entitlement), `last_transaction_status`.
 - **Jobs list**: `data[]` + `meta.pagination` (`page`, `limit`, `total_pages`, `total_records`).
 - **Preferences read/write**: `keywords`, `locations`, `job_types`, `salary_min`, `updated_at`.

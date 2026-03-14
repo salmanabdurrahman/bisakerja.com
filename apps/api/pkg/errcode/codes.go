@@ -17,6 +17,7 @@ const (
 	InvalidSalaryMin       = "INVALID_SALARY_MIN"
 	InvalidJobType         = "INVALID_JOB_TYPE"
 	InvalidPlanCode        = "INVALID_PLAN_CODE"
+	InvalidCouponCode      = "INVALID_COUPON_CODE"
 	InvalidRedirectURL     = "INVALID_REDIRECT_URL"
 	InvalidWebhookPayload  = "INVALID_WEBHOOK_PAYLOAD"
 	InvalidWebhookToken    = "INVALID_WEBHOOK_TOKEN" // #nosec G101 -- API error code, not secret material.
