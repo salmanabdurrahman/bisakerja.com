@@ -11,15 +11,19 @@ import (
 )
 
 type BillingRepository struct {
-	mu                sync.RWMutex
-	transactions      map[string]billing.Transaction
-	idempotencyToTxID map[string]string
+	mu                   sync.RWMutex
+	transactions         map[string]billing.Transaction
+	idempotencyToTxID    map[string]string
+	mayarTransactionToID map[string]string
+	webhookByIdempotency map[string]billing.WebhookDelivery
 }
 
 func NewBillingRepository() *BillingRepository {
 	return &BillingRepository{
-		transactions:      make(map[string]billing.Transaction),
-		idempotencyToTxID: make(map[string]string),
+		transactions:         make(map[string]billing.Transaction),
+		idempotencyToTxID:    make(map[string]string),
+		mayarTransactionToID: make(map[string]string),
+		webhookByIdempotency: make(map[string]billing.WebhookDelivery),
 	}
 }
 
@@ -78,6 +82,7 @@ func (r *BillingRepository) CreatePending(
 	}
 
 	r.transactions[transactionID] = transaction
+	r.mayarTransactionToID[strings.TrimSpace(input.MayarTransactionID)] = transactionID
 	if idempotencyKey != "" {
 		r.idempotencyToTxID[idempotencyCompositeKey(userID, idempotencyKey)] = transactionID
 	}
@@ -123,6 +128,118 @@ func (r *BillingRepository) FindPendingByUserAndIdempotencyKey(
 	return cloneBillingTransaction(item), nil
 }
 
+func (r *BillingRepository) GetByMayarTransactionID(
+	_ context.Context,
+	mayarTransactionID string,
+) (billing.Transaction, error) {
+	normalizedID := strings.TrimSpace(mayarTransactionID)
+	if normalizedID == "" {
+		return billing.Transaction{}, billing.ErrTransactionNotFound
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	txID, exists := r.mayarTransactionToID[normalizedID]
+	if !exists {
+		return billing.Transaction{}, billing.ErrTransactionNotFound
+	}
+	item, exists := r.transactions[txID]
+	if !exists {
+		return billing.Transaction{}, billing.ErrTransactionNotFound
+	}
+	return cloneBillingTransaction(item), nil
+}
+
+func (r *BillingRepository) UpdateStatusByMayarTransactionID(
+	_ context.Context,
+	mayarTransactionID string,
+	status billing.TransactionStatus,
+	metadata map[string]any,
+	updatedAt time.Time,
+) (billing.Transaction, error) {
+	normalizedID := strings.TrimSpace(mayarTransactionID)
+	if normalizedID == "" {
+		return billing.Transaction{}, billing.ErrTransactionNotFound
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	txID, exists := r.mayarTransactionToID[normalizedID]
+	if !exists {
+		return billing.Transaction{}, billing.ErrTransactionNotFound
+	}
+	item, exists := r.transactions[txID]
+	if !exists {
+		return billing.Transaction{}, billing.ErrTransactionNotFound
+	}
+
+	item.Status = status
+	item.Metadata = cloneMap(metadata)
+	item.UpdatedAt = updatedAt.UTC()
+	r.transactions[txID] = item
+
+	return cloneBillingTransaction(item), nil
+}
+
+func (r *BillingRepository) GetWebhookDeliveryByIdempotencyKey(
+	_ context.Context,
+	idempotencyKey string,
+) (billing.WebhookDelivery, error) {
+	normalizedKey := strings.TrimSpace(idempotencyKey)
+	if normalizedKey == "" {
+		return billing.WebhookDelivery{}, billing.ErrWebhookDeliveryNotFound
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	delivery, exists := r.webhookByIdempotency[normalizedKey]
+	if !exists {
+		return billing.WebhookDelivery{}, billing.ErrWebhookDeliveryNotFound
+	}
+	return cloneWebhookDelivery(delivery), nil
+}
+
+func (r *BillingRepository) RecordWebhookDelivery(
+	_ context.Context,
+	delivery billing.WebhookDelivery,
+) (billing.WebhookDelivery, error) {
+	idempotencyKey := strings.TrimSpace(delivery.IdempotencyKey)
+	if idempotencyKey == "" {
+		return billing.WebhookDelivery{}, fmt.Errorf("record webhook delivery: idempotency key is required")
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.webhookByIdempotency[idempotencyKey]; exists {
+		return billing.WebhookDelivery{}, billing.ErrWebhookDeliveryAlreadyExists
+	}
+
+	now := time.Now().UTC()
+	stored := billing.WebhookDelivery{
+		ID:               "whd_" + randomHex(12),
+		Provider:         delivery.Provider,
+		EventType:        strings.TrimSpace(delivery.EventType),
+		TransactionID:    strings.TrimSpace(delivery.TransactionID),
+		IdempotencyKey:   idempotencyKey,
+		ProcessingStatus: delivery.ProcessingStatus,
+		Payload:          cloneMap(delivery.Payload),
+		ErrorMessage:     strings.TrimSpace(delivery.ErrorMessage),
+		ReceivedAt:       now,
+		ProcessedAt:      cloneTime(delivery.ProcessedAt),
+	}
+	if stored.ProcessedAt == nil {
+		processedAt := now
+		stored.ProcessedAt = &processedAt
+	}
+
+	r.webhookByIdempotency[idempotencyKey] = stored
+	return cloneWebhookDelivery(stored), nil
+}
+
 func idempotencyCompositeKey(userID, idempotencyKey string) string {
 	return strings.ToLower(strings.TrimSpace(userID)) + "|" + strings.TrimSpace(idempotencyKey)
 }
@@ -131,6 +248,13 @@ func cloneBillingTransaction(value billing.Transaction) billing.Transaction {
 	result := value
 	result.ExpiresAt = cloneTime(value.ExpiresAt)
 	result.Metadata = cloneMap(value.Metadata)
+	return result
+}
+
+func cloneWebhookDelivery(value billing.WebhookDelivery) billing.WebhookDelivery {
+	result := value
+	result.Payload = cloneMap(value.Payload)
+	result.ProcessedAt = cloneTime(value.ProcessedAt)
 	return result
 }
 

@@ -20,6 +20,7 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("MAYAR_API_KEY", "")
 	t.Setenv("MAYAR_REQUEST_TIMEOUT", "")
 	t.Setenv("MAYAR_MAX_RETRIES", "")
+	t.Setenv("BILLING_WEBHOOK_TOKEN", "")
 	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "")
 	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "")
 	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "")
@@ -82,6 +83,10 @@ func TestLoad_DefaultValues(t *testing.T) {
 		t.Fatalf("expected default mayar max retries 3, got %d", cfg.MayarMaxRetries)
 	}
 
+	if cfg.BillingWebhookToken != "bisakerja-dev-webhook-token" {
+		t.Fatalf("expected default billing webhook token, got %q", cfg.BillingWebhookToken)
+	}
+
 	if len(cfg.BillingRedirectAllowlist) != 2 ||
 		cfg.BillingRedirectAllowlist[0] != "app.bisakerja.com" ||
 		cfg.BillingRedirectAllowlist[1] != "localhost:3000" {
@@ -112,6 +117,7 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("MAYAR_API_KEY", "test-api-key")
 	t.Setenv("MAYAR_REQUEST_TIMEOUT", "8s")
 	t.Setenv("MAYAR_MAX_RETRIES", "5")
+	t.Setenv("BILLING_WEBHOOK_TOKEN", "super-webhook-token")
 	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,staging.bisakerja.com")
 	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "20m")
 	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "12s")
@@ -172,6 +178,10 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 	if cfg.MayarMaxRetries != 5 {
 		t.Fatalf("expected mayar max retries 5, got %d", cfg.MayarMaxRetries)
+	}
+
+	if cfg.BillingWebhookToken != "super-webhook-token" {
+		t.Fatalf("expected billing webhook token override, got %q", cfg.BillingWebhookToken)
 	}
 
 	if len(cfg.BillingRedirectAllowlist) != 2 ||

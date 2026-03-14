@@ -96,6 +96,39 @@ func (r *IdentityRepository) GetUserByEmail(_ context.Context, email string) (id
 	return user, nil
 }
 
+func (r *IdentityRepository) UpdatePremiumStatus(
+	_ context.Context,
+	userID string,
+	isPremium bool,
+	premiumExpiredAt *time.Time,
+) (identity.User, error) {
+	trimmedUserID := strings.TrimSpace(userID)
+	if trimmedUserID == "" {
+		return identity.User{}, fmt.Errorf("update premium status: user id is required")
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	user, exists := r.usersByID[trimmedUserID]
+	if !exists {
+		return identity.User{}, identity.ErrUserNotFound
+	}
+
+	now := time.Now().UTC()
+	user.IsPremium = isPremium
+	if premiumExpiredAt != nil {
+		cloned := premiumExpiredAt.UTC()
+		user.PremiumExpiredAt = &cloned
+	} else {
+		user.PremiumExpiredAt = nil
+	}
+	user.UpdatedAt = now
+
+	r.usersByID[trimmedUserID] = user
+	return user, nil
+}
+
 func (r *IdentityRepository) ListUsers(_ context.Context) ([]identity.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

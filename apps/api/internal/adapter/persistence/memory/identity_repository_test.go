@@ -77,3 +77,28 @@ func TestIdentityRepository_DefaultAndSavePreferences(t *testing.T) {
 		t.Fatalf("unexpected saved preferences: %+v", saved)
 	}
 }
+
+func TestIdentityRepository_UpdatePremiumStatus(t *testing.T) {
+	repository := NewIdentityRepository()
+	user, err := repository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:        "premium@example.com",
+		PasswordHash: "hash",
+		Name:         "Santi",
+		Role:         identity.RoleUser,
+	})
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	expiredAt := time.Now().UTC().Add(30 * 24 * time.Hour)
+	updated, err := repository.UpdatePremiumStatus(context.Background(), user.ID, true, &expiredAt)
+	if err != nil {
+		t.Fatalf("update premium status: %v", err)
+	}
+	if !updated.IsPremium {
+		t.Fatal("expected is_premium true after update")
+	}
+	if updated.PremiumExpiredAt == nil || !updated.PremiumExpiredAt.Equal(expiredAt) {
+		t.Fatalf("expected premium_expired_at %v, got %v", expiredAt, updated.PremiumExpiredAt)
+	}
+}

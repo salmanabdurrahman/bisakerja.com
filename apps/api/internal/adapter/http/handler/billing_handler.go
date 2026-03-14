@@ -19,10 +19,15 @@ type BillingCheckoutService interface {
 		ctx context.Context,
 		input billingapp.CreateCheckoutSessionInput,
 	) (billingapp.CheckoutSession, error)
+	ProcessMayarWebhook(
+		ctx context.Context,
+		input billingapp.ProcessMayarWebhookInput,
+	) (billingapp.ProcessMayarWebhookResult, error)
 }
 
 type BillingHandler struct {
-	service BillingCheckoutService
+	service      BillingCheckoutService
+	webhookToken string
 }
 
 type createCheckoutSessionRequest struct {
@@ -30,8 +35,15 @@ type createCheckoutSessionRequest struct {
 	RedirectURL string `json:"redirect_url"`
 }
 
-func NewBillingHandler(service BillingCheckoutService) *BillingHandler {
-	return &BillingHandler{service: service}
+func NewBillingHandler(service BillingCheckoutService, webhookToken ...string) *BillingHandler {
+	token := ""
+	if len(webhookToken) > 0 {
+		token = strings.TrimSpace(webhookToken[0])
+	}
+	return &BillingHandler{
+		service:      service,
+		webhookToken: token,
+	}
 }
 
 func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
@@ -128,5 +140,69 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 		"expired_at":         checkout.ExpiredAt,
 		"subscription_state": checkout.SubscriptionState,
 		"transaction_status": checkout.TransactionStatus,
+	})
+}
+
+func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	if strings.TrimSpace(h.webhookToken) == "" {
+		response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
+			Code:    errcode.ServiceUnavailable,
+			Message: "webhook token is not configured",
+		}})
+		return
+	}
+
+	token := strings.TrimSpace(r.Header.Get("X-Bisakerja-Webhook-Token"))
+	if token == "" || token != h.webhookToken {
+		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+			Code:    errcode.InvalidWebhookToken,
+			Message: "invalid webhook token",
+		}})
+		return
+	}
+
+	payload := map[string]any{}
+	if err := decodeJSONBody(r, &payload); err != nil {
+		response.WriteError(w, http.StatusBadRequest, "Invalid request body", requestID, []response.ErrorItem{{
+			Code:    errcode.InvalidWebhookPayload,
+			Message: "webhook payload must be valid JSON object",
+		}})
+		return
+	}
+
+	result, err := h.service.ProcessMayarWebhook(r.Context(), billingapp.ProcessMayarWebhookInput{
+		Payload: payload,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, billingapp.ErrInvalidWebhookPayload):
+			response.WriteError(w, http.StatusBadRequest, "Bad request", requestID, []response.ErrorItem{{
+				Code:    errcode.InvalidWebhookPayload,
+				Message: "webhook payload is invalid",
+			}})
+		case errors.Is(err, billingapp.ErrWebhookUserNotFound):
+			response.WriteError(w, http.StatusUnprocessableEntity, "Unprocessable entity", requestID, []response.ErrorItem{{
+				Code:    errcode.WebhookUserNotFound,
+				Message: "webhook user not found",
+			}})
+		case errors.Is(err, billingapp.ErrServiceUnavailable):
+			response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
+				Code:    errcode.ServiceUnavailable,
+				Message: "webhook processing dependency unavailable",
+			}})
+		default:
+			response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
+				Code:    errcode.ServiceUnavailable,
+				Message: "failed to process webhook",
+			}})
+		}
+		return
+	}
+
+	response.WriteSuccess(w, http.StatusOK, "Webhook processed", requestID, map[string]any{
+		"provider":   result.Provider,
+		"processed":  result.Processed,
+		"idempotent": result.Idempotent,
 	})
 }

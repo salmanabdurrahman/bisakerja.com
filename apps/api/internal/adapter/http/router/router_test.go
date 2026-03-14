@@ -155,7 +155,7 @@ func TestNew_RegistersBillingRouteWhenDependencyProvided(t *testing.T) {
 		&routerTestBillingProvider{},
 		billingapp.Config{RedirectAllowlist: []string{"app.bisakerja.com"}},
 	)
-	billingHandler := handler.NewBillingHandler(billingService)
+	billingHandler := handler.NewBillingHandler(billingService, "router-webhook-token")
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 
 	appHandler := New(logger, Dependencies{
@@ -174,6 +174,35 @@ func TestNew_RegistersBillingRouteWhenDependencyProvided(t *testing.T) {
 
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("expected billing route to be protected with 401, got %d", response.Code)
+	}
+}
+
+func TestNew_RegistersWebhookRouteWhenBillingDependencyProvided(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	identityRepository := memory.NewIdentityRepository()
+	billingService := billingapp.NewService(
+		identityRepository,
+		memory.NewBillingRepository(),
+		&routerTestBillingProvider{},
+		billingapp.Config{RedirectAllowlist: []string{"app.bisakerja.com"}},
+	)
+	billingHandler := handler.NewBillingHandler(billingService, "router-webhook-token")
+
+	appHandler := New(logger, Dependencies{
+		BillingHandler: billingHandler,
+	})
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/webhook/mayar",
+		strings.NewReader(`{"event":"payment.received","data":{"transactionId":"trx_router","customerEmail":"user@example.com"}}`),
+	)
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	appHandler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected webhook route to return 401 (registered + token protected), got %d", response.Code)
 	}
 }
 

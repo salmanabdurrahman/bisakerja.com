@@ -54,6 +54,9 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.BillingHandler.CreateCheckoutSession)),
 		)
 	}
+	if deps.BillingHandler != nil {
+		mux.HandleFunc("POST /api/v1/webhook/mayar", deps.BillingHandler.HandleMayarWebhook)
+	}
 
 	return observability.RequestID(withRecovery(logger, mux))
 }

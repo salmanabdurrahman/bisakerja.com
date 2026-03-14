@@ -56,7 +56,7 @@ func main() {
 		IdempotencyWindow: cfg.BillingIdempotencyWindow,
 		RateLimitWindow:   cfg.BillingUserRateLimitWindow,
 	})
-	billingHandler := handler.NewBillingHandler(billingService)
+	billingHandler := handler.NewBillingHandler(billingService, cfg.BillingWebhookToken)
 
 	httpHandler := router.New(appLogger, router.Dependencies{
 		JobsHandler:        jobsHandler,

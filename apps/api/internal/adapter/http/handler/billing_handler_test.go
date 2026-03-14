@@ -184,10 +184,110 @@ func TestBillingHandler_CreateCheckoutSession_ErrorMatrix(t *testing.T) {
 	}
 }
 
+func TestBillingHandler_HandleMayarWebhook(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:        "webhook-handler@example.com",
+		PasswordHash: "hashed-password",
+		Name:         "Webhook Handler User",
+		Role:         identity.RoleUser,
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	transactionRepository := memory.NewBillingRepository()
+	now := time.Now().UTC()
+	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
+		UserID:             user.ID,
+		Provider:           billingdomain.PaymentProviderMayar,
+		PlanCode:           billingdomain.PlanCodeProMonthly,
+		MayarTransactionID: "trx_handler_webhook",
+		InvoiceID:          "inv_handler_webhook",
+		CheckoutURL:        "https://pay.example.com/checkout",
+		Amount:             49_000,
+		ExpiresAt:          &now,
+	})
+	if err != nil {
+		t.Fatalf("seed transaction: %v", err)
+	}
+
+	service := billingapp.NewService(identityRepository, transactionRepository, &handlerProviderStub{}, billingapp.Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+	})
+	handler := NewBillingHandler(service, "webhook-secret")
+
+	unauthorized := performWebhookRequest(t, handler, map[string]any{
+		"event": "payment.received",
+		"data": map[string]any{
+			"transactionId": "trx_handler_webhook",
+			"customerEmail": "webhook-handler@example.com",
+		},
+	}, "")
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatalf("expected webhook unauthorized 401, got %d", unauthorized.Code)
+	}
+
+	invalidPayload := performWebhookRequest(t, handler, map[string]any{
+		"event": "payment.received",
+	}, "webhook-secret")
+	if invalidPayload.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid payload 400, got %d", invalidPayload.Code)
+	}
+
+	userNotFound := performWebhookRequest(t, handler, map[string]any{
+		"event": "payment.received",
+		"data": map[string]any{
+			"transactionId": "trx_user_missing",
+			"customerEmail": "missing-user@example.com",
+		},
+	}, "webhook-secret")
+	if userNotFound.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected user not found 422, got %d", userNotFound.Code)
+	}
+
+	success := performWebhookRequest(t, handler, map[string]any{
+		"event": "payment.received",
+		"data": map[string]any{
+			"transactionId":     "trx_handler_webhook",
+			"transactionStatus": "paid",
+			"customerEmail":     "webhook-handler@example.com",
+		},
+	}, "webhook-secret")
+	if success.Code != http.StatusOK {
+		t.Fatalf("expected webhook success 200, got %d (%s)", success.Code, success.Body.String())
+	}
+
+	duplicate := performWebhookRequest(t, handler, map[string]any{
+		"event": "payment.received",
+		"data": map[string]any{
+			"transactionId":     "trx_handler_webhook",
+			"transactionStatus": "paid",
+			"customerEmail":     "webhook-handler@example.com",
+		},
+	}, "webhook-secret")
+	if duplicate.Code != http.StatusOK {
+		t.Fatalf("expected webhook duplicate 200, got %d (%s)", duplicate.Code, duplicate.Body.String())
+	}
+
+	serviceUnavailable := performWebhookRequest(t, handler, map[string]any{
+		"event": "payment.received",
+		"data": map[string]any{
+			"transactionId":     "trx_missing_transaction",
+			"transactionStatus": "paid",
+			"customerEmail":     "webhook-handler@example.com",
+		},
+	}, "webhook-secret")
+	if serviceUnavailable.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected webhook service unavailable 503, got %d", serviceUnavailable.Code)
+	}
+}
+
 func setupBillingHandler(
 	t *testing.T,
 	isPremiumUser bool,
 	provider billingdomain.Provider,
+	webhookToken ...string,
 ) (*BillingHandler, string) {
 	t.Helper()
 
@@ -216,7 +316,7 @@ func setupBillingHandler(
 		RateLimitWindow:   10 * time.Second,
 	})
 
-	return NewBillingHandler(service), user.ID
+	return NewBillingHandler(service, webhookToken...), user.ID
 }
 
 func performCheckoutRequest(
@@ -245,5 +345,29 @@ func performCheckoutRequest(
 
 	recorder := httptest.NewRecorder()
 	handler.CreateCheckoutSession(recorder, request)
+	return recorder
+}
+
+func performWebhookRequest(
+	t *testing.T,
+	handler *BillingHandler,
+	payload map[string]any,
+	webhookToken string,
+) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	if err := json.NewEncoder(&body).Encode(payload); err != nil {
+		t.Fatalf("encode request: %v", err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/webhook/mayar", &body)
+	request = request.WithContext(observability.WithRequestID(request.Context(), "req_webhook"))
+	request.Header.Set("Content-Type", "application/json")
+	if webhookToken != "" {
+		request.Header.Set("X-Bisakerja-Webhook-Token", webhookToken)
+	}
+
+	recorder := httptest.NewRecorder()
+	handler.HandleMayarWebhook(recorder, request)
 	return recorder
 }

@@ -28,10 +28,12 @@ const (
 )
 
 var (
-	ErrTransactionNotFound = errors.New("transaction not found")
-	ErrProviderRateLimited = errors.New("provider rate limited")
-	ErrProviderUpstream    = errors.New("provider upstream error")
-	ErrProviderUnavailable = errors.New("provider unavailable")
+	ErrTransactionNotFound          = errors.New("transaction not found")
+	ErrWebhookDeliveryNotFound      = errors.New("webhook delivery not found")
+	ErrWebhookDeliveryAlreadyExists = errors.New("webhook delivery already exists")
+	ErrProviderRateLimited          = errors.New("provider rate limited")
+	ErrProviderUpstream             = errors.New("provider upstream error")
+	ErrProviderUnavailable          = errors.New("provider unavailable")
 )
 
 type Transaction struct {
@@ -51,6 +53,27 @@ type Transaction struct {
 	UpdatedAt          time.Time
 }
 
+type WebhookProcessingStatus string
+
+const (
+	WebhookProcessingStatusProcessed        WebhookProcessingStatus = "processed"
+	WebhookProcessingStatusIgnoredDuplicate WebhookProcessingStatus = "ignored_duplicate"
+	WebhookProcessingStatusRejected         WebhookProcessingStatus = "rejected"
+)
+
+type WebhookDelivery struct {
+	ID               string
+	Provider         PaymentProvider
+	EventType        string
+	TransactionID    string
+	IdempotencyKey   string
+	ProcessingStatus WebhookProcessingStatus
+	Payload          map[string]any
+	ErrorMessage     string
+	ReceivedAt       time.Time
+	ProcessedAt      *time.Time
+}
+
 type CreatePendingTransactionInput struct {
 	UserID             string
 	Provider           PaymentProvider
@@ -66,6 +89,14 @@ type CreatePendingTransactionInput struct {
 
 type Repository interface {
 	CreatePending(ctx context.Context, input CreatePendingTransactionInput) (Transaction, error)
+	GetByMayarTransactionID(ctx context.Context, mayarTransactionID string) (Transaction, error)
+	UpdateStatusByMayarTransactionID(
+		ctx context.Context,
+		mayarTransactionID string,
+		status TransactionStatus,
+		metadata map[string]any,
+		updatedAt time.Time,
+	) (Transaction, error)
 	FindPendingByUserAndIdempotencyKey(
 		ctx context.Context,
 		userID string,
@@ -73,6 +104,8 @@ type Repository interface {
 		window time.Duration,
 		now time.Time,
 	) (Transaction, error)
+	GetWebhookDeliveryByIdempotencyKey(ctx context.Context, idempotencyKey string) (WebhookDelivery, error)
+	RecordWebhookDelivery(ctx context.Context, delivery WebhookDelivery) (WebhookDelivery, error)
 }
 
 type EnsureCustomerInput struct {

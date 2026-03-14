@@ -16,8 +16,9 @@ Implementasi backend saat ini:
 - **Iteration 1.2 backend** sudah diimplementasikan (auth register/login/refresh/me + JWT middleware/role guard dasar + preferences GET/PUT + auth integration tests).
 - **Iteration 1.3 backend** sudah diimplementasikan (matcher worker rule-based + email notifier + notification status persistence + notification flow tests).
 - **Iteration 2.1 backend** sudah diimplementasikan (checkout orchestration endpoint + adapter Mayar customer/invoice + pending transaction persistence + idempotency replay + rate-limit protection).
+- **Iteration 2.2 backend** sudah diimplementasikan (webhook receiver + token validation + idempotency delivery key + transaction status update + premium activation + duplicate handling tests).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend Iteration 2.1 complete**, siap lanjut ke backend Iteration 2.2 (webhook reliability).
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend Iteration 2.1-2.2 complete**, siap lanjut ke backend Iteration 2.3 (reconciliation & recovery).
 
 ## Prinsip Eksekusi
 
