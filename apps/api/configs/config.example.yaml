@@ -1,0 +1,5 @@
+app_name: bisakerja-api
+environment: development
+http_port: "8080"
+shutdown_timeout: 10s
+worker_tick_interval: 15s

@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Node / Frontend
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+apps/web/.next/
+apps/web/out/
+apps/web/coverage/
+
+# Go
+apps/api/bin/
+apps/api/coverage.out
+
+# Env
+.env
+.env.*
+!.env.example
+apps/web/.env.local
+apps/web/.env.*.local
+apps/api/.env
+
+# IDE
+.vscode/
+.idea/

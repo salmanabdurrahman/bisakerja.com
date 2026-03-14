@@ -1,11 +1,19 @@
 # Frontend Implementation Roadmap (Foundation → MVP → Growth)
 
 Checklist audit implementasi frontend:
+
 - [`implementation-checklist.md`](./implementation-checklist.md)
 
 ## Snapshot Saat Ini
 
-Repository saat ini masih tahap **documentation-first**. Folder implementasi frontend (`apps/web`) belum ditemukan, sehingga roadmap ini menjadi baseline eksekusi.
+Implementasi **Phase 0 frontend** sudah dimulai:
+
+- baseline `apps/web` (Next.js App Router) sudah terbentuk,
+- struktur domain awal (`features`, `components`, `services`, `lib`) sudah tersedia,
+- baseline lint/typecheck/test/build lulus pada validasi lokal,
+- workflow `ci-web` tervalidasi lewat run lokal `act`.
+
+Status saat ini: **Phase 0 frontend baseline complete**, siap lanjut ke iterasi Phase 1.
 
 ## Prinsip Eksekusi
 
@@ -15,24 +23,24 @@ Repository saat ini masih tahap **documentation-first**. Folder implementasi fro
 
 ## Quality Gates Lintas Phase (Wajib)
 
-| Gate | Referensi | Evidence Minimum |
-|---|---|---|
-| G1 - Lint | [CI Quality Gates](../../standards/ci-quality-gates.md) | hasil `eslint` + job CI |
-| G2 - Type safety | [CI Quality Gates](../../standards/ci-quality-gates.md) | hasil `tsc --noEmit` + job CI |
-| G3 - Unit/Component test | [Testing Strategy](../../standards/testing-strategy.md) | path test + job CI |
-| G4 - E2E test (jika trigger) | [Testing Strategy](../../standards/testing-strategy.md) | suite journey + job CI |
-| G5 - Coverage | [Testing Strategy](../../standards/testing-strategy.md) | angka coverage dan perbandingan baseline |
-| G6 - Security | [Security and Observability Standards](../../standards/security-observability-standards.md) | hasil secret/dependency/security scan |
-| G7 - Documentation | [Engineering Standards Hub](../../standards/README.md) | docs update + markdown link check pass |
-| G8 - Review readiness | [Code Review Checklist](../../standards/code-review-checklist.md) | approval + required checks hijau |
+| Gate                         | Referensi                                                                                   | Evidence Minimum                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| G1 - Lint                    | [CI Quality Gates](../../standards/ci-quality-gates.md)                                     | hasil `eslint` + job CI                  |
+| G2 - Type safety             | [CI Quality Gates](../../standards/ci-quality-gates.md)                                     | hasil `tsc --noEmit` + job CI            |
+| G3 - Unit/Component test     | [Testing Strategy](../../standards/testing-strategy.md)                                     | path test + job CI                       |
+| G4 - E2E test (jika trigger) | [Testing Strategy](../../standards/testing-strategy.md)                                     | suite journey + job CI                   |
+| G5 - Coverage                | [Testing Strategy](../../standards/testing-strategy.md)                                     | angka coverage dan perbandingan baseline |
+| G6 - Security                | [Security and Observability Standards](../../standards/security-observability-standards.md) | hasil secret/dependency/security scan    |
+| G7 - Documentation           | [Engineering Standards Hub](../../standards/README.md)                                      | docs update + markdown link check pass   |
+| G8 - Review readiness        | [Code Review Checklist](../../standards/code-review-checklist.md)                           | approval + required checks hijau         |
 
 ## Milestone Map (Roadmap ↔ Standards)
 
-| Phase | Outcome Utama | Required Gates | Acceptance Evidence |
-|---|---|---|---|
-| Phase 0 - Foundation | Baseline Next.js + CI frontend siap digunakan | G1, G2, G3, G6, G7, G8 (+ G4/G5 jika trigger) | `apps/web` bootstrap, build pass, checklist phase lengkap |
-| Phase 1 - MVP Delivery | Discovery + auth + preferences + checkout initiation usable | G1-G8 | journey MVP pass, regression test tersedia |
-| Phase 2 - Growth | Fitur retensi/engagement aktif tanpa regress core | G1-G8 (scope perubahan) | e2e growth pass + metrik adopsi tersedia |
+| Phase                  | Outcome Utama                                               | Required Gates                                | Acceptance Evidence                                       |
+| ---------------------- | ----------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------- |
+| Phase 0 - Foundation   | Baseline Next.js + CI frontend siap digunakan               | G1, G2, G3, G6, G7, G8 (+ G4/G5 jika trigger) | `apps/web` bootstrap, build pass, checklist phase lengkap |
+| Phase 1 - MVP Delivery | Discovery + auth + preferences + checkout initiation usable | G1-G8                                         | journey MVP pass, regression test tersedia                |
+| Phase 2 - Growth       | Fitur retensi/engagement aktif tanpa regress core           | G1-G8 (scope perubahan)                       | e2e growth pass + metrik adopsi tersedia                  |
 
 ## Phase 0 - Foundation
 

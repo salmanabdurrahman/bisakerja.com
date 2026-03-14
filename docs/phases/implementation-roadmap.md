@@ -1,7 +1,19 @@
 # Implementation Roadmap (Phase & Iteration)
 
 Checklist status implementasi per phase:
+
 - [`implementation-checklist.md`](./implementation-checklist.md)
+
+## Snapshot Saat Ini
+
+Implementasi **Phase 0 foundation** sudah dimulai:
+
+- baseline `apps/api` tersedia (cmd, internal, pkg, migrations, healthcheck, worker skeleton),
+- baseline `apps/web` tersedia (Next.js App Router + domain-first skeleton),
+- validasi lokal lint/typecheck/test/build sudah dijalankan,
+- workflow `ci-api` dan `ci-web` tervalidasi lewat run lokal `act`.
+
+Status saat ini: **Phase 0 foundation baseline complete**, siap lanjut ke Phase 1 dengan hardening bertahap.
 
 ## Prinsip Eksekusi
 
@@ -11,14 +23,14 @@ Checklist status implementasi per phase:
 
 ## Quality Gates Lintas Phase (Wajib)
 
-| Gate | Ekspektasi Minimum |
-|---|---|
-| G1-G2 | Lint + type/static analysis pass |
-| G3-G4 | Test wajib pass sesuai trigger matrix |
-| G5 | Coverage threshold terpenuhi atau exception resmi |
-| G6 | Security scan tanpa blocker |
-| G7 | Docs/checklist update + markdown link check pass |
-| G8 | Approval sesuai risk + rollback plan untuk high-risk |
+| Gate  | Ekspektasi Minimum                                   |
+| ----- | ---------------------------------------------------- |
+| G1-G2 | Lint + type/static analysis pass                     |
+| G3-G4 | Test wajib pass sesuai trigger matrix                |
+| G5    | Coverage threshold terpenuhi atau exception resmi    |
+| G6    | Security scan tanpa blocker                          |
+| G7    | Docs/checklist update + markdown link check pass     |
+| G8    | Approval sesuai risk + rollback plan untuk high-risk |
 
 ## Definisi Phase Done
 
@@ -30,13 +42,13 @@ Phase dinyatakan selesai jika seluruh kondisi berikut terpenuhi:
 
 ## Milestone Map (Roadmap ↔ Standards)
 
-| Phase | Outcome Utama | Required Gates | Acceptance Evidence |
-|---|---|---|---|
-| Phase 0 - Foundation | Fondasi service, schema, observability dasar siap dipakai | G1, G2, G3, G6, G7, G8 (+ G4/G5 jika trigger) | healthcheck pass, migrasi tervalidasi, checklist phase lengkap |
-| Phase 1 - MVP Core | Search + auth + notification MVP usable end-to-end | G1-G8 | test journey MVP pass, regression suite tersedia |
-| Phase 2 - Billing Hardening | Billing flow stabil, idempotent, dapat diaudit | G1-G8 | webhook idempotency + reconciliation evidence + alert aktif |
-| Phase 3 - Growth (opsional) | Fitur retensi/engagement bertambah tanpa regress core | G1-G8 (untuk scope perubahan) | e2e growth + metrik adopsi tersedia |
-| Phase 4 - Advanced (opsional) | Monetisasi lanjutan + intelligence stabil | G1-G8 + ADR wajib untuk keputusan besar | contract stabil, fallback tervalidasi, ADR tersedia |
+| Phase                         | Outcome Utama                                             | Required Gates                                | Acceptance Evidence                                            |
+| ----------------------------- | --------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| Phase 0 - Foundation          | Fondasi service, schema, observability dasar siap dipakai | G1, G2, G3, G6, G7, G8 (+ G4/G5 jika trigger) | healthcheck pass, migrasi tervalidasi, checklist phase lengkap |
+| Phase 1 - MVP Core            | Search + auth + notification MVP usable end-to-end        | G1-G8                                         | test journey MVP pass, regression suite tersedia               |
+| Phase 2 - Billing Hardening   | Billing flow stabil, idempotent, dapat diaudit            | G1-G8                                         | webhook idempotency + reconciliation evidence + alert aktif    |
+| Phase 3 - Growth (opsional)   | Fitur retensi/engagement bertambah tanpa regress core     | G1-G8 (untuk scope perubahan)                 | e2e growth + metrik adopsi tersedia                            |
+| Phase 4 - Advanced (opsional) | Monetisasi lanjutan + intelligence stabil                 | G1-G8 + ADR wajib untuk keputusan besar       | contract stabil, fallback tervalidasi, ADR tersedia            |
 
 ## Phase 0 - Foundation & Baseline
 
