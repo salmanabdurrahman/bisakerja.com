@@ -50,6 +50,19 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0 frontend** suda
 | `PATCH /api/v1/notifications/:id/read`  | `id`, `read_at`                                                                             | 📝     | dipakai mark as read                       |
 | `PUT /api/v1/preferences/notification`  | `alert_mode`, `digest_hour`, `updated_at`                                                   | 📝     | dipakai kontrol digest mode                |
 
+## 3.2) Rencana Lanjutan (Document-First)
+
+Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readiness backend dan kontrak API.
+
+| Milestone | Dampak ke Frontend | Status |
+| --------- | ------------------ | ------ |
+| M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete |
+| M1 | Stabilitas persistence backend (PostgreSQL) sebagai fondasi | 📝 Documented |
+| M2 | Comments/TSDoc pass pada area frontend kritikal | 📝 Documented |
+| M3 | Migrasi seluruh UI copy + message user-facing ke English | 📝 Documented |
+| M4 | Redesign SaaS + penutupan web vitals dan growth e2e | 📝 Documented |
+| M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 📝 Documented |
+
 ## 4) Checklist per Phase & Iteration
 
 ## Phase 0 - Foundation

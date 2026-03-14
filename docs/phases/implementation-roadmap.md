@@ -22,6 +22,25 @@ Implementasi backend saat ini:
 
 Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete**, siap lanjut ke phase berikutnya.
 
+## Rencana Lanjutan (Document-First, One-by-One)
+
+Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu agar setiap perubahan berjalan bertahap dan tervalidasi.
+
+| Milestone | Fokus | Status | Catatan Eksekusi |
+| --------- | ----- | ------ | ---------------- |
+| M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete | Rencana detail sudah ditetapkan sebelum coding lanjutan |
+| M1 | Migrasi fondasi persistence ke PostgreSQL | 🟧 In Queue | Prioritas pertama; runtime non-test harus berhenti bergantung ke memory repository |
+| M2 | Pass komentar/docstrings sesuai standar | ⬜ Pending | Best-practice only, tanpa komentar berlebihan |
+| M3 | Migrasi copy UI + API user-facing ke English | ⬜ Pending | Ubah bahasa tanpa mengubah kontrak field/enum |
+| M4 | Redesign frontend ala SaaS + hardening growth | ⬜ Pending | Sekaligus menutup observability + e2e growth yang masih pending |
+| M5 | Eksekusi Phase 4 backend | ⬜ Pending | Dimulai hanya setelah M1-M4 lulus gate |
+
+Aturan eksekusi:
+
+1. Jalankan satu milestone pada satu waktu (tidak lompat milestone).
+2. Tiap milestone wajib lulus gate kualitas (G1-G8) sebelum lanjut.
+3. Jika ada mismatch kontrak FE-BE, perbaiki kontrak/dokumen pada milestone aktif sebelum maju.
+
 ## Prinsip Eksekusi
 
 - Milestone phase hanya boleh ditutup jika acceptance criteria phase terpenuhi.

@@ -30,6 +30,19 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0** sudah dimulai
 - Evidence CI sudah tersedia melalui eksekusi workflow lokal menggunakan `act` untuk `ci-api` dan `ci-web`.
 - Implementasi saat ini: **✅ Phase 0 foundation baseline complete** (dengan catatan hardening lanjutan tetap direkomendasikan).
 
+## 3.1) Rencana Lanjutan (Document-First)
+
+Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieksekusi satu per satu dan tervalidasi.
+
+| Milestone | Fokus | Status |
+| --------- | ----- | ------ |
+| M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete |
+| M1 | Migrasi fondasi persistence ke PostgreSQL | 📝 Documented |
+| M2 | Comments/docstrings pass sesuai standar | 📝 Documented |
+| M3 | English migration (UI + API user-facing messages) | 📝 Documented |
+| M4 | Frontend redesign + growth hardening | 📝 Documented |
+| M5 | Phase 4 backend execution | 📝 Documented |
+
 ## 4) Checklist per Phase & Iteration
 
 ## Phase 0 - Foundation & Baseline

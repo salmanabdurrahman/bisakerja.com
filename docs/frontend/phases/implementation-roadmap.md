@@ -19,6 +19,25 @@ Implementasi **Phase 0 frontend** sudah dimulai:
 
 Status saat ini: **Phase 0 frontend baseline complete + Phase 1 complete + Phase 2 frontend in progress (core growth UI sudah aktif)**.
 
+## Rencana Lanjutan (Document-First, One-by-One)
+
+Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu agar frontend tidak bergerak tanpa fondasi backend yang stabil.
+
+| Milestone | Dampak Utama ke Frontend | Status | Catatan Eksekusi |
+| --------- | ------------------------ | ------ | ---------------- |
+| M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete | Detail rollout sudah ditetapkan sebelum coding lanjutan |
+| M1 | Fondasi PostgreSQL backend | 🟧 In Queue | Menjadi dependensi stabilitas data untuk flow frontend berikutnya |
+| M2 | Comments/docstrings quality pass | ⬜ Pending | Berlaku juga untuk util/helper TS yang exported dan non-obvious |
+| M3 | English-only copy migration | ⬜ Pending | Seluruh UI copy, feedback state, dan message user-facing API |
+| M4 | SaaS redesign + hardening growth | ⬜ Pending | Menutup item pending: web vitals observability + growth e2e |
+| M5 | Phase 4 backend follow-up | ⬜ Pending | Frontend mengikuti contract Phase 4 setelah backend siap |
+
+Aturan eksekusi:
+
+1. Eksekusi satu milestone per satu waktu.
+2. Frontend hanya lanjut ke milestone berikutnya jika milestone aktif sudah lulus gate dan docs sinkron.
+3. Update checklist frontend wajib dilakukan pada PR yang sama dengan implementasi.
+
 ## Prinsip Eksekusi
 
 - Setiap phase harus punya artefak terverifikasi (kode, test, CI, docs).
