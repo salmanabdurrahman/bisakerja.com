@@ -14,14 +14,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/identity"
 )
 
+// IdentityRepository represents identity repository.
 type IdentityRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewIdentityRepository creates a new identity repository instance.
 func NewIdentityRepository(pool *pgxpool.Pool) *IdentityRepository {
 	return &IdentityRepository{pool: pool}
 }
 
+// CreateUser creates user.
 func (r *IdentityRepository) CreateUser(ctx context.Context, input identity.CreateUserInput) (identity.User, error) {
 	normalizedEmail := identity.NormalizeEmail(input.Email)
 	if normalizedEmail == "" {
@@ -67,6 +70,7 @@ RETURNING id::text, email, password_hash, name, role, is_premium, premium_expire
 	return user, nil
 }
 
+// GetUserByID returns user by id.
 func (r *IdentityRepository) GetUserByID(ctx context.Context, userID string) (identity.User, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
@@ -89,6 +93,7 @@ WHERE id::text = $1
 	return user, nil
 }
 
+// GetUserByEmail returns user by email.
 func (r *IdentityRepository) GetUserByEmail(ctx context.Context, email string) (identity.User, error) {
 	normalizedEmail := identity.NormalizeEmail(email)
 	if normalizedEmail == "" {
@@ -111,6 +116,7 @@ WHERE email = $1
 	return user, nil
 }
 
+// UpdatePremiumStatus updates premium status.
 func (r *IdentityRepository) UpdatePremiumStatus(
 	ctx context.Context,
 	userID string,
@@ -141,6 +147,7 @@ RETURNING id::text, email, password_hash, name, role, is_premium, premium_expire
 	return updated, nil
 }
 
+// ListUsers returns a list of users.
 func (r *IdentityRepository) ListUsers(ctx context.Context) ([]identity.User, error) {
 	query := `
 SELECT id::text, email, password_hash, name, role, is_premium, premium_expired_at, created_at, updated_at
@@ -169,6 +176,7 @@ ORDER BY created_at DESC, id DESC
 	return result, nil
 }
 
+// GetPreferences returns preferences.
 func (r *IdentityRepository) GetPreferences(ctx context.Context, userID string) (identity.Preferences, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
@@ -250,6 +258,7 @@ WHERE user_id::text = $1
 	}, nil
 }
 
+// SavePreferences handles save preferences.
 func (r *IdentityRepository) SavePreferences(ctx context.Context, preferences identity.Preferences) (identity.Preferences, error) {
 	normalizedUserID := strings.TrimSpace(preferences.UserID)
 	if normalizedUserID == "" {

@@ -19,6 +19,9 @@ function parseURL(value: string): URL | null {
   }
 }
 
+/**
+ * normalizeAPIBasePath normalizes api base path.
+ */
 export function normalizeAPIBasePath(value: string | undefined): string {
   const raw = value?.trim();
   if (!raw) {
@@ -39,6 +42,9 @@ export function normalizeAPIBasePath(value: string | undefined): string {
   return normalizedPath === "/" ? defaultPublicAPIBasePath : normalizedPath;
 }
 
+/**
+ * resolveAPIOrigin resolves api origin.
+ */
 export function resolveAPIOrigin(value: string | undefined): string {
   const raw = value?.trim();
   if (!raw) {
@@ -51,6 +57,9 @@ export function resolveAPIOrigin(value: string | undefined): string {
   return parsed?.origin ?? defaultAPIOrigin;
 }
 
+/**
+ * buildServerAPIBaseURL builds server api base url.
+ */
 export function buildServerAPIBaseURL(
   apiOrigin: string | undefined,
   publicBasePath: string | undefined,

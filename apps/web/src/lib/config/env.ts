@@ -3,6 +3,9 @@ import {
   normalizeAPIBasePath,
 } from "@/lib/config/api-base";
 
+/**
+ * getAPIBaseURL returns api base url.
+ */
 export function getAPIBaseURL(): string {
   if (typeof window !== "undefined") {
     return normalizeAPIBasePath(process.env.NEXT_PUBLIC_API_BASE_URL);

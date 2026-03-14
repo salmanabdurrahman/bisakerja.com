@@ -10,6 +10,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/identity"
 )
 
+// IdentityRepository represents identity repository.
 type IdentityRepository struct {
 	mu              sync.RWMutex
 	usersByID       map[string]identity.User
@@ -17,6 +18,7 @@ type IdentityRepository struct {
 	preferencesByID map[string]identity.Preferences
 }
 
+// NewIdentityRepository creates a new identity repository instance.
 func NewIdentityRepository() *IdentityRepository {
 	return &IdentityRepository{
 		usersByID:       make(map[string]identity.User),
@@ -25,6 +27,7 @@ func NewIdentityRepository() *IdentityRepository {
 	}
 }
 
+// CreateUser creates user.
 func (r *IdentityRepository) CreateUser(_ context.Context, input identity.CreateUserInput) (identity.User, error) {
 	normalizedEmail := identity.NormalizeEmail(input.Email)
 	if normalizedEmail == "" {
@@ -68,6 +71,7 @@ func (r *IdentityRepository) CreateUser(_ context.Context, input identity.Create
 	return user, nil
 }
 
+// GetUserByID returns user by id.
 func (r *IdentityRepository) GetUserByID(_ context.Context, userID string) (identity.User, error) {
 	trimmedUserID := strings.TrimSpace(userID)
 	r.mu.RLock()
@@ -80,6 +84,7 @@ func (r *IdentityRepository) GetUserByID(_ context.Context, userID string) (iden
 	return user, nil
 }
 
+// GetUserByEmail returns user by email.
 func (r *IdentityRepository) GetUserByEmail(_ context.Context, email string) (identity.User, error) {
 	normalizedEmail := identity.NormalizeEmail(email)
 	r.mu.RLock()
@@ -96,6 +101,7 @@ func (r *IdentityRepository) GetUserByEmail(_ context.Context, email string) (id
 	return user, nil
 }
 
+// UpdatePremiumStatus updates premium status.
 func (r *IdentityRepository) UpdatePremiumStatus(
 	_ context.Context,
 	userID string,
@@ -129,6 +135,7 @@ func (r *IdentityRepository) UpdatePremiumStatus(
 	return user, nil
 }
 
+// ListUsers returns a list of users.
 func (r *IdentityRepository) ListUsers(_ context.Context) ([]identity.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -140,6 +147,7 @@ func (r *IdentityRepository) ListUsers(_ context.Context) ([]identity.User, erro
 	return result, nil
 }
 
+// GetPreferences returns preferences.
 func (r *IdentityRepository) GetPreferences(_ context.Context, userID string) (identity.Preferences, error) {
 	trimmedUserID := strings.TrimSpace(userID)
 
@@ -166,6 +174,7 @@ func (r *IdentityRepository) GetPreferences(_ context.Context, userID string) (i
 	}, nil
 }
 
+// SavePreferences handles save preferences.
 func (r *IdentityRepository) SavePreferences(_ context.Context, preferences identity.Preferences) (identity.Preferences, error) {
 	trimmedUserID := strings.TrimSpace(preferences.UserID)
 	if trimmedUserID == "" {

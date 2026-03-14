@@ -12,6 +12,7 @@ type requestIDKey string
 
 const requestIDContextKey requestIDKey = "request_id"
 
+// RequestID handles request id.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := r.Header.Get("X-Request-Id")
@@ -24,10 +25,12 @@ func RequestID(next http.Handler) http.Handler {
 	})
 }
 
+// WithRequestID attaches request id to the context value chain.
 func WithRequestID(ctx context.Context, requestID string) context.Context {
 	return context.WithValue(ctx, requestIDContextKey, requestID)
 }
 
+// RequestIDFromContext handles request id from context.
 func RequestIDFromContext(ctx context.Context) string {
 	value, ok := ctx.Value(requestIDContextKey).(string)
 	if !ok {

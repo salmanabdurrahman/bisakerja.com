@@ -13,12 +13,14 @@ type pair struct {
 	down bool
 }
 
+// FileSet represents file set.
 type FileSet struct {
 	Key      string
 	UpPath   string
 	DownPath string
 }
 
+// ValidateDirectory validates directory.
 func ValidateDirectory(path string) (int, error) {
 	files, err := CollectDirectory(path)
 	if err != nil {
@@ -28,6 +30,7 @@ func ValidateDirectory(path string) (int, error) {
 	return len(files), nil
 }
 
+// CollectDirectory handles collect directory.
 func CollectDirectory(path string) ([]FileSet, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {

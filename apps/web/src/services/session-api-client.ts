@@ -52,6 +52,9 @@ const defaultDependencies: SessionClientDependencies = {
   refresh: refreshAuthToken,
 };
 
+/**
+ * SessionAPIClient defines the shape of session api client.
+ */
 export interface SessionAPIClient {
   getMe: () => Promise<APIResponse<AuthMe>>;
   getBillingStatus: () => Promise<APIResponse<BillingStatus>>;
@@ -83,6 +86,9 @@ export interface SessionAPIClient {
 
 let refreshInFlight: Promise<string | null> | null = null;
 
+/**
+ * createSessionAPIClient creates session api client.
+ */
 export function createSessionAPIClient(
   dependencies?: Partial<SessionClientDependencies>,
 ): SessionAPIClient {
@@ -139,6 +145,9 @@ export function createSessionAPIClient(
   };
 }
 
+/**
+ * resetSessionRefreshStateForTests resets session refresh state for tests.
+ */
 export function resetSessionRefreshStateForTests(): void {
   refreshInFlight = null;
 }

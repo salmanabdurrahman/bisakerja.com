@@ -30,7 +30,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | --------- | ----- | ------ | ---------------- |
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete | Rencana detail sudah ditetapkan sebelum coding lanjutan |
 | M1 | Migrasi fondasi persistence ke PostgreSQL | ✅ Complete | Adapter PostgreSQL + wiring API/worker + migration cutover + queue persistence sudah aktif |
-| M2 | Pass komentar/docstrings sesuai standar | ⬜ Pending | Best-practice only, tanpa komentar berlebihan |
+| M2 | Pass komentar/docstrings sesuai standar | ✅ Complete | Doc comments Go untuk simbol exported + TSDoc pada service/lib frontend sudah ditambahkan |
 | M3 | Migrasi copy UI + API user-facing ke English | ⬜ Pending | Ubah bahasa tanpa mengubah kontrak field/enum |
 | M4 | Redesign frontend ala SaaS + hardening growth | ⬜ Pending | Sekaligus menutup observability + e2e growth yang masih pending |
 | M5 | Eksekusi Phase 4 backend | ⬜ Pending | Dimulai hanya setelah M1-M4 lulus gate |

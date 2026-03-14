@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// New creates a new instance.
 func New(environment string) *slog.Logger {
 	level := slog.LevelDebug
 	if environment == "production" {

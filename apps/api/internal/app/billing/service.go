@@ -23,12 +23,14 @@ var (
 	ErrServiceUnavailable = errors.New("service unavailable")
 )
 
+// Config stores configuration values for config.
 type Config struct {
 	RedirectAllowlist []string
 	IdempotencyWindow time.Duration
 	RateLimitWindow   time.Duration
 }
 
+// Service coordinates application use cases for the package.
 type Service struct {
 	identityRepository identity.Repository
 	repository         billingdomain.Repository
@@ -42,6 +44,7 @@ type Service struct {
 	lastCheckoutByUID map[string]time.Time
 }
 
+// CreateCheckoutSessionInput contains input parameters for create checkout session.
 type CreateCheckoutSessionInput struct {
 	UserID         string
 	PlanCode       string
@@ -49,6 +52,7 @@ type CreateCheckoutSessionInput struct {
 	IdempotencyKey string
 }
 
+// CheckoutSession represents checkout session.
 type CheckoutSession struct {
 	Provider          billingdomain.PaymentProvider
 	InvoiceID         string
@@ -76,6 +80,7 @@ var supportedPlans = map[billingdomain.PlanCode]planDefinition{
 	},
 }
 
+// NewService creates a new service instance.
 func NewService(
 	identityRepository identity.Repository,
 	repository billingdomain.Repository,
@@ -104,6 +109,7 @@ func NewService(
 	}
 }
 
+// CreateCheckoutSession creates checkout session.
 func (s *Service) CreateCheckoutSession(
 	ctx context.Context,
 	input CreateCheckoutSessionInput,

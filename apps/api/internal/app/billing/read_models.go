@@ -17,6 +17,7 @@ var (
 	ErrInvalidTransactionStatus = errors.New("invalid transaction status")
 )
 
+// BillingStatus describes status details for billing.
 type BillingStatus struct {
 	PlanCode              string
 	SubscriptionState     identity.SubscriptionState
@@ -25,6 +26,7 @@ type BillingStatus struct {
 	LastTransactionStatus string
 }
 
+// ListTransactionsInput contains input parameters for list transactions.
 type ListTransactionsInput struct {
 	UserID string
 	Page   int
@@ -32,6 +34,7 @@ type ListTransactionsInput struct {
 	Status string
 }
 
+// TransactionRecord represents a persisted record for transaction.
 type TransactionRecord struct {
 	ID                 string
 	Provider           billingdomain.PaymentProvider
@@ -41,6 +44,7 @@ type TransactionRecord struct {
 	CreatedAt          time.Time
 }
 
+// ListTransactionsResult contains result values for list transactions.
 type ListTransactionsResult struct {
 	Data         []TransactionRecord
 	Page         int
@@ -49,6 +53,7 @@ type ListTransactionsResult struct {
 	TotalRecords int
 }
 
+// GetBillingStatus returns billing status.
 func (s *Service) GetBillingStatus(ctx context.Context, userID string) (BillingStatus, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return BillingStatus{}, errors.New("billing service dependency is not fully configured")
@@ -95,6 +100,7 @@ func (s *Service) GetBillingStatus(ctx context.Context, userID string) (BillingS
 	}, nil
 }
 
+// ListBillingTransactions returns a list of billing transactions.
 func (s *Service) ListBillingTransactions(
 	ctx context.Context,
 	input ListTransactionsInput,

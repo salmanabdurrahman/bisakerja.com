@@ -17,23 +17,28 @@ type authUserContextKey string
 
 const userContextKey authUserContextKey = "auth_user"
 
+// TokenParser defines behavior for token parser.
 type TokenParser interface {
 	ParseAccessToken(rawToken string) (platformauth.Claims, error)
 }
 
+// AuthUser represents auth user.
 type AuthUser struct {
 	UserID string
 	Role   identity.Role
 }
 
+// Authenticator represents authenticator.
 type Authenticator struct {
 	tokenParser TokenParser
 }
 
+// NewAuthenticator creates a new authenticator instance.
 func NewAuthenticator(tokenParser TokenParser) *Authenticator {
 	return &Authenticator{tokenParser: tokenParser}
 }
 
+// RequireAuth handles require auth.
 func (a *Authenticator) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := observability.RequestIDFromContext(r.Context())
@@ -67,6 +72,7 @@ func (a *Authenticator) RequireAuth(next http.Handler) http.Handler {
 	})
 }
 
+// RequireRole handles require role.
 func (a *Authenticator) RequireRole(requiredRole identity.Role, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := observability.RequestIDFromContext(r.Context())
@@ -90,10 +96,12 @@ func (a *Authenticator) RequireRole(requiredRole identity.Role, next http.Handle
 	})
 }
 
+// WithAuthUser attaches auth user to the context value chain.
 func WithAuthUser(ctx context.Context, authUser AuthUser) context.Context {
 	return context.WithValue(ctx, userContextKey, authUser)
 }
 
+// AuthUserFromContext handles auth user from context.
 func AuthUserFromContext(ctx context.Context) (AuthUser, bool) {
 	value, ok := ctx.Value(userContextKey).(AuthUser)
 	if !ok {

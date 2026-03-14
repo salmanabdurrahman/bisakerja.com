@@ -38,7 +38,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | --------- | ----- | ------ |
 | M0 | Dokumentasi rencana perubahan menyeluruh | ✅ Complete |
 | M1 | Migrasi fondasi persistence ke PostgreSQL | ✅ Complete |
-| M2 | Comments/docstrings pass sesuai standar | 📝 Documented |
+| M2 | Comments/docstrings pass sesuai standar | ✅ Complete |
 | M3 | English migration (UI + API user-facing messages) | 📝 Documented |
 | M4 | Frontend redesign + growth hardening | 📝 Documented |
 | M5 | Phase 4 backend execution | 📝 Documented |
@@ -51,6 +51,12 @@ Catatan progress M1 saat ini:
 - persistence queue notifier sudah dipindah ke PostgreSQL (`000004_phase3_notification_queue_postgres` + adapter queue PostgreSQL),
 - hardening migrasi drift schema sudah ditambahkan di `000002` dan `000003` untuk kasus histori `schema_migrations` kosong pada database yang sudah pernah dicutover,
 - bootstrap runtime lokal memakai `make -C apps/api check-migrations` + `make -C apps/api migrate-up` sebelum `make -C apps/api run-api`.
+
+Catatan progress M2 saat ini:
+
+- doc comment untuk simbol exported Go sudah ditambahkan pada layer adapter/app/domain/platform,
+- TSDoc untuk exported API frontend pada `apps/web/src/services/*` dan `apps/web/src/lib/*` sudah ditambahkan,
+- validasi non-fungsional pass: `make -C apps/api lint test build check-migrations` dan root `pnpm lint test build`.
 
 ## 4) Checklist per Phase & Iteration
 

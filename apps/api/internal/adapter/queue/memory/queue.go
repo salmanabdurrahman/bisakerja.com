@@ -7,12 +7,14 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 )
 
+// Queue represents queue.
 type Queue struct {
 	mu            sync.Mutex
 	jobEvents     []notification.JobEvent
 	deliveryTasks []notification.DeliveryTask
 }
 
+// NewQueue creates a new queue instance.
 func NewQueue() *Queue {
 	return &Queue{
 		jobEvents:     []notification.JobEvent{},
@@ -20,6 +22,7 @@ func NewQueue() *Queue {
 	}
 }
 
+// EnqueueJobEvent handles enqueue job event.
 func (q *Queue) EnqueueJobEvent(_ context.Context, event notification.JobEvent) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -27,6 +30,7 @@ func (q *Queue) EnqueueJobEvent(_ context.Context, event notification.JobEvent) 
 	return nil
 }
 
+// DequeueJobEvents handles dequeue job events.
 func (q *Queue) DequeueJobEvents(_ context.Context, limit int) ([]notification.JobEvent, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -37,6 +41,7 @@ func (q *Queue) DequeueJobEvents(_ context.Context, limit int) ([]notification.J
 	return events, nil
 }
 
+// EnqueueDeliveryTask handles enqueue delivery task.
 func (q *Queue) EnqueueDeliveryTask(_ context.Context, task notification.DeliveryTask) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -44,6 +49,7 @@ func (q *Queue) EnqueueDeliveryTask(_ context.Context, task notification.Deliver
 	return nil
 }
 
+// DequeueDeliveryTasks handles dequeue delivery tasks.
 func (q *Queue) DequeueDeliveryTasks(_ context.Context, limit int) ([]notification.DeliveryTask, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()

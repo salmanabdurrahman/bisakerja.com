@@ -15,6 +15,7 @@ import (
 	billingdomain "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 )
 
+// ClientConfig stores configuration values for client.
 type ClientConfig struct {
 	BaseURL    string
 	APIKey     string
@@ -25,6 +26,7 @@ type ClientConfig struct {
 	RandIntn   func(int) int
 }
 
+// Client represents client.
 type Client struct {
 	baseURL    string
 	apiKey     string
@@ -34,6 +36,7 @@ type Client struct {
 	randIntn   func(int) int
 }
 
+// NewClient creates a new client instance.
 func NewClient(config ClientConfig) *Client {
 	timeout := config.Timeout
 	if timeout <= 0 {
@@ -80,6 +83,7 @@ func NewClient(config ClientConfig) *Client {
 	}
 }
 
+// EnsureCustomer ensures customer.
 func (c *Client) EnsureCustomer(
 	ctx context.Context,
 	input billingdomain.EnsureCustomerInput,
@@ -117,6 +121,7 @@ func (c *Client) EnsureCustomer(
 	}, nil
 }
 
+// CreateInvoice creates invoice.
 func (c *Client) CreateInvoice(
 	ctx context.Context,
 	input billingdomain.CreateInvoiceInput,
@@ -207,6 +212,7 @@ func (c *Client) CreateInvoice(
 	}, nil
 }
 
+// GetInvoiceByID returns invoice by id.
 func (c *Client) GetInvoiceByID(
 	ctx context.Context,
 	invoiceID string,

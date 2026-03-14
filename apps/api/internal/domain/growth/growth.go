@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// AlertFrequency represents alert frequency.
 type AlertFrequency string
 
 const (
@@ -21,6 +22,7 @@ var (
 	ErrWatchlistCompanyAlreadyExists = errors.New("watchlist company already exists")
 )
 
+// SavedSearch represents saved search.
 type SavedSearch struct {
 	ID        string
 	UserID    string
@@ -34,6 +36,7 @@ type SavedSearch struct {
 	UpdatedAt time.Time
 }
 
+// CreateSavedSearchInput contains input parameters for create saved search.
 type CreateSavedSearchInput struct {
 	UserID    string
 	Query     string
@@ -44,12 +47,14 @@ type CreateSavedSearchInput struct {
 	IsActive  bool
 }
 
+// CompanyWatchlist represents company watchlist.
 type CompanyWatchlist struct {
 	UserID      string
 	CompanySlug string
 	CreatedAt   time.Time
 }
 
+// Repository defines behavior for repository.
 type Repository interface {
 	CreateSavedSearch(ctx context.Context, input CreateSavedSearchInput) (SavedSearch, error)
 	ListSavedSearchesByUser(ctx context.Context, userID string) ([]SavedSearch, error)

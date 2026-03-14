@@ -11,6 +11,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
+// Dependencies represents dependencies.
 type Dependencies struct {
 	JobsHandler         *handler.JobsHandler
 	AuthHandler         *handler.AuthHandler
@@ -21,6 +22,7 @@ type Dependencies struct {
 	AuthMiddleware      *middleware.Authenticator
 }
 
+// New creates a new instance.
 func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 	var deps Dependencies
 	if len(dependencies) > 0 {

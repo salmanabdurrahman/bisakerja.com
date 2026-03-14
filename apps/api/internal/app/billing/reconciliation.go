@@ -10,6 +10,7 @@ import (
 	billingdomain "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 )
 
+// ReconciliationSummary summarizes execution details for reconciliation.
 type ReconciliationSummary struct {
 	ScannedTransactions int
 	ReconciledCount     int
@@ -17,6 +18,7 @@ type ReconciliationSummary struct {
 	AnomalyCount        int
 }
 
+// ReconcileWithMayar handles reconcile with mayar.
 func (s *Service) ReconcileWithMayar(ctx context.Context) (ReconciliationSummary, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return ReconciliationSummary{}, errors.New("billing service dependency is not fully configured")

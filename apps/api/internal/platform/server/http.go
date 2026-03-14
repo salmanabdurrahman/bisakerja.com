@@ -10,12 +10,14 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
 )
 
+// HTTP represents http.
 type HTTP struct {
 	server          *http.Server
 	logger          *slog.Logger
 	shutdownTimeout time.Duration
 }
 
+// NewHTTP creates a new http instance.
 func NewHTTP(cfg config.Config, handler http.Handler, logger *slog.Logger) *HTTP {
 	return &HTTP{
 		server: &http.Server{
@@ -28,6 +30,7 @@ func NewHTTP(cfg config.Config, handler http.Handler, logger *slog.Logger) *HTTP
 	}
 }
 
+// Run runs the main execution flow.
 func (s *HTTP) Run(ctx context.Context) error {
 	errCh := make(chan error, 1)
 

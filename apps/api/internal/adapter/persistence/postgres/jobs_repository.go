@@ -14,14 +14,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 )
 
+// JobsRepository represents jobs repository.
 type JobsRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewJobsRepository creates a new jobs repository instance.
 func NewJobsRepository(pool *pgxpool.Pool) *JobsRepository {
 	return &JobsRepository{pool: pool}
 }
 
+// UpsertMany upserts many.
 func (r *JobsRepository) UpsertMany(ctx context.Context, source job.Source, inputs []job.UpsertInput) (job.UpsertResult, error) {
 	if source == "" {
 		return job.UpsertResult{}, errors.New("source is required")
@@ -117,6 +120,7 @@ RETURNING id::text, source, original_job_id, title, COALESCE(company, ''), COALE
 	}, nil
 }
 
+// Search searches.
 func (r *JobsRepository) Search(ctx context.Context, query job.SearchQuery) (job.SearchResult, error) {
 	page := query.Page
 	if page <= 0 {
@@ -226,6 +230,7 @@ FROM jobs` + whereClause + ` ORDER BY ` + orderBy +
 	}, nil
 }
 
+// GetByID returns by id.
 func (r *JobsRepository) GetByID(ctx context.Context, id string) (job.Job, error) {
 	normalizedID := strings.TrimSpace(id)
 	if normalizedID == "" {
@@ -249,6 +254,7 @@ WHERE id::text = $1
 	return item, nil
 }
 
+// RecordScrapeRun records scrape run.
 func (r *JobsRepository) RecordScrapeRun(ctx context.Context, run job.ScrapeRun) error {
 	startedAt := run.StartedAt.UTC()
 	if startedAt.IsZero() {

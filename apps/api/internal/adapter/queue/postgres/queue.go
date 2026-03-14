@@ -10,14 +10,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 )
 
+// Queue represents queue.
 type Queue struct {
 	pool *pgxpool.Pool
 }
 
+// NewQueue creates a new queue instance.
 func NewQueue(pool *pgxpool.Pool) *Queue {
 	return &Queue{pool: pool}
 }
 
+// EnqueueJobEvent handles enqueue job event.
 func (q *Queue) EnqueueJobEvent(ctx context.Context, event notification.JobEvent) error {
 	jobID := strings.TrimSpace(event.JobID)
 	if jobID == "" {
@@ -34,6 +37,7 @@ VALUES ($1, now())
 	return nil
 }
 
+// DequeueJobEvents handles dequeue job events.
 func (q *Queue) DequeueJobEvents(ctx context.Context, limit int) ([]notification.JobEvent, error) {
 	if limit <= 0 {
 		return []notification.JobEvent{}, nil
@@ -76,6 +80,7 @@ RETURNING events.job_id
 	return result, nil
 }
 
+// EnqueueDeliveryTask handles enqueue delivery task.
 func (q *Queue) EnqueueDeliveryTask(ctx context.Context, task notification.DeliveryTask) error {
 	if strings.TrimSpace(task.NotificationID) == "" {
 		return fmt.Errorf("enqueue delivery task: notification id is required")
@@ -118,6 +123,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
 	return nil
 }
 
+// DequeueDeliveryTasks handles dequeue delivery tasks.
 func (q *Queue) DequeueDeliveryTasks(ctx context.Context, limit int) ([]notification.DeliveryTask, error) {
 	if limit <= 0 {
 		return []notification.DeliveryTask{}, nil

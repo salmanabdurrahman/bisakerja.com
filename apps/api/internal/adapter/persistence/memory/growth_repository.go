@@ -11,6 +11,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/growth"
 )
 
+// GrowthRepository represents growth repository.
 type GrowthRepository struct {
 	mu                  sync.RWMutex
 	savedSearchByID     map[string]growth.SavedSearch
@@ -18,6 +19,7 @@ type GrowthRepository struct {
 	watchlistByUnique   map[string]growth.CompanyWatchlist
 }
 
+// NewGrowthRepository creates a new growth repository instance.
 func NewGrowthRepository() *GrowthRepository {
 	return &GrowthRepository{
 		savedSearchByID:     make(map[string]growth.SavedSearch),
@@ -26,6 +28,7 @@ func NewGrowthRepository() *GrowthRepository {
 	}
 }
 
+// CreateSavedSearch creates saved search.
 func (r *GrowthRepository) CreateSavedSearch(
 	_ context.Context,
 	input growth.CreateSavedSearchInput,
@@ -75,6 +78,7 @@ func (r *GrowthRepository) CreateSavedSearch(
 	return cloneSavedSearch(record), nil
 }
 
+// ListSavedSearchesByUser returns a list of saved searches by user.
 func (r *GrowthRepository) ListSavedSearchesByUser(
 	_ context.Context,
 	userID string,
@@ -98,6 +102,7 @@ func (r *GrowthRepository) ListSavedSearchesByUser(
 	return result, nil
 }
 
+// DeleteSavedSearchByUserAndID deletes saved search by user and id.
 func (r *GrowthRepository) DeleteSavedSearchByUserAndID(
 	_ context.Context,
 	userID string,
@@ -124,6 +129,7 @@ func (r *GrowthRepository) DeleteSavedSearchByUserAndID(
 	return nil
 }
 
+// CreateWatchlistCompany creates watchlist company.
 func (r *GrowthRepository) CreateWatchlistCompany(
 	_ context.Context,
 	userID string,
@@ -149,6 +155,7 @@ func (r *GrowthRepository) CreateWatchlistCompany(
 	return cloneCompanyWatchlist(record), nil
 }
 
+// ListWatchlistCompaniesByUser returns a list of watchlist companies by user.
 func (r *GrowthRepository) ListWatchlistCompaniesByUser(
 	_ context.Context,
 	userID string,
@@ -180,6 +187,7 @@ func (r *GrowthRepository) ListWatchlistCompaniesByUser(
 	return result, nil
 }
 
+// DeleteWatchlistCompanyByUserAndSlug deletes watchlist company by user and slug.
 func (r *GrowthRepository) DeleteWatchlistCompanyByUserAndSlug(
 	_ context.Context,
 	userID string,

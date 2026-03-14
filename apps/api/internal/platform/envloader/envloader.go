@@ -8,10 +8,12 @@ import (
 	"strings"
 )
 
+// LoadAPIEnv loads api env.
 func LoadAPIEnv() error {
 	return Load(".env", filepath.Join("apps", "api", ".env"))
 }
 
+// Load loads configuration values from environment variables.
 func Load(paths ...string) error {
 	for _, path := range paths {
 		if strings.TrimSpace(path) == "" {

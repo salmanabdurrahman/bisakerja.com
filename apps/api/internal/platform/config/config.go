@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Config stores configuration values for config.
 type Config struct {
 	AppName                    string
 	Environment                string
@@ -34,6 +35,7 @@ type Config struct {
 	BillingUserRateLimitWindow time.Duration
 }
 
+// Load loads configuration values from environment variables.
 func Load() Config {
 	return Config{
 		AppName:                    getenv("APP_NAME", "bisakerja-api"),
@@ -63,6 +65,7 @@ func Load() Config {
 	}
 }
 
+// HTTPAddress handles http address.
 func (c Config) HTTPAddress() string {
 	return ":" + c.HTTPPort
 }

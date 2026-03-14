@@ -9,10 +9,12 @@ import (
 	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
 )
 
+// LoggerSender represents logger sender.
 type LoggerSender struct {
 	logger *slog.Logger
 }
 
+// NewLoggerSender creates a new logger sender instance.
 func NewLoggerSender(logger *slog.Logger) *LoggerSender {
 	if logger == nil {
 		logger = slog.Default()
@@ -20,6 +22,7 @@ func NewLoggerSender(logger *slog.Logger) *LoggerSender {
 	return &LoggerSender{logger: logger}
 }
 
+// Send handles send.
 func (s *LoggerSender) Send(_ context.Context, message notificationapp.EmailMessage) error {
 	if strings.TrimSpace(message.To) == "" {
 		return errors.New("email recipient is required")

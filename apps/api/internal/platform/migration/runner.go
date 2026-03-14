@@ -11,14 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Runner represents runner.
 type Runner struct {
 	pool *pgxpool.Pool
 }
 
+// NewRunner creates a new runner instance.
 func NewRunner(pool *pgxpool.Pool) *Runner {
 	return &Runner{pool: pool}
 }
 
+// MigrateUp handles migrate up.
 func (r *Runner) MigrateUp(ctx context.Context, path string) ([]string, error) {
 	files, err := CollectDirectory(path)
 	if err != nil {
@@ -47,6 +50,7 @@ func (r *Runner) MigrateUp(ctx context.Context, path string) ([]string, error) {
 	return applied, nil
 }
 
+// MigrateDown handles migrate down.
 func (r *Runner) MigrateDown(ctx context.Context, path string) (string, bool, error) {
 	files, err := CollectDirectory(path)
 	if err != nil {

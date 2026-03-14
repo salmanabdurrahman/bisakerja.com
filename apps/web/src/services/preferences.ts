@@ -2,16 +2,25 @@ import type { APIResponse } from "@/lib/types/api";
 import { fetchJSON } from "@/lib/utils/fetch-json";
 import { buildAPIURL } from "@/services/http-client";
 
+/**
+ * PreferredJobType defines the shape of preferred job type.
+ */
 export type PreferredJobType =
   | "fulltime"
   | "parttime"
   | "contract"
   | "internship";
+/**
+ * NotificationAlertMode defines the shape of notification alert mode.
+ */
 export type NotificationAlertMode =
   | "instant"
   | "daily_digest"
   | "weekly_digest";
 
+/**
+ * UserPreferences defines the shape of user preferences.
+ */
 export interface UserPreferences {
   user_id: string;
   keywords: string[];
@@ -23,6 +32,9 @@ export interface UserPreferences {
   updated_at?: string | null;
 }
 
+/**
+ * UpdatePreferencesInput defines the shape of update preferences input.
+ */
 export interface UpdatePreferencesInput {
   keywords: string[];
   locations: string[];
@@ -30,11 +42,17 @@ export interface UpdatePreferencesInput {
   salary_min: number;
 }
 
+/**
+ * UpdateNotificationPreferencesInput defines the shape of update notification preferences input.
+ */
 export interface UpdateNotificationPreferencesInput {
   alert_mode?: NotificationAlertMode;
   digest_hour?: number;
 }
 
+/**
+ * NotificationPreferences defines the shape of notification preferences.
+ */
 export interface NotificationPreferences {
   user_id: string;
   alert_mode: NotificationAlertMode;
@@ -42,6 +60,9 @@ export interface NotificationPreferences {
   updated_at?: string | null;
 }
 
+/**
+ * getPreferences returns preferences.
+ */
 export async function getPreferences(
   accessToken: string,
   init?: RequestInit,
@@ -57,6 +78,9 @@ export async function getPreferences(
   });
 }
 
+/**
+ * updatePreferences updates preferences.
+ */
 export async function updatePreferences(
   accessToken: string,
   input: UpdatePreferencesInput,
@@ -74,6 +98,9 @@ export async function updatePreferences(
   });
 }
 
+/**
+ * updateNotificationPreferences updates notification preferences.
+ */
 export async function updateNotificationPreferences(
   accessToken: string,
   input: UpdateNotificationPreferencesInput,

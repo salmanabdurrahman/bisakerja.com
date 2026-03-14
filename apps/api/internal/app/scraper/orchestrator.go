@@ -15,6 +15,7 @@ var (
 	ErrSourceUnauthorized = errors.New("source unauthorized")
 )
 
+// FetchRequest represents fetch request.
 type FetchRequest struct {
 	Keyword string
 	Page    int
@@ -22,27 +23,32 @@ type FetchRequest struct {
 	Token   string
 }
 
+// FetchResult contains result values for fetch.
 type FetchResult struct {
 	Jobs    []job.UpsertInput
 	HasMore bool
 }
 
+// SourceAdapter defines behavior for source adapter.
 type SourceAdapter interface {
 	Source() job.Source
 	RequiresAuth() bool
 	Fetch(ctx context.Context, request FetchRequest) (FetchResult, error)
 }
 
+// TokenProvider defines behavior for token provider.
 type TokenProvider interface {
 	Resolve(ctx context.Context, source job.Source) (string, error)
 }
 
+// Config stores configuration values for config.
 type Config struct {
 	Keywords []string
 	PageSize int
 	MaxPages int
 }
 
+// RunSummary summarizes execution details for run.
 type RunSummary struct {
 	Sources        int
 	SuccessSources int
@@ -53,6 +59,7 @@ type RunSummary struct {
 	ProcessedAt    time.Time
 }
 
+// Orchestrator represents orchestrator.
 type Orchestrator struct {
 	logger        *slog.Logger
 	repository    job.Repository
@@ -62,6 +69,7 @@ type Orchestrator struct {
 	onJobInserted func(context.Context, job.Job) error
 }
 
+// NewOrchestrator creates a new orchestrator instance.
 func NewOrchestrator(
 	logger *slog.Logger,
 	repository job.Repository,
@@ -91,6 +99,7 @@ func NewOrchestrator(
 	}
 }
 
+// RunOnce runs once.
 func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 	if o.repository == nil {
 		return RunSummary{}, errors.New("repository is required")
@@ -225,6 +234,7 @@ func (o *Orchestrator) resolveToken(ctx context.Context, adapter SourceAdapter) 
 	return token, nil
 }
 
+// SetOnJobInserted sets on job inserted.
 func (o *Orchestrator) SetOnJobInserted(callback func(context.Context, job.Job) error) {
 	o.onJobInserted = callback
 }

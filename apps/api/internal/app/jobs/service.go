@@ -8,14 +8,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 )
 
+// Service coordinates application use cases for the package.
 type Service struct {
 	repository job.Repository
 }
 
+// NewService creates a new service instance.
 func NewService(repository job.Repository) *Service {
 	return &Service{repository: repository}
 }
 
+// Search searches.
 func (s *Service) Search(ctx context.Context, query job.SearchQuery) (job.SearchResult, error) {
 	result, err := s.repository.Search(ctx, query)
 	if err != nil {
@@ -25,6 +28,7 @@ func (s *Service) Search(ctx context.Context, query job.SearchQuery) (job.Search
 	return result, nil
 }
 
+// GetByID returns by id.
 func (s *Service) GetByID(ctx context.Context, id string) (job.Job, error) {
 	result, err := s.repository.GetByID(ctx, strings.TrimSpace(id))
 	if err != nil {
@@ -34,6 +38,7 @@ func (s *Service) GetByID(ctx context.Context, id string) (job.Job, error) {
 	return result, nil
 }
 
+// UpsertFromScrape upserts from scrape.
 func (s *Service) UpsertFromScrape(ctx context.Context, source job.Source, jobs []job.UpsertInput) (job.UpsertResult, error) {
 	result, err := s.repository.UpsertMany(ctx, source, jobs)
 	if err != nil {
@@ -43,6 +48,7 @@ func (s *Service) UpsertFromScrape(ctx context.Context, source job.Source, jobs 
 	return result, nil
 }
 
+// RecordScrapeRun records scrape run.
 func (s *Service) RecordScrapeRun(ctx context.Context, run job.ScrapeRun) error {
 	if err := s.repository.RecordScrapeRun(ctx, run); err != nil {
 		return fmt.Errorf("record scrape run: %w", err)

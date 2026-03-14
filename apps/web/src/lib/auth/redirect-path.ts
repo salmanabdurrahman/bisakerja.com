@@ -1,5 +1,8 @@
 const defaultRedirectPath = "/account";
 
+/**
+ * normalizeRedirectPath normalizes redirect path.
+ */
 export function normalizeRedirectPath(
   rawValue: string | null | undefined,
 ): string {
@@ -21,6 +24,9 @@ export function normalizeRedirectPath(
   return value;
 }
 
+/**
+ * buildLoginHref builds login href.
+ */
 export function buildLoginHref(redirectPath: string): string {
   const normalized = normalizeRedirectPath(redirectPath);
   return `/auth/login?redirect=${encodeURIComponent(normalized)}`;

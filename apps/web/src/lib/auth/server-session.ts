@@ -8,6 +8,9 @@ import {
 } from "@/lib/auth/session-constants";
 import { refreshAuthToken } from "@/services/auth";
 
+/**
+ * resolveServerAccessToken resolves server access token.
+ */
 export async function resolveServerAccessToken(): Promise<string | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value ?? null;

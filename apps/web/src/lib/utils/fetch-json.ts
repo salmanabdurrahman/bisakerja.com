@@ -1,5 +1,8 @@
 import type { APIErrorItem, APIErrorResponse, APIResponse } from "@/lib/types/api";
 
+/**
+ * APIRequestError encapsulates api request error.
+ */
 export class APIRequestError extends Error {
   status: number;
   code?: string;
@@ -19,6 +22,9 @@ export class APIRequestError extends Error {
   }
 }
 
+/**
+ * fetchJSON fetches json.
+ */
 export async function fetchJSON<T>(
   input: string,
   init?: RequestInit,

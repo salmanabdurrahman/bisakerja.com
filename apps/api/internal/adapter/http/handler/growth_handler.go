@@ -15,6 +15,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
+// GrowthService defines behavior for growth service.
 type GrowthService interface {
 	CreateSavedSearch(ctx context.Context, input growthapp.CreateSavedSearchInput) (growth.SavedSearch, error)
 	ListSavedSearches(ctx context.Context, userID string) ([]growth.SavedSearch, error)
@@ -24,6 +25,7 @@ type GrowthService interface {
 	RemoveWatchlistCompany(ctx context.Context, userID string, companySlug string) error
 }
 
+// GrowthHandler represents growth handler.
 type GrowthHandler struct {
 	service GrowthService
 }
@@ -41,10 +43,12 @@ type createWatchlistCompanyRequest struct {
 	CompanySlug string `json:"company_slug"`
 }
 
+// NewGrowthHandler creates a new growth handler instance.
 func NewGrowthHandler(service GrowthService) *GrowthHandler {
 	return &GrowthHandler{service: service}
 }
 
+// CreateSavedSearch creates saved search.
 func (h *GrowthHandler) CreateSavedSearch(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -133,6 +137,7 @@ func (h *GrowthHandler) CreateSavedSearch(w http.ResponseWriter, r *http.Request
 	response.WriteSuccess(w, http.StatusCreated, "Saved search created", requestID, mapSavedSearch(created))
 }
 
+// ListSavedSearches returns a list of saved searches.
 func (h *GrowthHandler) ListSavedSearches(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -167,6 +172,7 @@ func (h *GrowthHandler) ListSavedSearches(w http.ResponseWriter, r *http.Request
 	response.WriteSuccess(w, http.StatusOK, "Saved searches retrieved", requestID, result)
 }
 
+// DeleteSavedSearch deletes saved search.
 func (h *GrowthHandler) DeleteSavedSearch(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -214,6 +220,7 @@ func (h *GrowthHandler) DeleteSavedSearch(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// CreateWatchlistCompany creates watchlist company.
 func (h *GrowthHandler) CreateWatchlistCompany(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -265,6 +272,7 @@ func (h *GrowthHandler) CreateWatchlistCompany(w http.ResponseWriter, r *http.Re
 	response.WriteSuccess(w, http.StatusCreated, "Company added to watchlist", requestID, mapWatchlistCompany(created))
 }
 
+// ListWatchlistCompanies returns a list of watchlist companies.
 func (h *GrowthHandler) ListWatchlistCompanies(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -299,6 +307,7 @@ func (h *GrowthHandler) ListWatchlistCompanies(w http.ResponseWriter, r *http.Re
 	response.WriteSuccess(w, http.StatusOK, "Watchlist companies retrieved", requestID, result)
 }
 
+// DeleteWatchlistCompany deletes watchlist company.
 func (h *GrowthHandler) DeleteWatchlistCompany(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())

@@ -10,12 +10,15 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 )
 
+// EnvProvider represents env provider.
 type EnvProvider struct{}
 
+// NewEnvProvider creates a new env provider instance.
 func NewEnvProvider() *EnvProvider {
 	return &EnvProvider{}
 }
 
+// Resolve resolves.
 func (p *EnvProvider) Resolve(_ context.Context, source job.Source) (string, error) {
 	switch source {
 	case job.SourceJobstreet:

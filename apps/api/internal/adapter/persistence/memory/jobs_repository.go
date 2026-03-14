@@ -14,6 +14,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 )
 
+// JobsRepository represents jobs repository.
 type JobsRepository struct {
 	mu            sync.RWMutex
 	byID          map[string]job.Job
@@ -21,6 +22,7 @@ type JobsRepository struct {
 	scrapeRunLogs []job.ScrapeRun
 }
 
+// NewJobsRepository creates a new jobs repository instance.
 func NewJobsRepository() *JobsRepository {
 	return &JobsRepository{
 		byID:        make(map[string]job.Job),
@@ -28,6 +30,7 @@ func NewJobsRepository() *JobsRepository {
 	}
 }
 
+// UpsertMany upserts many.
 func (r *JobsRepository) UpsertMany(_ context.Context, source job.Source, inputs []job.UpsertInput) (job.UpsertResult, error) {
 	if source == "" {
 		return job.UpsertResult{}, errors.New("source is required")
@@ -83,6 +86,7 @@ func (r *JobsRepository) UpsertMany(_ context.Context, source job.Source, inputs
 	}, nil
 }
 
+// Search searches.
 func (r *JobsRepository) Search(_ context.Context, query job.SearchQuery) (job.SearchResult, error) {
 	if query.Page <= 0 {
 		query.Page = 1
@@ -138,6 +142,7 @@ func (r *JobsRepository) Search(_ context.Context, query job.SearchQuery) (job.S
 	}, nil
 }
 
+// GetByID returns by id.
 func (r *JobsRepository) GetByID(_ context.Context, id string) (job.Job, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -150,6 +155,7 @@ func (r *JobsRepository) GetByID(_ context.Context, id string) (job.Job, error) 
 	return record, nil
 }
 
+// RecordScrapeRun records scrape run.
 func (r *JobsRepository) RecordScrapeRun(_ context.Context, run job.ScrapeRun) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

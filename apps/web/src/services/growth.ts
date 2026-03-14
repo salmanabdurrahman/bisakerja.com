@@ -3,8 +3,14 @@ import { fetchJSON } from "@/lib/utils/fetch-json";
 import { buildAPIURL } from "@/services/http-client";
 import type { NotificationAlertMode } from "@/services/preferences";
 
+/**
+ * JobSource defines the shape of job source.
+ */
 export type JobSource = "glints" | "kalibrr" | "jobstreet";
 
+/**
+ * SavedSearch defines the shape of saved search.
+ */
 export interface SavedSearch {
   id: string;
   query: string;
@@ -17,6 +23,9 @@ export interface SavedSearch {
   updated_at: string;
 }
 
+/**
+ * CreateSavedSearchInput defines the shape of create saved search input.
+ */
 export interface CreateSavedSearchInput {
   query: string;
   location?: string;
@@ -26,11 +35,17 @@ export interface CreateSavedSearchInput {
   is_active?: boolean;
 }
 
+/**
+ * WatchlistCompany defines the shape of watchlist company.
+ */
 export interface WatchlistCompany {
   company_slug: string;
   [key: string]: unknown;
 }
 
+/**
+ * NotificationRecord defines the shape of notification record.
+ */
 export interface NotificationRecord {
   id: string;
   job_id: string;
@@ -42,17 +57,26 @@ export interface NotificationRecord {
   created_at: string;
 }
 
+/**
+ * NotificationsQuery defines the shape of notifications query.
+ */
 export interface NotificationsQuery {
   page?: number;
   limit?: number;
   unread_only?: boolean;
 }
 
+/**
+ * NotificationListResult defines the shape of notification list result.
+ */
 export interface NotificationListResult {
   items: NotificationRecord[];
   pagination: APIPagination | null;
 }
 
+/**
+ * createSavedSearch creates saved search.
+ */
 export async function createSavedSearch(
   accessToken: string,
   input: CreateSavedSearchInput,
@@ -70,6 +94,9 @@ export async function createSavedSearch(
   });
 }
 
+/**
+ * listSavedSearches returns a list of saved searches.
+ */
 export async function listSavedSearches(
   accessToken: string,
   init?: RequestInit,
@@ -85,6 +112,9 @@ export async function listSavedSearches(
   });
 }
 
+/**
+ * deleteSavedSearch deletes saved search.
+ */
 export async function deleteSavedSearch(
   accessToken: string,
   id: string,
@@ -101,6 +131,9 @@ export async function deleteSavedSearch(
   });
 }
 
+/**
+ * addCompanyToWatchlist handles add company to watchlist.
+ */
 export async function addCompanyToWatchlist(
   accessToken: string,
   companySlug: string,
@@ -118,6 +151,9 @@ export async function addCompanyToWatchlist(
   });
 }
 
+/**
+ * listWatchlistCompanies returns a list of watchlist companies.
+ */
 export async function listWatchlistCompanies(
   accessToken: string,
   init?: RequestInit,
@@ -133,6 +169,9 @@ export async function listWatchlistCompanies(
   });
 }
 
+/**
+ * removeCompanyFromWatchlist removes company from watchlist.
+ */
 export async function removeCompanyFromWatchlist(
   accessToken: string,
   companySlug: string,
@@ -152,6 +191,9 @@ export async function removeCompanyFromWatchlist(
   );
 }
 
+/**
+ * listNotifications returns a list of notifications.
+ */
 export async function listNotifications(
   accessToken: string,
   query: NotificationsQuery = {},
@@ -182,6 +224,9 @@ export async function listNotifications(
   });
 }
 
+/**
+ * markNotificationAsRead marks notification as read.
+ */
 export async function markNotificationAsRead(
   accessToken: string,
   notificationID: string,

@@ -13,14 +13,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/growth"
 )
 
+// GrowthRepository represents growth repository.
 type GrowthRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewGrowthRepository creates a new growth repository instance.
 func NewGrowthRepository(pool *pgxpool.Pool) *GrowthRepository {
 	return &GrowthRepository{pool: pool}
 }
 
+// CreateSavedSearch creates saved search.
 func (r *GrowthRepository) CreateSavedSearch(
 	ctx context.Context,
 	input growth.CreateSavedSearchInput,
@@ -95,6 +98,7 @@ RETURNING id::text, user_id::text, query, location, source, salary_min, frequenc
 	return created, nil
 }
 
+// ListSavedSearchesByUser returns a list of saved searches by user.
 func (r *GrowthRepository) ListSavedSearchesByUser(
 	ctx context.Context,
 	userID string,
@@ -132,6 +136,7 @@ ORDER BY created_at DESC, id DESC
 	return result, nil
 }
 
+// DeleteSavedSearchByUserAndID deletes saved search by user and id.
 func (r *GrowthRepository) DeleteSavedSearchByUserAndID(
 	ctx context.Context,
 	userID string,
@@ -158,6 +163,7 @@ WHERE id::text = $1 AND user_id::text = $2
 	return nil
 }
 
+// CreateWatchlistCompany creates watchlist company.
 func (r *GrowthRepository) CreateWatchlistCompany(
 	ctx context.Context,
 	userID string,
@@ -203,6 +209,7 @@ WHERE user_id::text = $1 AND company_slug = $2
 	return growth.CompanyWatchlist{}, growth.ErrWatchlistCompanyNotFound
 }
 
+// ListWatchlistCompaniesByUser returns a list of watchlist companies by user.
 func (r *GrowthRepository) ListWatchlistCompaniesByUser(
 	ctx context.Context,
 	userID string,
@@ -240,6 +247,7 @@ ORDER BY created_at DESC, company_slug DESC
 	return result, nil
 }
 
+// DeleteWatchlistCompanyByUserAndSlug deletes watchlist company by user and slug.
 func (r *GrowthRepository) DeleteWatchlistCompanyByUserAndSlug(
 	ctx context.Context,
 	userID string,

@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// Meta represents meta.
 type Meta struct {
 	Code       int         `json:"code"`
 	Status     string      `json:"status"`
@@ -13,6 +14,7 @@ type Meta struct {
 	Pagination *Pagination `json:"pagination,omitempty"`
 }
 
+// Pagination represents pagination.
 type Pagination struct {
 	Page         int `json:"page"`
 	Limit        int `json:"limit"`
@@ -20,6 +22,7 @@ type Pagination struct {
 	TotalRecords int `json:"total_records"`
 }
 
+// ErrorItem represents error item.
 type ErrorItem struct {
 	Field   string `json:"field,omitempty"`
 	Code    string `json:"code"`
@@ -36,6 +39,7 @@ type errorEnvelope struct {
 	Errors []ErrorItem `json:"errors,omitempty"`
 }
 
+// WriteSuccess writes success.
 func WriteSuccess(w http.ResponseWriter, code int, message, requestID string, data any) {
 	writeJSON(w, code, successEnvelope{
 		Meta: Meta{
@@ -48,6 +52,7 @@ func WriteSuccess(w http.ResponseWriter, code int, message, requestID string, da
 	})
 }
 
+// WriteSuccessWithPagination writes success with pagination.
 func WriteSuccessWithPagination(
 	w http.ResponseWriter,
 	code int,
@@ -67,6 +72,7 @@ func WriteSuccessWithPagination(
 	})
 }
 
+// WriteError writes error.
 func WriteError(w http.ResponseWriter, code int, message, requestID string, errors []ErrorItem) {
 	writeJSON(w, code, errorEnvelope{
 		Meta: Meta{

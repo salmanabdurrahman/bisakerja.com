@@ -16,6 +16,7 @@ import (
 
 const defaultJobstreetEndpoint = "https://id.jobstreet.com/graphql"
 
+// JobstreetAdapter represents jobstreet adapter.
 type JobstreetAdapter struct {
 	Endpoint string
 	Client   *http.Client
@@ -24,6 +25,7 @@ type JobstreetAdapter struct {
 	Timezone string
 }
 
+// NewJobstreetAdapter creates a new jobstreet adapter instance.
 func NewJobstreetAdapter(client *http.Client) *JobstreetAdapter {
 	if client == nil {
 		client = &http.Client{Timeout: 15 * time.Second}
@@ -37,14 +39,17 @@ func NewJobstreetAdapter(client *http.Client) *JobstreetAdapter {
 	}
 }
 
+// Source handles source.
 func (a *JobstreetAdapter) Source() job.Source {
 	return job.SourceJobstreet
 }
 
+// RequiresAuth handles requires auth.
 func (a *JobstreetAdapter) RequiresAuth() bool {
 	return true
 }
 
+// Fetch handles fetch.
 func (a *JobstreetAdapter) Fetch(ctx context.Context, request scraper.FetchRequest) (scraper.FetchResult, error) {
 	if strings.TrimSpace(request.Token) == "" {
 		return scraper.FetchResult{}, fmt.Errorf("%w: missing bearer token", scraper.ErrTokenUnavailable)

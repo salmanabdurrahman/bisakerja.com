@@ -17,12 +17,14 @@ var (
 	ErrNotificationIDRequired = errors.New("notification id is required")
 )
 
+// CenterService represents center service.
 type CenterService struct {
 	identityRepository     identity.Repository
 	notificationRepository notification.Repository
 	now                    func() time.Time
 }
 
+// ListNotificationsInput contains input parameters for list notifications.
 type ListNotificationsInput struct {
 	UserID     string
 	Page       int
@@ -30,6 +32,7 @@ type ListNotificationsInput struct {
 	UnreadOnly bool
 }
 
+// ListNotificationsResult contains result values for list notifications.
 type ListNotificationsResult struct {
 	Data         []notification.Notification
 	Page         int
@@ -38,6 +41,7 @@ type ListNotificationsResult struct {
 	TotalRecords int
 }
 
+// NewCenterService creates a new center service instance.
 func NewCenterService(
 	identityRepository identity.Repository,
 	notificationRepository notification.Repository,
@@ -49,6 +53,7 @@ func NewCenterService(
 	}
 }
 
+// ListNotifications returns a list of notifications.
 func (s *CenterService) ListNotifications(
 	ctx context.Context,
 	input ListNotificationsInput,
@@ -125,6 +130,7 @@ func (s *CenterService) ListNotifications(
 	}, nil
 }
 
+// MarkNotificationRead marks notification read.
 func (s *CenterService) MarkNotificationRead(
 	ctx context.Context,
 	userID string,

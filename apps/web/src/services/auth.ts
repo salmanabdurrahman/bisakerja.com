@@ -2,19 +2,31 @@ import type { APIResponse } from "@/lib/types/api";
 import { fetchJSON } from "@/lib/utils/fetch-json";
 import { buildAPIURL } from "@/services/http-client";
 
+/**
+ * UserRole defines the shape of user role.
+ */
 export type UserRole = "user" | "admin";
+/**
+ * SubscriptionState defines the shape of subscription state.
+ */
 export type SubscriptionState =
   | "free"
   | "pending_payment"
   | "premium_active"
   | "premium_expired";
 
+/**
+ * RegisterInput defines the shape of register input.
+ */
 export interface RegisterInput {
   email: string;
   password: string;
   name: string;
 }
 
+/**
+ * RegisterResult defines the shape of register result.
+ */
 export interface RegisterResult {
   id: string;
   email: string;
@@ -23,11 +35,17 @@ export interface RegisterResult {
   created_at: string;
 }
 
+/**
+ * LoginInput defines the shape of login input.
+ */
 export interface LoginInput {
   email: string;
   password: string;
 }
 
+/**
+ * LoginResult defines the shape of login result.
+ */
 export interface LoginResult {
   access_token: string;
   refresh_token: string;
@@ -35,16 +53,25 @@ export interface LoginResult {
   expires_in: number;
 }
 
+/**
+ * RefreshTokenInput defines the shape of refresh token input.
+ */
 export interface RefreshTokenInput {
   refresh_token: string;
 }
 
+/**
+ * RefreshTokenResult defines the shape of refresh token result.
+ */
 export interface RefreshTokenResult {
   access_token: string;
   token_type: "Bearer";
   expires_in: number;
 }
 
+/**
+ * AuthMe defines the shape of auth me.
+ */
 export interface AuthMe {
   id: string;
   email: string;
@@ -55,6 +82,9 @@ export interface AuthMe {
   subscription_state?: SubscriptionState;
 }
 
+/**
+ * registerUser handles register user.
+ */
 export async function registerUser(
   input: RegisterInput,
   init?: RequestInit,
@@ -67,6 +97,9 @@ export async function registerUser(
   });
 }
 
+/**
+ * loginUser handles login user.
+ */
 export async function loginUser(
   input: LoginInput,
   init?: RequestInit,
@@ -79,6 +112,9 @@ export async function loginUser(
   });
 }
 
+/**
+ * refreshAuthToken handles refresh auth token.
+ */
 export async function refreshAuthToken(
   input: RefreshTokenInput,
   init?: RequestInit,
@@ -91,6 +127,9 @@ export async function refreshAuthToken(
   });
 }
 
+/**
+ * getMe returns me.
+ */
 export async function getMe(
   accessToken: string,
   init?: RequestInit,

@@ -14,14 +14,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 )
 
+// BillingRepository represents billing repository.
 type BillingRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewBillingRepository creates a new billing repository instance.
 func NewBillingRepository(pool *pgxpool.Pool) *BillingRepository {
 	return &BillingRepository{pool: pool}
 }
 
+// CreatePending creates pending.
 func (r *BillingRepository) CreatePending(
 	ctx context.Context,
 	input billing.CreatePendingTransactionInput,
@@ -134,6 +137,7 @@ RETURNING id::text, user_id::text, provider, plan_code, mayar_transaction_id, in
 	return billing.Transaction{}, err
 }
 
+// FindPendingByUserAndIdempotencyKey handles find pending by user and idempotency key.
 func (r *BillingRepository) FindPendingByUserAndIdempotencyKey(
 	ctx context.Context,
 	userID string,
@@ -179,6 +183,7 @@ LIMIT 1
 	return transaction, nil
 }
 
+// GetByMayarTransactionID returns by mayar transaction id.
 func (r *BillingRepository) GetByMayarTransactionID(
 	ctx context.Context,
 	mayarTransactionID string,
@@ -205,6 +210,7 @@ WHERE mayar_transaction_id = $1
 	return item, nil
 }
 
+// ListByUser returns a list of by user.
 func (r *BillingRepository) ListByUser(ctx context.Context, userID string) ([]billing.Transaction, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
@@ -240,6 +246,7 @@ ORDER BY created_at DESC, id DESC
 	return result, nil
 }
 
+// ListAll returns a list of all.
 func (r *BillingRepository) ListAll(ctx context.Context) ([]billing.Transaction, error) {
 	query := `
 SELECT id::text, user_id::text, provider, plan_code, mayar_transaction_id, invoice_id, checkout_url, amount, status,
@@ -268,6 +275,7 @@ ORDER BY created_at DESC, id DESC
 	return result, nil
 }
 
+// UpdateStatusByMayarTransactionID updates status by mayar transaction id.
 func (r *BillingRepository) UpdateStatusByMayarTransactionID(
 	ctx context.Context,
 	mayarTransactionID string,
@@ -306,6 +314,7 @@ RETURNING id::text, user_id::text, provider, plan_code, mayar_transaction_id, in
 	return updated, nil
 }
 
+// GetWebhookDeliveryByIdempotencyKey returns webhook delivery by idempotency key.
 func (r *BillingRepository) GetWebhookDeliveryByIdempotencyKey(
 	ctx context.Context,
 	idempotencyKey string,
@@ -332,6 +341,7 @@ WHERE idempotency_key = $1
 	return item, nil
 }
 
+// RecordWebhookDelivery records webhook delivery.
 func (r *BillingRepository) RecordWebhookDelivery(
 	ctx context.Context,
 	delivery billing.WebhookDelivery,

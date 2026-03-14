@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Source represents source.
 type Source string
 
 const (
@@ -19,6 +20,7 @@ var (
 	ErrNotFound = errors.New("job not found")
 )
 
+// Job represents job.
 type Job struct {
 	ID            string
 	Source        Source
@@ -37,6 +39,7 @@ type Job struct {
 	RawData       map[string]any
 }
 
+// UpsertInput contains input parameters for upsert.
 type UpsertInput struct {
 	OriginalJobID string
 	Title         string
@@ -51,12 +54,14 @@ type UpsertInput struct {
 	RawData       map[string]any
 }
 
+// UpsertResult contains result values for upsert.
 type UpsertResult struct {
 	Inserted       []Job
 	InsertedCount  int
 	DuplicateCount int
 }
 
+// SearchQuery represents search query.
 type SearchQuery struct {
 	Q            string
 	Location     string
@@ -68,6 +73,7 @@ type SearchQuery struct {
 	Limit        int
 }
 
+// SearchResult contains result values for search.
 type SearchResult struct {
 	Data         []Job
 	Page         int
@@ -76,6 +82,7 @@ type SearchResult struct {
 	TotalRecords int
 }
 
+// ScrapeRunStatus describes status details for scrape run.
 type ScrapeRunStatus string
 
 const (
@@ -85,6 +92,7 @@ const (
 	ScrapeRunFailedAuth ScrapeRunStatus = "failed_auth"
 )
 
+// ScrapeRun represents scrape run.
 type ScrapeRun struct {
 	ID             string
 	Source         Source
@@ -98,6 +106,7 @@ type ScrapeRun struct {
 	FinishedAt     time.Time
 }
 
+// Repository defines behavior for repository.
 type Repository interface {
 	UpsertMany(ctx context.Context, source Source, jobs []UpsertInput) (UpsertResult, error)
 	Search(ctx context.Context, query SearchQuery) (SearchResult, error)
@@ -105,6 +114,7 @@ type Repository interface {
 	RecordScrapeRun(ctx context.Context, run ScrapeRun) error
 }
 
+// ParseSource parses source.
 func ParseSource(raw string) (Source, bool) {
 	value := Source(strings.TrimSpace(strings.ToLower(raw)))
 	switch value {
@@ -115,11 +125,13 @@ func ParseSource(raw string) (Source, bool) {
 	}
 }
 
+// IsSupportedSource handles is supported source.
 func IsSupportedSource(raw string) bool {
 	_, ok := ParseSource(raw)
 	return ok
 }
 
+// SupportedSources handles supported sources.
 func SupportedSources() []string {
 	return []string{string(SourceGlints), string(SourceKalibrr), string(SourceJobstreet)}
 }

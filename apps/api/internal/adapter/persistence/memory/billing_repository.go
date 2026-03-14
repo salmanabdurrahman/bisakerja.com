@@ -11,6 +11,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 )
 
+// BillingRepository represents billing repository.
 type BillingRepository struct {
 	mu                   sync.RWMutex
 	transactions         map[string]billing.Transaction
@@ -19,6 +20,7 @@ type BillingRepository struct {
 	webhookByIdempotency map[string]billing.WebhookDelivery
 }
 
+// NewBillingRepository creates a new billing repository instance.
 func NewBillingRepository() *BillingRepository {
 	return &BillingRepository{
 		transactions:         make(map[string]billing.Transaction),
@@ -28,6 +30,7 @@ func NewBillingRepository() *BillingRepository {
 	}
 }
 
+// CreatePending creates pending.
 func (r *BillingRepository) CreatePending(
 	_ context.Context,
 	input billing.CreatePendingTransactionInput,
@@ -91,6 +94,7 @@ func (r *BillingRepository) CreatePending(
 	return cloneBillingTransaction(transaction), nil
 }
 
+// FindPendingByUserAndIdempotencyKey handles find pending by user and idempotency key.
 func (r *BillingRepository) FindPendingByUserAndIdempotencyKey(
 	_ context.Context,
 	userID string,
@@ -129,6 +133,7 @@ func (r *BillingRepository) FindPendingByUserAndIdempotencyKey(
 	return cloneBillingTransaction(item), nil
 }
 
+// GetByMayarTransactionID returns by mayar transaction id.
 func (r *BillingRepository) GetByMayarTransactionID(
 	_ context.Context,
 	mayarTransactionID string,
@@ -152,6 +157,7 @@ func (r *BillingRepository) GetByMayarTransactionID(
 	return cloneBillingTransaction(item), nil
 }
 
+// ListByUser returns a list of by user.
 func (r *BillingRepository) ListByUser(
 	_ context.Context,
 	userID string,
@@ -183,6 +189,7 @@ func (r *BillingRepository) ListByUser(
 	return result, nil
 }
 
+// ListAll returns a list of all.
 func (r *BillingRepository) ListAll(_ context.Context) ([]billing.Transaction, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -203,6 +210,7 @@ func (r *BillingRepository) ListAll(_ context.Context) ([]billing.Transaction, e
 	return result, nil
 }
 
+// UpdateStatusByMayarTransactionID updates status by mayar transaction id.
 func (r *BillingRepository) UpdateStatusByMayarTransactionID(
 	_ context.Context,
 	mayarTransactionID string,
@@ -235,6 +243,7 @@ func (r *BillingRepository) UpdateStatusByMayarTransactionID(
 	return cloneBillingTransaction(item), nil
 }
 
+// GetWebhookDeliveryByIdempotencyKey returns webhook delivery by idempotency key.
 func (r *BillingRepository) GetWebhookDeliveryByIdempotencyKey(
 	_ context.Context,
 	idempotencyKey string,
@@ -254,6 +263,7 @@ func (r *BillingRepository) GetWebhookDeliveryByIdempotencyKey(
 	return cloneWebhookDelivery(delivery), nil
 }
 
+// RecordWebhookDelivery records webhook delivery.
 func (r *BillingRepository) RecordWebhookDelivery(
 	_ context.Context,
 	delivery billing.WebhookDelivery,

@@ -6,18 +6,21 @@ import (
 	"time"
 )
 
+// PlanCode represents plan code.
 type PlanCode string
 
 const (
 	PlanCodeProMonthly PlanCode = "pro_monthly"
 )
 
+// PaymentProvider represents payment provider.
 type PaymentProvider string
 
 const (
 	PaymentProviderMayar PaymentProvider = "mayar"
 )
 
+// TransactionStatus describes status details for transaction.
 type TransactionStatus string
 
 const (
@@ -36,6 +39,7 @@ var (
 	ErrProviderUnavailable          = errors.New("provider unavailable")
 )
 
+// Transaction represents transaction.
 type Transaction struct {
 	ID                 string
 	UserID             string
@@ -53,6 +57,7 @@ type Transaction struct {
 	UpdatedAt          time.Time
 }
 
+// WebhookProcessingStatus describes status details for webhook processing.
 type WebhookProcessingStatus string
 
 const (
@@ -61,6 +66,7 @@ const (
 	WebhookProcessingStatusRejected         WebhookProcessingStatus = "rejected"
 )
 
+// WebhookDelivery represents webhook delivery.
 type WebhookDelivery struct {
 	ID               string
 	Provider         PaymentProvider
@@ -74,6 +80,7 @@ type WebhookDelivery struct {
 	ProcessedAt      *time.Time
 }
 
+// CreatePendingTransactionInput contains input parameters for create pending transaction.
 type CreatePendingTransactionInput struct {
 	UserID             string
 	Provider           PaymentProvider
@@ -87,6 +94,7 @@ type CreatePendingTransactionInput struct {
 	Metadata           map[string]any
 }
 
+// Repository defines behavior for repository.
 type Repository interface {
 	CreatePending(ctx context.Context, input CreatePendingTransactionInput) (Transaction, error)
 	GetByMayarTransactionID(ctx context.Context, mayarTransactionID string) (Transaction, error)
@@ -110,17 +118,20 @@ type Repository interface {
 	RecordWebhookDelivery(ctx context.Context, delivery WebhookDelivery) (WebhookDelivery, error)
 }
 
+// EnsureCustomerInput contains input parameters for ensure customer.
 type EnsureCustomerInput struct {
 	Name  string
 	Email string
 }
 
+// Customer represents customer.
 type Customer struct {
 	ID    string
 	Email string
 	Name  string
 }
 
+// CreateInvoiceInput contains input parameters for create invoice.
 type CreateInvoiceInput struct {
 	CustomerID  string
 	PlanCode    PlanCode
@@ -130,6 +141,7 @@ type CreateInvoiceInput struct {
 	ExternalID  string
 }
 
+// Invoice represents invoice.
 type Invoice struct {
 	ID            string
 	TransactionID string
@@ -138,11 +150,13 @@ type Invoice struct {
 	ExpiresAt     *time.Time
 }
 
+// Provider defines behavior for provider.
 type Provider interface {
 	EnsureCustomer(ctx context.Context, input EnsureCustomerInput) (Customer, error)
 	CreateInvoice(ctx context.Context, input CreateInvoiceInput) (Invoice, error)
 }
 
+// InvoiceSnapshot represents invoice snapshot.
 type InvoiceSnapshot struct {
 	InvoiceID         string
 	TransactionID     string
@@ -152,6 +166,7 @@ type InvoiceSnapshot struct {
 	UpdatedAt         *time.Time
 }
 
+// ReconciliationProvider defines behavior for reconciliation provider.
 type ReconciliationProvider interface {
 	GetInvoiceByID(ctx context.Context, invoiceID string) (InvoiceSnapshot, error)
 }

@@ -13,6 +13,7 @@ type healthData struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// Healthz writes the liveness probe response.
 func Healthz(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	response.WriteSuccess(w, http.StatusOK, "Service healthy", requestID, healthData{
@@ -21,6 +22,7 @@ func Healthz(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Readyz writes the readiness probe response.
 func Readyz(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	response.WriteSuccess(w, http.StatusOK, "Service ready", requestID, healthData{

@@ -16,10 +16,12 @@ var (
 	ErrWebhookUserNotFound   = errors.New("webhook user not found")
 )
 
+// ProcessMayarWebhookInput contains input parameters for process mayar webhook.
 type ProcessMayarWebhookInput struct {
 	Payload map[string]any
 }
 
+// ProcessMayarWebhookResult contains result values for process mayar webhook.
 type ProcessMayarWebhookResult struct {
 	Provider   billingdomain.PaymentProvider
 	Processed  bool
@@ -34,6 +36,7 @@ type parsedMayarWebhookPayload struct {
 	Payload           map[string]any
 }
 
+// ProcessMayarWebhook handles process mayar webhook.
 func (s *Service) ProcessMayarWebhook(
 	ctx context.Context,
 	input ProcessMayarWebhookInput,

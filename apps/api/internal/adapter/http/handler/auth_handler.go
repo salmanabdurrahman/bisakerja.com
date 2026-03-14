@@ -13,6 +13,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
+// AuthHandler represents auth handler.
 type AuthHandler struct {
 	service *identityapp.Service
 }
@@ -32,10 +33,12 @@ type refreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// NewAuthHandler creates a new auth handler instance.
 func NewAuthHandler(service *identityapp.Service) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
+// Register handles register.
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	var request registerRequest
@@ -95,6 +98,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Login handles login.
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	var request loginRequest
@@ -146,6 +150,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Refresh handles refresh.
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	var request refreshRequest
@@ -189,6 +194,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Me handles me.
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())

@@ -4,8 +4,14 @@ import { buildAPIURL } from "@/services/http-client";
 
 import type { SubscriptionState } from "@/services/auth";
 
+/**
+ * TransactionStatus defines the shape of transaction status.
+ */
 export type TransactionStatus = "pending" | "reminder" | "success" | "failed";
 
+/**
+ * BillingStatus defines the shape of billing status.
+ */
 export interface BillingStatus {
   plan_code?: string;
   subscription_state: SubscriptionState;
@@ -14,12 +20,18 @@ export interface BillingStatus {
   last_transaction_status?: TransactionStatus;
 }
 
+/**
+ * CreateCheckoutSessionInput defines the shape of create checkout session input.
+ */
 export interface CreateCheckoutSessionInput {
   plan_code: "pro_monthly";
   redirect_url: string;
   idempotency_key?: string;
 }
 
+/**
+ * CheckoutSession defines the shape of checkout session.
+ */
 export interface CheckoutSession {
   provider: "mayar";
   invoice_id: string;
@@ -30,6 +42,9 @@ export interface CheckoutSession {
   transaction_status: TransactionStatus;
 }
 
+/**
+ * BillingTransaction defines the shape of billing transaction.
+ */
 export interface BillingTransaction {
   id: string;
   provider: string;
@@ -39,12 +54,18 @@ export interface BillingTransaction {
   created_at: string;
 }
 
+/**
+ * BillingTransactionsQuery defines the shape of billing transactions query.
+ */
 export interface BillingTransactionsQuery {
   page?: number;
   limit?: number;
   status?: TransactionStatus;
 }
 
+/**
+ * getBillingStatus returns billing status.
+ */
 export async function getBillingStatus(
   accessToken: string,
   init?: RequestInit,
@@ -60,6 +81,9 @@ export async function getBillingStatus(
   });
 }
 
+/**
+ * createCheckoutSession creates checkout session.
+ */
 export async function createCheckoutSession(
   accessToken: string,
   input: CreateCheckoutSessionInput,
@@ -79,6 +103,9 @@ export async function createCheckoutSession(
   });
 }
 
+/**
+ * getBillingTransactions returns billing transactions.
+ */
 export async function getBillingTransactions(
   accessToken: string,
   query: BillingTransactionsQuery = {},

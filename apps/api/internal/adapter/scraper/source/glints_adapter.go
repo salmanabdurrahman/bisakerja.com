@@ -15,12 +15,14 @@ import (
 
 const defaultGlintsEndpoint = "https://glints.com/api/v2-alc/graphql?op=searchJobsV3"
 
+// GlintsAdapter represents glints adapter.
 type GlintsAdapter struct {
 	Endpoint    string
 	CountryCode string
 	Client      *http.Client
 }
 
+// NewGlintsAdapter creates a new glints adapter instance.
 func NewGlintsAdapter(client *http.Client) *GlintsAdapter {
 	if client == nil {
 		client = &http.Client{Timeout: 15 * time.Second}
@@ -32,14 +34,17 @@ func NewGlintsAdapter(client *http.Client) *GlintsAdapter {
 	}
 }
 
+// Source handles source.
 func (a *GlintsAdapter) Source() job.Source {
 	return job.SourceGlints
 }
 
+// RequiresAuth handles requires auth.
 func (a *GlintsAdapter) RequiresAuth() bool {
 	return false
 }
 
+// Fetch handles fetch.
 func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest) (scraper.FetchResult, error) {
 	endpoint := strings.TrimSpace(a.Endpoint)
 	if endpoint == "" {

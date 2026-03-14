@@ -16,11 +16,13 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
+// NotificationCenterService defines behavior for notification center service.
 type NotificationCenterService interface {
 	ListNotifications(ctx context.Context, input notificationapp.ListNotificationsInput) (notificationapp.ListNotificationsResult, error)
 	MarkNotificationRead(ctx context.Context, userID string, notificationID string) (notification.Notification, error)
 }
 
+// NotificationHandler represents notification handler.
 type NotificationHandler struct {
 	service NotificationCenterService
 }
@@ -31,10 +33,12 @@ type notificationsQuery struct {
 	UnreadOnly bool
 }
 
+// NewNotificationHandler creates a new notification handler instance.
 func NewNotificationHandler(service NotificationCenterService) *NotificationHandler {
 	return &NotificationHandler{service: service}
 }
 
+// ListNotifications returns a list of notifications.
 func (h *NotificationHandler) ListNotifications(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -118,6 +122,7 @@ func (h *NotificationHandler) ListNotifications(w http.ResponseWriter, r *http.R
 	)
 }
 
+// MarkNotificationRead marks notification read.
 func (h *NotificationHandler) MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())

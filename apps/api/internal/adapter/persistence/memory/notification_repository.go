@@ -11,12 +11,14 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 )
 
+// NotificationRepository represents notification repository.
 type NotificationRepository struct {
 	mu        sync.RWMutex
 	byID      map[string]notification.Notification
 	byUniqKey map[string]string
 }
 
+// NewNotificationRepository creates a new notification repository instance.
 func NewNotificationRepository() *NotificationRepository {
 	return &NotificationRepository{
 		byID:      make(map[string]notification.Notification),
@@ -24,6 +26,7 @@ func NewNotificationRepository() *NotificationRepository {
 	}
 }
 
+// CreatePending creates pending.
 func (r *NotificationRepository) CreatePending(_ context.Context, input notification.CreateInput) (notification.Notification, error) {
 	userID := strings.TrimSpace(input.UserID)
 	jobID := strings.TrimSpace(input.JobID)
@@ -56,6 +59,7 @@ func (r *NotificationRepository) CreatePending(_ context.Context, input notifica
 	return cloneNotification(record), nil
 }
 
+// GetByID returns by id.
 func (r *NotificationRepository) GetByID(_ context.Context, notificationID string) (notification.Notification, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -67,6 +71,7 @@ func (r *NotificationRepository) GetByID(_ context.Context, notificationID strin
 	return cloneNotification(record), nil
 }
 
+// ListByUser returns a list of by user.
 func (r *NotificationRepository) ListByUser(_ context.Context, userID string) ([]notification.Notification, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
@@ -95,6 +100,7 @@ func (r *NotificationRepository) ListByUser(_ context.Context, userID string) ([
 	return result, nil
 }
 
+// MarkSent marks sent.
 func (r *NotificationRepository) MarkSent(_ context.Context, notificationID string, sentAt time.Time) (notification.Notification, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -113,6 +119,7 @@ func (r *NotificationRepository) MarkSent(_ context.Context, notificationID stri
 	return cloneNotification(record), nil
 }
 
+// MarkFailed marks failed.
 func (r *NotificationRepository) MarkFailed(_ context.Context, notificationID, errorMessage string) (notification.Notification, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -129,6 +136,7 @@ func (r *NotificationRepository) MarkFailed(_ context.Context, notificationID, e
 	return cloneNotification(record), nil
 }
 
+// MarkRead marks read.
 func (r *NotificationRepository) MarkRead(
 	_ context.Context,
 	notificationID string,

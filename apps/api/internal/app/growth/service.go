@@ -23,11 +23,13 @@ var (
 
 var companySlugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,79}$`)
 
+// Service coordinates application use cases for the package.
 type Service struct {
 	identityRepository identity.Repository
 	repository         growth.Repository
 }
 
+// CreateSavedSearchInput contains input parameters for create saved search.
 type CreateSavedSearchInput struct {
 	UserID    string
 	Query     string
@@ -38,6 +40,7 @@ type CreateSavedSearchInput struct {
 	IsActive  bool
 }
 
+// NewService creates a new service instance.
 func NewService(identityRepository identity.Repository, repository growth.Repository) *Service {
 	return &Service{
 		identityRepository: identityRepository,
@@ -45,6 +48,7 @@ func NewService(identityRepository identity.Repository, repository growth.Reposi
 	}
 }
 
+// CreateSavedSearch creates saved search.
 func (s *Service) CreateSavedSearch(ctx context.Context, input CreateSavedSearchInput) (growth.SavedSearch, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return growth.SavedSearch{}, errors.New("growth service dependency is not fully configured")
@@ -99,6 +103,7 @@ func (s *Service) CreateSavedSearch(ctx context.Context, input CreateSavedSearch
 	return created, nil
 }
 
+// ListSavedSearches returns a list of saved searches.
 func (s *Service) ListSavedSearches(ctx context.Context, userID string) ([]growth.SavedSearch, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return nil, errors.New("growth service dependency is not fully configured")
@@ -119,6 +124,7 @@ func (s *Service) ListSavedSearches(ctx context.Context, userID string) ([]growt
 	return result, nil
 }
 
+// DeleteSavedSearch deletes saved search.
 func (s *Service) DeleteSavedSearch(ctx context.Context, userID string, savedSearchID string) error {
 	if s.identityRepository == nil || s.repository == nil {
 		return errors.New("growth service dependency is not fully configured")
@@ -142,6 +148,7 @@ func (s *Service) DeleteSavedSearch(ctx context.Context, userID string, savedSea
 	return nil
 }
 
+// AddWatchlistCompany adds watchlist company.
 func (s *Service) AddWatchlistCompany(ctx context.Context, userID string, companySlug string) (growth.CompanyWatchlist, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return growth.CompanyWatchlist{}, errors.New("growth service dependency is not fully configured")
@@ -167,6 +174,7 @@ func (s *Service) AddWatchlistCompany(ctx context.Context, userID string, compan
 	return created, nil
 }
 
+// ListWatchlistCompanies returns a list of watchlist companies.
 func (s *Service) ListWatchlistCompanies(ctx context.Context, userID string) ([]growth.CompanyWatchlist, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return nil, errors.New("growth service dependency is not fully configured")
@@ -187,6 +195,7 @@ func (s *Service) ListWatchlistCompanies(ctx context.Context, userID string) ([]
 	return result, nil
 }
 
+// RemoveWatchlistCompany removes watchlist company.
 func (s *Service) RemoveWatchlistCompany(ctx context.Context, userID string, companySlug string) error {
 	if s.identityRepository == nil || s.repository == nil {
 		return errors.New("growth service dependency is not fully configured")

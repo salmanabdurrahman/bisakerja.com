@@ -14,14 +14,17 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 )
 
+// NotificationRepository represents notification repository.
 type NotificationRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewNotificationRepository creates a new notification repository instance.
 func NewNotificationRepository(pool *pgxpool.Pool) *NotificationRepository {
 	return &NotificationRepository{pool: pool}
 }
 
+// CreatePending creates pending.
 func (r *NotificationRepository) CreatePending(
 	ctx context.Context,
 	input notification.CreateInput,
@@ -84,6 +87,7 @@ LIMIT 1
 	return notification.Notification{}, fmt.Errorf("create pending notification: user or job not found")
 }
 
+// GetByID returns by id.
 func (r *NotificationRepository) GetByID(ctx context.Context, notificationID string) (notification.Notification, error) {
 	normalizedID := strings.TrimSpace(notificationID)
 	if normalizedID == "" {
@@ -106,6 +110,7 @@ WHERE id::text = $1
 	return item, nil
 }
 
+// ListByUser returns a list of by user.
 func (r *NotificationRepository) ListByUser(ctx context.Context, userID string) ([]notification.Notification, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
@@ -140,6 +145,7 @@ ORDER BY created_at DESC, id DESC
 	return result, nil
 }
 
+// MarkSent marks sent.
 func (r *NotificationRepository) MarkSent(
 	ctx context.Context,
 	notificationID string,
@@ -164,6 +170,7 @@ RETURNING id::text, user_id::text, job_id::text, channel, status, COALESCE(error
 	return item, nil
 }
 
+// MarkFailed marks failed.
 func (r *NotificationRepository) MarkFailed(
 	ctx context.Context,
 	notificationID string,
@@ -194,6 +201,7 @@ RETURNING id::text, user_id::text, job_id::text, channel, status, COALESCE(error
 	return item, nil
 }
 
+// MarkRead marks read.
 func (r *NotificationRepository) MarkRead(
 	ctx context.Context,
 	notificationID string,

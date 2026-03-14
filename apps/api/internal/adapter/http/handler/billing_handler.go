@@ -15,6 +15,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
+// BillingCheckoutService defines behavior for billing checkout service.
 type BillingCheckoutService interface {
 	CreateCheckoutSession(
 		ctx context.Context,
@@ -31,6 +32,7 @@ type BillingCheckoutService interface {
 	) (billingapp.ListTransactionsResult, error)
 }
 
+// BillingHandler represents billing handler.
 type BillingHandler struct {
 	service      BillingCheckoutService
 	webhookToken string
@@ -47,6 +49,7 @@ type billingTransactionsQuery struct {
 	Status string
 }
 
+// NewBillingHandler creates a new billing handler instance.
 func NewBillingHandler(service BillingCheckoutService, webhookToken ...string) *BillingHandler {
 	token := ""
 	if len(webhookToken) > 0 {
@@ -58,6 +61,7 @@ func NewBillingHandler(service BillingCheckoutService, webhookToken ...string) *
 	}
 }
 
+// CreateCheckoutSession creates checkout session.
 func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -155,6 +159,7 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 	})
 }
 
+// HandleMayarWebhook handles handle mayar webhook.
 func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	if strings.TrimSpace(h.webhookToken) == "" {
@@ -219,6 +224,7 @@ func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+// GetBillingStatus returns billing status.
 func (h *BillingHandler) GetBillingStatus(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -256,6 +262,7 @@ func (h *BillingHandler) GetBillingStatus(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// GetBillingTransactions returns billing transactions.
 func (h *BillingHandler) GetBillingTransactions(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())

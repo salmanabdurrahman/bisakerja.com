@@ -37,6 +37,7 @@ var allowedJobTypes = map[string]struct{}{
 	"internship": {},
 }
 
+// TokenManager defines behavior for token manager.
 type TokenManager interface {
 	IssueAccessToken(userID string, role domain.Role) (string, error)
 	IssueRefreshToken(userID string, role domain.Role) (string, error)
@@ -44,23 +45,27 @@ type TokenManager interface {
 	AccessTokenTTLSeconds() int
 }
 
+// Service coordinates application use cases for the package.
 type Service struct {
 	repository   domain.Repository
 	tokenManager TokenManager
 	now          func() time.Time
 }
 
+// RegisterInput contains input parameters for register.
 type RegisterInput struct {
 	Email    string
 	Password string
 	Name     string
 }
 
+// LoginInput contains input parameters for login.
 type LoginInput struct {
 	Email    string
 	Password string
 }
 
+// Profile represents profile.
 type Profile struct {
 	ID                string
 	Email             string
@@ -71,6 +76,7 @@ type Profile struct {
 	SubscriptionState domain.SubscriptionState
 }
 
+// AuthTokens represents auth tokens.
 type AuthTokens struct {
 	AccessToken  string
 	RefreshToken string
@@ -78,12 +84,14 @@ type AuthTokens struct {
 	ExpiresIn    int
 }
 
+// AccessToken represents access token.
 type AccessToken struct {
 	AccessToken string
 	TokenType   string
 	ExpiresIn   int
 }
 
+// UpdatePreferencesInput contains input parameters for update preferences.
 type UpdatePreferencesInput struct {
 	Keywords     []string
 	KeywordsSet  bool
@@ -95,6 +103,7 @@ type UpdatePreferencesInput struct {
 	SalaryMinSet bool
 }
 
+// UpdateNotificationPreferencesInput contains input parameters for update notification preferences.
 type UpdateNotificationPreferencesInput struct {
 	AlertMode     string
 	AlertModeSet  bool
@@ -102,6 +111,7 @@ type UpdateNotificationPreferencesInput struct {
 	DigestHourSet bool
 }
 
+// NewService creates a new service instance.
 func NewService(repository domain.Repository, tokenManager TokenManager) *Service {
 	return &Service{
 		repository:   repository,
@@ -110,6 +120,7 @@ func NewService(repository domain.Repository, tokenManager TokenManager) *Servic
 	}
 }
 
+// Register handles register.
 func (s *Service) Register(ctx context.Context, input RegisterInput) (domain.User, error) {
 	email := domain.NormalizeEmail(input.Email)
 	if !isValidEmail(email) {
@@ -143,6 +154,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (domain.Use
 	return user, nil
 }
 
+// Login handles login.
 func (s *Service) Login(ctx context.Context, input LoginInput) (AuthTokens, error) {
 	email := domain.NormalizeEmail(input.Email)
 	if !isValidEmail(email) {
@@ -182,6 +194,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthTokens, erro
 	}, nil
 }
 
+// Refresh handles refresh.
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (AccessToken, error) {
 	claims, err := s.tokenManager.ParseRefreshToken(strings.TrimSpace(refreshToken))
 	if err != nil {
@@ -211,6 +224,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (AccessToken
 	}, nil
 }
 
+// GetProfile returns profile.
 func (s *Service) GetProfile(ctx context.Context, userID string) (Profile, error) {
 	user, err := s.repository.GetUserByID(ctx, strings.TrimSpace(userID))
 	if err != nil {
@@ -228,6 +242,7 @@ func (s *Service) GetProfile(ctx context.Context, userID string) (Profile, error
 	}, nil
 }
 
+// GetPreferences returns preferences.
 func (s *Service) GetPreferences(ctx context.Context, userID string) (domain.Preferences, error) {
 	trimmedUserID := strings.TrimSpace(userID)
 	if trimmedUserID == "" {
@@ -241,6 +256,7 @@ func (s *Service) GetPreferences(ctx context.Context, userID string) (domain.Pre
 	return preferences, nil
 }
 
+// UpdatePreferences updates preferences.
 func (s *Service) UpdatePreferences(ctx context.Context, userID string, input UpdatePreferencesInput) (domain.Preferences, error) {
 	trimmedUserID := strings.TrimSpace(userID)
 	if trimmedUserID == "" {
@@ -304,6 +320,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, userID string, input Up
 	return updated, nil
 }
 
+// UpdateNotificationPreferences updates notification preferences.
 func (s *Service) UpdateNotificationPreferences(
 	ctx context.Context,
 	userID string,

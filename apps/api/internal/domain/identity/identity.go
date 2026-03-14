@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Role represents role.
 type Role string
 
 const (
@@ -14,6 +15,7 @@ const (
 	RoleAdmin Role = "admin"
 )
 
+// SubscriptionState represents subscription state.
 type SubscriptionState string
 
 const (
@@ -30,6 +32,7 @@ var (
 	ErrForbidden              = errors.New("forbidden")
 )
 
+// User represents user.
 type User struct {
 	ID               string
 	Email            string
@@ -42,6 +45,7 @@ type User struct {
 	UpdatedAt        time.Time
 }
 
+// Preferences represents preferences.
 type Preferences struct {
 	UserID     string
 	Keywords   []string
@@ -53,6 +57,7 @@ type Preferences struct {
 	UpdatedAt  *time.Time
 }
 
+// NotificationAlertMode represents notification alert mode.
 type NotificationAlertMode string
 
 const (
@@ -61,6 +66,7 @@ const (
 	NotificationAlertModeWeeklyDigest NotificationAlertMode = "weekly_digest"
 )
 
+// CreateUserInput contains input parameters for create user.
 type CreateUserInput struct {
 	Email            string
 	PasswordHash     string
@@ -70,6 +76,7 @@ type CreateUserInput struct {
 	PremiumExpiredAt *time.Time
 }
 
+// Repository defines behavior for repository.
 type Repository interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (User, error)
 	GetUserByID(ctx context.Context, userID string) (User, error)
@@ -80,6 +87,7 @@ type Repository interface {
 	SavePreferences(ctx context.Context, preferences Preferences) (Preferences, error)
 }
 
+// NormalizeEmail handles normalize email.
 func NormalizeEmail(raw string) string {
 	return strings.ToLower(strings.TrimSpace(raw))
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
 )
 
+// PreferencesHandler represents preferences handler.
 type PreferencesHandler struct {
 	service *identityapp.Service
 }
@@ -28,10 +29,12 @@ type updateNotificationPreferencesRequest struct {
 	DigestHour *int    `json:"digest_hour"`
 }
 
+// NewPreferencesHandler creates a new preferences handler instance.
 func NewPreferencesHandler(service *identityapp.Service) *PreferencesHandler {
 	return &PreferencesHandler{service: service}
 }
 
+// GetPreferences returns preferences.
 func (h *PreferencesHandler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -71,6 +74,7 @@ func (h *PreferencesHandler) GetPreferences(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+// UpdatePreferences updates preferences.
 func (h *PreferencesHandler) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())
@@ -168,6 +172,7 @@ func (h *PreferencesHandler) UpdatePreferences(w http.ResponseWriter, r *http.Re
 	})
 }
 
+// UpdateNotificationPreferences updates notification preferences.
 func (h *PreferencesHandler) UpdateNotificationPreferences(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	authUser, ok := middleware.AuthUserFromContext(r.Context())

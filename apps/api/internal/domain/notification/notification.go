@@ -6,12 +6,14 @@ import (
 	"time"
 )
 
+// Channel represents channel.
 type Channel string
 
 const (
 	ChannelEmail Channel = "email"
 )
 
+// Status describes status details for status.
 type Status string
 
 const (
@@ -25,6 +27,7 @@ var (
 	ErrDuplicateNotification = errors.New("duplicate notification")
 )
 
+// Notification represents notification.
 type Notification struct {
 	ID           string
 	UserID       string
@@ -38,16 +41,19 @@ type Notification struct {
 	UpdatedAt    time.Time
 }
 
+// CreateInput contains input parameters for create.
 type CreateInput struct {
 	UserID  string
 	JobID   string
 	Channel Channel
 }
 
+// JobEvent represents job event.
 type JobEvent struct {
 	JobID string
 }
 
+// DeliveryTask represents delivery task.
 type DeliveryTask struct {
 	NotificationID string
 	UserID         string
@@ -61,6 +67,7 @@ type DeliveryTask struct {
 	URL            string
 }
 
+// Repository defines behavior for repository.
 type Repository interface {
 	CreatePending(ctx context.Context, input CreateInput) (Notification, error)
 	GetByID(ctx context.Context, notificationID string) (Notification, error)
@@ -70,6 +77,7 @@ type Repository interface {
 	MarkRead(ctx context.Context, notificationID, userID string, readAt time.Time) (Notification, error)
 }
 
+// Queue defines behavior for queue.
 type Queue interface {
 	EnqueueJobEvent(ctx context.Context, event JobEvent) error
 	DequeueJobEvents(ctx context.Context, limit int) ([]JobEvent, error)

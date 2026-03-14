@@ -20,6 +20,7 @@ var allowedSort = map[string]struct{}{
 	"created_at":  {},
 }
 
+// JobsHandler represents jobs handler.
 type JobsHandler struct {
 	service *jobs.Service
 }
@@ -29,14 +30,17 @@ type queryValidationError struct {
 	message string
 }
 
+// Error returns the error message.
 func (e queryValidationError) Error() string {
 	return e.message
 }
 
+// NewJobsHandler creates a new jobs handler instance.
 func NewJobsHandler(service *jobs.Service) *JobsHandler {
 	return &JobsHandler{service: service}
 }
 
+// ListJobs returns a list of jobs.
 func (h *JobsHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	query, err := parseSearchQuery(r)
@@ -78,6 +82,7 @@ func (h *JobsHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// GetJobByID returns job by id.
 func (h *JobsHandler) GetJobByID(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
 	id := strings.TrimSpace(r.PathValue("id"))

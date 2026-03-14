@@ -20,12 +20,14 @@ var (
 	ErrTokenExpired = errors.New("token expired")
 )
 
+// Claims represents claims.
 type Claims struct {
 	Role      identity.Role `json:"role"`
 	TokenType string        `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
+// Manager represents manager.
 type Manager struct {
 	secret     []byte
 	accessTTL  time.Duration
@@ -33,6 +35,7 @@ type Manager struct {
 	now        func() time.Time
 }
 
+// NewManager creates a new manager instance.
 func NewManager(secret string, accessTTL, refreshTTL time.Duration) (*Manager, error) {
 	trimmedSecret := strings.TrimSpace(secret)
 	if trimmedSecret == "" {
@@ -53,22 +56,27 @@ func NewManager(secret string, accessTTL, refreshTTL time.Duration) (*Manager, e
 	}, nil
 }
 
+// AccessTokenTTLSeconds handles access token ttl seconds.
 func (m *Manager) AccessTokenTTLSeconds() int {
 	return int(m.accessTTL.Seconds())
 }
 
+// IssueAccessToken issues access token.
 func (m *Manager) IssueAccessToken(userID string, role identity.Role) (string, error) {
 	return m.issue(userID, role, tokenTypeAccess, m.accessTTL)
 }
 
+// IssueRefreshToken issues refresh token.
 func (m *Manager) IssueRefreshToken(userID string, role identity.Role) (string, error) {
 	return m.issue(userID, role, tokenTypeRefresh, m.refreshTTL)
 }
 
+// ParseAccessToken parses access token.
 func (m *Manager) ParseAccessToken(rawToken string) (Claims, error) {
 	return m.parse(rawToken, tokenTypeAccess)
 }
 
+// ParseRefreshToken parses refresh token.
 func (m *Manager) ParseRefreshToken(rawToken string) (Claims, error) {
 	return m.parse(rawToken, tokenTypeRefresh)
 }

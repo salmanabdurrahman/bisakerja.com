@@ -5,6 +5,9 @@ import {
   REFRESH_TOKEN_MAX_AGE_SECONDS,
 } from "@/lib/auth/session-constants";
 
+/**
+ * BrowserSessionSnapshot defines the shape of browser session snapshot.
+ */
 export interface BrowserSessionSnapshot {
   accessToken: string | null;
   refreshToken: string | null;
@@ -24,6 +27,9 @@ interface AccessTokenWriteInput {
 
 const sessionChangedEventName = "bisakerja:session-changed";
 
+/**
+ * readBrowserSession reads browser session.
+ */
 export function readBrowserSession(): BrowserSessionSnapshot {
   return {
     accessToken: readCookie(ACCESS_TOKEN_COOKIE),
@@ -32,11 +38,17 @@ export function readBrowserSession(): BrowserSessionSnapshot {
   };
 }
 
+/**
+ * hasBrowserSession checks whether browser session.
+ */
 export function hasBrowserSession(): boolean {
   const session = readBrowserSession();
   return Boolean(session.accessToken || session.refreshToken);
 }
 
+/**
+ * writeBrowserSession writes browser session.
+ */
 export function writeBrowserSession(input: SessionWriteInput): void {
   const expiresAt = Date.now() + Math.max(1, input.expiresIn) * 1000;
 
@@ -54,6 +66,9 @@ export function writeBrowserSession(input: SessionWriteInput): void {
   dispatchSessionChangedEvent();
 }
 
+/**
+ * writeBrowserAccessToken writes browser access token.
+ */
 export function writeBrowserAccessToken(input: AccessTokenWriteInput): void {
   const expiresAt = Date.now() + Math.max(1, input.expiresIn) * 1000;
   writeCookie(ACCESS_TOKEN_COOKIE, input.accessToken, input.expiresIn);
@@ -65,6 +80,9 @@ export function writeBrowserAccessToken(input: AccessTokenWriteInput): void {
   dispatchSessionChangedEvent();
 }
 
+/**
+ * clearBrowserSession handles clear browser session.
+ */
 export function clearBrowserSession(): void {
   clearCookie(ACCESS_TOKEN_COOKIE);
   clearCookie(REFRESH_TOKEN_COOKIE);
@@ -72,6 +90,9 @@ export function clearBrowserSession(): void {
   dispatchSessionChangedEvent();
 }
 
+/**
+ * subscribeSessionChanged handles subscribe session changed.
+ */
 export function subscribeSessionChanged(handler: () => void): () => void {
   if (typeof window === "undefined") {
     return () => {};

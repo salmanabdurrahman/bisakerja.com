@@ -15,11 +15,13 @@ import (
 
 const defaultKalibrrEndpoint = "https://www.kalibrr.id/kjs/job_board/search"
 
+// KalibrrAdapter represents kalibrr adapter.
 type KalibrrAdapter struct {
 	Endpoint string
 	Client   *http.Client
 }
 
+// NewKalibrrAdapter creates a new kalibrr adapter instance.
 func NewKalibrrAdapter(client *http.Client) *KalibrrAdapter {
 	if client == nil {
 		client = &http.Client{Timeout: 15 * time.Second}
@@ -30,14 +32,17 @@ func NewKalibrrAdapter(client *http.Client) *KalibrrAdapter {
 	}
 }
 
+// Source handles source.
 func (a *KalibrrAdapter) Source() job.Source {
 	return job.SourceKalibrr
 }
 
+// RequiresAuth handles requires auth.
 func (a *KalibrrAdapter) RequiresAuth() bool {
 	return false
 }
 
+// Fetch handles fetch.
 func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest) (scraper.FetchResult, error) {
 	endpoint := strings.TrimSpace(a.Endpoint)
 	if endpoint == "" {

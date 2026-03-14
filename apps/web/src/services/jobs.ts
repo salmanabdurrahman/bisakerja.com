@@ -2,9 +2,18 @@ import type { APIResponse } from "@/lib/types/api";
 import { fetchJSON } from "@/lib/utils/fetch-json";
 import { buildAPIURL } from "@/services/http-client";
 
+/**
+ * JobSource defines the shape of job source.
+ */
 export type JobSource = "glints" | "kalibrr" | "jobstreet";
+/**
+ * JobSort defines the shape of job sort.
+ */
 export type JobSort = "-posted_at" | "posted_at" | "-created_at" | "created_at";
 
+/**
+ * JobsQuery defines the shape of jobs query.
+ */
 export interface JobsQuery {
   q?: string;
   location?: string;
@@ -15,6 +24,9 @@ export interface JobsQuery {
   source?: JobSource;
 }
 
+/**
+ * JobListItem defines the shape of job list item.
+ */
 export interface JobListItem {
   id: string;
   title: string;
@@ -25,6 +37,9 @@ export interface JobListItem {
   posted_at?: string | null;
 }
 
+/**
+ * JobDetail defines the shape of job detail.
+ */
 export interface JobDetail {
   id: string;
   title: string;
@@ -38,6 +53,9 @@ export interface JobDetail {
   created_at?: string;
 }
 
+/**
+ * listJobs returns a list of jobs.
+ */
 export async function listJobs(
   query: JobsQuery,
   init?: RequestInit,
@@ -50,6 +68,9 @@ export async function listJobs(
   });
 }
 
+/**
+ * getJobDetail returns job detail.
+ */
 export async function getJobDetail(
   jobID: string,
   init?: RequestInit,

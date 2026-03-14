@@ -10,16 +10,19 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 )
 
+// EmailMessage represents email message.
 type EmailMessage struct {
 	To      string
 	Subject string
 	Body    string
 }
 
+// EmailSender defines behavior for email sender.
 type EmailSender interface {
 	Send(ctx context.Context, message EmailMessage) error
 }
 
+// Notifier represents notifier.
 type Notifier struct {
 	logger                 *slog.Logger
 	notificationRepository notification.Repository
@@ -29,12 +32,14 @@ type Notifier struct {
 	now                    func() time.Time
 }
 
+// NotifySummary summarizes execution details for notify.
 type NotifySummary struct {
 	ProcessedTasks int
 	SentCount      int
 	FailedCount    int
 }
 
+// NewNotifier creates a new notifier instance.
 func NewNotifier(
 	logger *slog.Logger,
 	notificationRepository notification.Repository,
@@ -58,6 +63,7 @@ func NewNotifier(
 	}
 }
 
+// RunOnce runs once.
 func (n *Notifier) RunOnce(ctx context.Context) (NotifySummary, error) {
 	if n.notificationRepository == nil || n.queue == nil || n.emailSender == nil {
 		return NotifySummary{}, errors.New("notifier dependency is not fully configured")

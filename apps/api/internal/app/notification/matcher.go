@@ -13,6 +13,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/notification"
 )
 
+// Matcher represents matcher.
 type Matcher struct {
 	logger                 *slog.Logger
 	jobsRepository         job.Repository
@@ -23,6 +24,7 @@ type Matcher struct {
 	now                    func() time.Time
 }
 
+// MatchSummary summarizes execution details for match.
 type MatchSummary struct {
 	ProcessedEvents    int
 	MatchedUsers       int
@@ -33,6 +35,7 @@ type MatchSummary struct {
 	SkippedNotMatching int
 }
 
+// NewMatcher creates a new matcher instance.
 func NewMatcher(
 	logger *slog.Logger,
 	jobsRepository job.Repository,
@@ -58,6 +61,7 @@ func NewMatcher(
 	}
 }
 
+// RunOnce runs once.
 func (m *Matcher) RunOnce(ctx context.Context) (MatchSummary, error) {
 	if m.jobsRepository == nil || m.identityRepository == nil || m.notificationRepository == nil || m.queue == nil {
 		return MatchSummary{}, errors.New("matcher dependency is not fully configured")
