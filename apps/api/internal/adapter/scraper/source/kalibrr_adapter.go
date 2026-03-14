@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -56,19 +57,28 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"?"+params.Encode(), nil)
 	if err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("build kalibrr request: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("build_request", 0, err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Referer", "https://www.kalibrr.id")
 
 	resp, err := a.Client.Do(req)
 	if err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("execute kalibrr request: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("execute_request", 0, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return scraper.FetchResult{}, fmt.Errorf("kalibrr returned status %d", resp.StatusCode)
+		snippet := readBodySnippet(resp.Body, 1_024)
+		if snippet != "" {
+			return scraper.FetchResult{}, scraper.WrapSourceError(
+				"execute_request",
+				resp.StatusCode,
+				fmt.Errorf("unexpected upstream response: %s", snippet),
+			)
+		}
+
+		return scraper.FetchResult{}, scraper.WrapSourceError("execute_request", resp.StatusCode, errors.New("unexpected upstream response"))
 	}
 
 	var parsed struct {
@@ -89,8 +99,8 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 					Region string `json:"region"`
 				} `json:"address_components"`
 			} `json:"google_location"`
-			MinimumSalary *int64 `json:"minimum_salary"`
-			MaximumSalary *int64 `json:"maximum_salary"`
+			MinimumSalary nullableSalaryAmount `json:"minimum_salary"`
+			MaximumSalary nullableSalaryAmount `json:"maximum_salary"`
 		} `json:"jobs"`
 		Results []struct {
 			ID          string `json:"id"`
@@ -103,7 +113,7 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("decode kalibrr response: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("decode_response", resp.StatusCode, err)
 	}
 
 	items := make([]job.UpsertInput, 0, len(parsed.Jobs)+len(parsed.Results))
@@ -117,8 +127,8 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 			Location:      location,
 			Description:   row.Description,
 			URL:           buildKalibrrURL(row.Company.Code, row.Slug, row.ID),
-			SalaryMin:     row.MinimumSalary,
-			SalaryMax:     row.MaximumSalary,
+			SalaryMin:     row.MinimumSalary.Ptr(),
+			SalaryMax:     row.MaximumSalary.Ptr(),
 			PostedAt:      postedAt,
 			RawData:       map[string]any{},
 		})

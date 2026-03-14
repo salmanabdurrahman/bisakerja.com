@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -19,6 +20,7 @@ const defaultGlintsEndpoint = "https://glints.com/api/v2-alc/graphql?op=searchJo
 type GlintsAdapter struct {
 	Endpoint    string
 	CountryCode string
+	Cookie      string
 	Client      *http.Client
 }
 
@@ -50,13 +52,14 @@ func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest)
 	if endpoint == "" {
 		endpoint = defaultGlintsEndpoint
 	}
+	countryCode := firstNonEmpty(a.CountryCode, "ID")
 
 	payload := map[string]any{
 		"operationName": "searchJobsV3",
 		"variables": map[string]any{
 			"data": map[string]any{
 				"SearchTerm":          request.Keyword,
-				"CountryCode":         a.CountryCode,
+				"CountryCode":         countryCode,
 				"includeExternalJobs": true,
 				"pageSize":            request.Limit,
 				"page":                request.Page,
@@ -67,41 +70,57 @@ func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest)
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("marshal glints payload: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("marshal_request_payload", 0, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("build glints request: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("build_request", 0, err)
 	}
+	req.Header.Set("Accept", defaultJSONAcceptHeader)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Origin", "https://glints.com")
 	req.Header.Set("Referer", "https://glints.com/id/opportunities/jobs/explore")
-	req.Header.Set("x-glints-country-code", a.CountryCode)
+	req.Header.Set("User-Agent", defaultBrowserUserAgent)
+	req.Header.Set("x-glints-country-code", countryCode)
+	if cookie := strings.TrimSpace(a.Cookie); cookie != "" {
+		req.Header.Set("Cookie", cookie)
+	}
 
 	resp, err := a.Client.Do(req)
 	if err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("execute glints request: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("execute_request", 0, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return scraper.FetchResult{}, fmt.Errorf("glints returned status %d", resp.StatusCode)
+		snippet := readBodySnippet(resp.Body, 1_024)
+		if snippet != "" {
+			return scraper.FetchResult{}, scraper.WrapSourceError(
+				"execute_request",
+				resp.StatusCode,
+				fmt.Errorf("unexpected upstream response: %s", snippet),
+			)
+		}
+
+		return scraper.FetchResult{}, scraper.WrapSourceError("execute_request", resp.StatusCode, errors.New("unexpected upstream response"))
 	}
 
 	var parsed struct {
 		Data struct {
 			SearchJobsV3 struct {
 				JobsInPage []struct {
-					ID          string `json:"id"`
-					Title       string `json:"title"`
-					Description string `json:"description"`
-					Company     struct {
+					ID      string `json:"id"`
+					Title   string `json:"title"`
+					Company struct {
 						Name string `json:"name"`
 					} `json:"company"`
 					City struct {
 						Name string `json:"name"`
 					} `json:"city"`
+					Country struct {
+						Name string `json:"name"`
+					} `json:"country"`
 					CreatedAt      string `json:"createdAt"`
 					SalaryEstimate struct {
 						MinAmount *int64 `json:"minAmount"`
@@ -114,7 +133,7 @@ func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest)
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return scraper.FetchResult{}, fmt.Errorf("decode glints response: %w", err)
+		return scraper.FetchResult{}, scraper.WrapSourceError("decode_response", resp.StatusCode, err)
 	}
 
 	items := make([]job.UpsertInput, 0, len(parsed.Data.SearchJobsV3.JobsInPage))
@@ -124,8 +143,7 @@ func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest)
 			OriginalJobID: row.ID,
 			Title:         row.Title,
 			Company:       row.Company.Name,
-			Location:      row.City.Name,
-			Description:   row.Description,
+			Location:      firstNonEmpty(row.City.Name, row.Country.Name),
 			URL:           buildGlintsURL(row.ID),
 			SalaryMin:     row.SalaryEstimate.MinAmount,
 			SalaryMax:     row.SalaryEstimate.MaxAmount,
@@ -149,12 +167,46 @@ const glintsSearchQuery = `query searchJobsV3($data: JobSearchConditionInput!) {
     jobsInPage {
       id
       title
-      description
+      workArrangementOption
+      status
       createdAt
-      company { name }
-      city { name }
-      salaryEstimate { minAmount maxAmount }
+      updatedAt
+      isActivelyHiring
+      isHot
+      isApplied
+      shouldShowSalary
+      educationLevel
+      type
+      fraudReportFlag
+      salaryEstimate {
+        minAmount
+        maxAmount
+        CurrencyCode
+        __typename
+      }
+      company {
+        id
+        name
+        logo
+        status
+        isVIP
+        IndustryId
+      }
+      city {
+        id
+        name
+      }
+      country {
+        code
+        name
+      }
+      minYearsOfExperience
+      maxYearsOfExperience
+      source
+      jobSource
+      traceInfo
     }
+    expInfo
     hasMore
   }
 }`

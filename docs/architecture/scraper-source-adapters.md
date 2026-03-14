@@ -31,19 +31,19 @@ graph TD
 
 ```go
 type SourceAdapter interface {
-    SourceName() string
+    Source() job.Source
     RequiresAuth() bool
-    FetchPage(ctx context.Context, req FetchRequest) (FetchResult, error)
+    Fetch(ctx context.Context, request scraper.FetchRequest) (scraper.FetchResult, error)
 }
 
 type TokenProvider interface {
-    Resolve(ctx context.Context, source string) (TokenResult, error)
+    Resolve(ctx context.Context, source job.Source) (string, error)
 }
 
-type TokenResult struct {
-    Token     string
-    Source    string // env, secret-manager, manual
-    ExpiresAt time.Time
+type SourceError struct {
+    Operation  string
+    StatusCode int
+    Err        error
 }
 ```
 
@@ -51,6 +51,7 @@ Catatan:
 
 - `JobStreetAdapter.RequiresAuth() == true`.
 - `GlintsAdapter` dan `KalibrrAdapter` tidak membutuhkan token pada baseline saat ini.
+- Adapter membungkus error fetch/parse menjadi `SourceError` agar orchestrator bisa mencatat `source_operation` dan `http_status_last` secara konsisten.
 
 ## 4) Orchestrator State Machine
 
@@ -71,6 +72,12 @@ Catatan:
 | `rate_limited` | `429` | source melambat | exponential backoff + jitter |
 | `source_unavailable` | `5xx`/timeout source | source tertentu gagal | retry bounded + catat telemetry |
 | `parse_error` | schema source berubah | partial ingest | simpan sample payload + alert parser drift |
+
+Implementasi sekarang menambahkan metadata error terstruktur:
+
+- `source_operation` (contoh: `resolve_token`, `execute_request`, `decode_response`, `upsert_jobs`),
+- `http_status_last` (status HTTP terakhir jika tersedia),
+- `error_message` yang menyertakan snippet respons upstream untuk kasus `4xx/5xx`.
 
 ## 6) Observability & Audit
 

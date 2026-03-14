@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
@@ -57,6 +58,13 @@ type RunSummary struct {
 	InsertedCount  int
 	DuplicateCount int
 	ProcessedAt    time.Time
+}
+
+type sourceLogContext struct {
+	Keyword    string
+	Page       int
+	Operation  string
+	HTTPStatus int
 }
 
 // Orchestrator represents orchestrator.
@@ -116,6 +124,7 @@ func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 			Status:    job.ScrapeRunSuccess,
 			StartedAt: time.Now().UTC(),
 		}
+		logContext := sourceLogContext{}
 
 		token, err := o.resolveToken(ctx, adapter)
 		if err != nil {
@@ -123,8 +132,10 @@ func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 			runRecord.ErrorClass = "auth_missing"
 			runRecord.ErrorMessage = err.Error()
 			runRecord.FinishedAt = time.Now().UTC()
+			logContext.Operation = "resolve_token"
 			_ = o.repository.RecordScrapeRun(ctx, runRecord)
 			summary.FailedSources++
+			o.logSourceProcessed(runRecord, logContext)
 			continue
 		}
 
@@ -139,6 +150,12 @@ func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 				})
 				if fetchErr != nil {
 					sourceError = fetchErr
+					logContext.Keyword = keyword
+					logContext.Page = page
+					logContext.Operation, logContext.HTTPStatus = SourceErrorDetails(fetchErr)
+					if logContext.Operation == "" {
+						logContext.Operation = "fetch_page"
+					}
 					if errors.Is(fetchErr, ErrSourceUnauthorized) {
 						runRecord.Status = job.ScrapeRunFailedAuth
 						runRecord.ErrorClass = "auth_failed"
@@ -157,6 +174,9 @@ func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 					runRecord.Status = job.ScrapeRunFailed
 					runRecord.ErrorClass = "repository_error"
 					runRecord.ErrorMessage = upsertErr.Error()
+					logContext.Keyword = keyword
+					logContext.Page = page
+					logContext.Operation = "upsert_jobs"
 					break
 				}
 
@@ -169,6 +189,8 @@ func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 						if publishErr := o.onJobInserted(ctx, inserted); publishErr != nil {
 							o.logger.Error(
 								"job inserted hook failed",
+								"operation", "publish_job_event",
+								"error_class", "queue_publish_error",
 								"source", adapter.Source(),
 								"job_id", inserted.ID,
 								"error", publishErr.Error(),
@@ -201,15 +223,7 @@ func (o *Orchestrator) RunOnce(ctx context.Context) (RunSummary, error) {
 			summary.FailedSources++
 		}
 
-		o.logger.Info(
-			"scrape source processed",
-			"source", adapter.Source(),
-			"status", runRecord.Status,
-			"fetched_count", runRecord.FetchedCount,
-			"inserted_count", runRecord.InsertedCount,
-			"duplicate_count", runRecord.DuplicateCount,
-			"error_class", runRecord.ErrorClass,
-		)
+		o.logSourceProcessed(runRecord, logContext)
 	}
 
 	return summary, nil
@@ -237,4 +251,45 @@ func (o *Orchestrator) resolveToken(ctx context.Context, adapter SourceAdapter) 
 // SetOnJobInserted sets on job inserted.
 func (o *Orchestrator) SetOnJobInserted(callback func(context.Context, job.Job) error) {
 	o.onJobInserted = callback
+}
+
+func (o *Orchestrator) logSourceProcessed(runRecord job.ScrapeRun, logContext sourceLogContext) {
+	attrs := []any{
+		"operation", "run_source",
+		"source", runRecord.Source,
+		"status", runRecord.Status,
+		"fetched_count", runRecord.FetchedCount,
+		"inserted_count", runRecord.InsertedCount,
+		"duplicate_count", runRecord.DuplicateCount,
+		"duration_ms", runDuration(runRecord.StartedAt, runRecord.FinishedAt),
+	}
+
+	if errorClass := strings.TrimSpace(runRecord.ErrorClass); errorClass != "" {
+		attrs = append(attrs, "error_class", errorClass)
+	}
+	if errorMessage := strings.TrimSpace(runRecord.ErrorMessage); errorMessage != "" {
+		attrs = append(attrs, "error_message", errorMessage)
+	}
+	if keyword := strings.TrimSpace(logContext.Keyword); keyword != "" {
+		attrs = append(attrs, "keyword", keyword)
+	}
+	if logContext.Page > 0 {
+		attrs = append(attrs, "page", logContext.Page)
+	}
+	if operation := strings.TrimSpace(logContext.Operation); operation != "" {
+		attrs = append(attrs, "source_operation", operation)
+	}
+	if logContext.HTTPStatus > 0 {
+		attrs = append(attrs, "http_status_last", logContext.HTTPStatus)
+	}
+
+	o.logger.Info("scrape source processed", attrs...)
+}
+
+func runDuration(startedAt, finishedAt time.Time) int64 {
+	if startedAt.IsZero() || finishedAt.IsZero() || finishedAt.Before(startedAt) {
+		return 0
+	}
+
+	return finishedAt.Sub(startedAt).Milliseconds()
 }

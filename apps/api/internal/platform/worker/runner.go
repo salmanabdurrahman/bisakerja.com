@@ -25,22 +25,28 @@ func RunWithTask(
 	tickInterval time.Duration,
 	task func(context.Context) error,
 ) error {
-	logger.Info("worker started", "worker", name, "tick_interval", tickInterval.String())
+	logger.Info("worker started", "operation", "worker_lifecycle", "worker", name, "tick_interval", tickInterval.String())
 	ticker := time.NewTicker(tickInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("worker shutting down", "worker", name)
+			logger.Info("worker shutting down", "operation", "worker_lifecycle", "worker", name)
 			return nil
 		case <-ticker.C:
 			if task != nil {
 				if err := task(ctx); err != nil {
-					logger.Error("worker task failed", "worker", name, "error", err.Error())
+					logger.Error(
+						"worker task failed",
+						"operation", "run_worker_task",
+						"error_class", "worker_task_error",
+						"worker", name,
+						"error", err.Error(),
+					)
 				}
 			}
-			logger.Debug("worker heartbeat", "worker", name)
+			logger.Debug("worker heartbeat", "operation", "worker_heartbeat", "worker", name)
 		}
 	}
 }

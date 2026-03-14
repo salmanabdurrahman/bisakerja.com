@@ -25,6 +25,7 @@ Catatan penting: kegagalan JobStreet pada referensi terjadi karena token tidak d
 - Endpoint: GraphQL `POST` (`searchJobsV3`).
 - Auth: tidak wajib bearer token pada baseline ini.
 - Header penting: `Content-Type`, `Origin`, `Referer`, `x-glints-country-code`.
+- Fallback opsional saat upstream mulai `403`: kirim browser-like `Accept` + `User-Agent`, dan `GLINTS_COOKIE` via environment bila dibutuhkan untuk debugging/dev.
 - Pagination: `page` + `pageSize`.
 - Payload kunci: `SearchTerm`, `CountryCode`, `includeExternalJobs`, `LocationIds`.
 
@@ -41,6 +42,7 @@ Catatan penting: kegagalan JobStreet pada referensi terjadi karena token tidak d
 - Endpoint: GraphQL `POST` (`JobSearchV6`).
 - Auth: **wajib** `Authorization: Bearer <token>`.
 - Header tambahan yang dibutuhkan source: `seek-request-brand`, `seek-request-country`, `x-seek-site`.
+- Jika token valid masih menghasilkan `400`, worker boleh menambahkan `Accept`, `Accept-Language`, `User-Agent`, `Referer` search-result style, dan cookie/session metadata opsional dari environment.
 - Pagination: `page` + `pageSize`.
 - Risiko utama: token short-lived/rotasi cepat, sehingga scraping bisa gagal dengan `auth_missing` atau `auth_failed`.
 
@@ -83,6 +85,21 @@ Aturan penting:
 - Jika source mengembalikan `401/403`: tandai `auth_failed`, invalidasi token cache, retry terbatas.
 - Source lain harus tetap berjalan (partial success diterima).
 
+### 5.4 Browser Metadata Tambahan (Opsional, Debugging/Staging)
+
+Untuk meningkatkan kompatibilitas ketika upstream memperketat request validation:
+
+- `JOBSTREET_COOKIE` (opsional): cookie mentah dari sesi browser aktif.
+- `JOBSTREET_EC_SESSION_ID` (opsional): session id untuk header `x-seek-ec-sessionid`.
+- `JOBSTREET_EC_VISITOR_ID` (opsional): visitor id untuk header `x-seek-ec-visitorid`.
+- `GLINTS_COOKIE` (opsional): cookie mentah untuk fallback request Glints saat upstream menolak request default.
+
+Catatan:
+
+1. variabel ini tidak wajib untuk operasi normal,
+2. jangan commit nilai aslinya ke repository,
+3. jika dipakai, rotasi berkala karena bisa short-lived.
+
 ## 6) Reliability Rules per Source
 
 1. Rate limiting wajib per source (bukan global) agar satu source tidak mengorbankan source lain.
@@ -98,8 +115,9 @@ Periksa berurutan:
 
 1. apakah token tersedia di environment,
 2. apakah token expired,
-3. apakah header source-specific sudah terpasang,
-4. apakah ada error `401/403` pada response source.
+3. apakah header source-specific sudah terpasang (`seek-request-*`, `x-seek-site`, `x-seek-ec-*` bila diisi),
+4. apakah cookie/session metadata opsional (`JOBSTREET_COOKIE`, `JOBSTREET_EC_SESSION_ID`, `JOBSTREET_EC_VISITOR_ID`) sudah benar,
+5. cek structured log worker: `error_class`, `source_operation`, `http_status_last`, `error_message`.
 
 ### 7.2 Gejala: Glints/Kalibrr tiba-tiba kosong
 
@@ -109,6 +127,17 @@ Periksa:
 2. parameter pagination yang berubah,
 3. throttling/rate-limit source,
 4. structured log worker pada field `error_message`, `source_operation`, `http_status_last`, `keyword`, dan `page` untuk melihat titik gagal terakhir.
+
+### 7.3 Interpretasi Structured Error Metadata
+
+- `error_class=source_fetch_error` + `source_operation=execute_request`:
+  indikasi gagal di level HTTP upstream (`4xx/5xx`/network).
+- `error_class=source_fetch_error` + `source_operation=decode_response`:
+  indikasi drift payload/JSON invalid.
+- `error_class=auth_missing` + `source_operation=resolve_token`:
+  token source auth-required tidak tersedia dari provider.
+- `http_status_last` > 0:
+  status HTTP terakhir dari upstream, gunakan bersama `error_message` untuk troubleshooting cepat.
 
 ## 8) Security & Compliance Guardrails
 

@@ -1,10 +1,12 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -209,5 +211,90 @@ func TestRunOnce_CallsInsertedHook(t *testing.T) {
 	}
 	if hookCalled == 0 {
 		t.Fatal("expected onJobInserted hook to be called")
+	}
+}
+
+func TestRunOnce_LogsAuthMissingSourceDetails(t *testing.T) {
+	repository := &fakeRepository{}
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+	orchestrator := NewOrchestrator(
+		logger,
+		repository,
+		fakeTokenProvider{err: errors.New("missing token")},
+		[]SourceAdapter{
+			fakeAdapter{source: job.SourceJobstreet, requiresAuth: true},
+		},
+		Config{
+			Keywords: []string{"backend"},
+			PageSize: 10,
+			MaxPages: 1,
+		},
+	)
+
+	_, err := orchestrator.RunOnce(context.Background())
+	if err != nil {
+		t.Fatalf("run once: %v", err)
+	}
+
+	logOutput := logBuffer.String()
+	for _, fragment := range []string{
+		"msg=\"scrape source processed\"",
+		"source=jobstreet",
+		"status=failed_auth",
+		"error_class=auth_missing",
+		"source_operation=resolve_token",
+		"error_message=\"missing token\"",
+	} {
+		if !strings.Contains(logOutput, fragment) {
+			t.Fatalf("expected log output to contain %q, got %s", fragment, logOutput)
+		}
+	}
+}
+
+func TestRunOnce_LogsFetchErrorMetadata(t *testing.T) {
+	repository := &fakeRepository{}
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+	orchestrator := NewOrchestrator(
+		logger,
+		repository,
+		fakeTokenProvider{token: "token"},
+		[]SourceAdapter{
+			fakeAdapter{
+				source:       job.SourceKalibrr,
+				requiresAuth: false,
+				fetchErr:     WrapSourceError("execute_request", 429, errors.New("unexpected upstream response")),
+			},
+		},
+		Config{
+			Keywords: []string{"backend"},
+			PageSize: 10,
+			MaxPages: 1,
+		},
+	)
+
+	_, err := orchestrator.RunOnce(context.Background())
+	if err != nil {
+		t.Fatalf("run once: %v", err)
+	}
+
+	logOutput := logBuffer.String()
+	for _, fragment := range []string{
+		"msg=\"scrape source processed\"",
+		"source=kalibrr",
+		"status=partial",
+		"error_class=source_fetch_error",
+		"keyword=backend",
+		"page=1",
+		"source_operation=execute_request",
+		"http_status_last=429",
+		"error_message=\"execute_request (status=429): unexpected upstream response\"",
+	} {
+		if !strings.Contains(logOutput, fragment) {
+			t.Fatalf("expected log output to contain %q, got %s", fragment, logOutput)
+		}
 	}
 }

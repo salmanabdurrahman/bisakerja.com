@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/postgres"
 	queuepostgres "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/queue/postgres"
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	cfg := config.Load()
-	appLogger := logger.New(cfg.Environment)
+	appLogger := logger.New(cfg.Environment).With("service", "scraper-worker")
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -51,14 +52,20 @@ func main() {
 
 	repository := postgres.NewJobsRepository(dbPool)
 	queue := queuepostgres.NewQueue(dbPool)
+	glintsAdapter := source.NewGlintsAdapter(nil)
+	glintsAdapter.Cookie = strings.TrimSpace(os.Getenv("GLINTS_COOKIE"))
+	jobstreetAdapter := source.NewJobstreetAdapter(nil)
+	jobstreetAdapter.Cookie = strings.TrimSpace(os.Getenv("JOBSTREET_COOKIE"))
+	jobstreetAdapter.SeekSessionID = strings.TrimSpace(os.Getenv("JOBSTREET_EC_SESSION_ID"))
+	jobstreetAdapter.SeekVisitorID = strings.TrimSpace(os.Getenv("JOBSTREET_EC_VISITOR_ID"))
 	orchestrator := scraper.NewOrchestrator(
 		appLogger,
 		repository,
 		token.NewEnvProvider(),
 		[]scraper.SourceAdapter{
-			source.NewGlintsAdapter(nil),
+			glintsAdapter,
 			source.NewKalibrrAdapter(nil),
-			source.NewJobstreetAdapter(nil),
+			jobstreetAdapter,
 		},
 		scraper.Config{
 			Keywords: parseKeywords(os.Getenv("SCRAPER_KEYWORDS")),
@@ -71,6 +78,7 @@ func main() {
 	})
 
 	if err = worker.RunWithTask(ctx, appLogger, "scraper", cfg.WorkerTick, func(taskCtx context.Context) error {
+		tickStartedAt := time.Now().UTC()
 		summary, runErr := orchestrator.RunOnce(taskCtx)
 		if runErr != nil {
 			return runErr
@@ -78,12 +86,15 @@ func main() {
 
 		appLogger.Info(
 			"scrape tick finished",
+			"operation", "run_tick",
 			"sources", summary.Sources,
 			"success_sources", summary.SuccessSources,
 			"partial_sources", summary.PartialSources,
 			"failed_sources", summary.FailedSources,
 			"inserted_count", summary.InsertedCount,
 			"duplicate_count", summary.DuplicateCount,
+			"processed_at", summary.ProcessedAt.Format(time.RFC3339),
+			"duration_ms", time.Since(tickStartedAt).Milliseconds(),
 		)
 		return nil
 	}); err != nil {
