@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthSessionProvider } from "@/features/auth/session-provider";
 
 export const metadata: Metadata = {
   title: "Bisakerja",
-  description: "Bisakerja frontend foundation (Phase 0)",
+  description: "Bisakerja frontend app",
 };
 
 export default function RootLayout({
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body>
+        <AuthSessionProvider>{children}</AuthSessionProvider>
+      </body>
     </html>
   );
 }
