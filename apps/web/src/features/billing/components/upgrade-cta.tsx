@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/session-provider";
 import {
   clearCheckoutSession,
@@ -84,9 +85,7 @@ export function UpgradeCTA({
           return;
         }
         if (error.status === 429) {
-          setMessage(
-            "Too many checkout requests. Please try again shortly.",
-          );
+          setMessage("Too many checkout requests. Please try again shortly.");
           return;
         }
         if (error.status === 400) {
@@ -112,22 +111,26 @@ export function UpgradeCTA({
   }
 
   return (
-    <section className="grid gap-3 rounded-lg border border-gray-200 p-4">
-      <h3 className="text-lg font-semibold text-gray-900">Upgrade premium</h3>
-      <p className="text-sm text-gray-700">
-        Premium entitlement always follows{" "}
-        <code>billing/status.subscription_state</code>.
+    <section className="bk-card grid gap-4 p-6 sm:p-8">
+      <h3 className="text-[24px] font-normal text-black">Upgrade premium</h3>
+      <p className="text-[14px] text-[#666666]">
+        Start or continue checkout to unlock premium features and faster
+        notifications.
       </p>
-      <button
+      <Button
         type="button"
         disabled={isSubmitting || isPremiumActive}
         onClick={() => void handleUpgrade()}
-        className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        variant="secondary"
       >
         {isSubmitting ? "Processing..." : buttonLabel}
-      </button>
+      </Button>
       {message ? (
-        <p className="text-sm text-gray-700" role="status" aria-live="polite">
+        <p
+          className="rounded-2xl border border-[#E5E5E5] bg-[#F4F4F4] px-4 py-3 text-[14px] text-[#666666]"
+          role="status"
+          aria-live="polite"
+        >
           {message}
         </p>
       ) : null}

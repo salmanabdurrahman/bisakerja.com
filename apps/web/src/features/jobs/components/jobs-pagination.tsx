@@ -2,6 +2,7 @@ import {
   buildPaginationHref,
   type JobsSearchParamsState,
 } from "@/features/jobs/search-params";
+import { buttonVariants } from "@/components/ui/button";
 
 interface JobsPaginationProps {
   state: JobsSearchParamsState;
@@ -16,7 +17,7 @@ export function JobsPagination({
 }: JobsPaginationProps) {
   if (totalPages <= 1) {
     return (
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-slate-600">
         {totalRecords} jobs found. Showing page {state.page}.
       </p>
     );
@@ -25,30 +26,31 @@ export function JobsPagination({
   return (
     <nav
       aria-label="Jobs pagination"
-      className="flex items-center gap-2 text-sm"
+      className="bk-card flex flex-wrap items-center justify-between gap-3 p-4 text-sm"
     >
       <a
         href={buildPaginationHref(state, state.page - 1)}
         aria-disabled={state.page <= 1}
-        className={`rounded-md border px-3 py-2 ${
-          state.page <= 1
-            ? "pointer-events-none border-gray-200 text-gray-400"
-            : "border-gray-300 text-gray-700"
-        }`}
+        className={buttonVariants({
+          variant: "outline",
+          size: "sm",
+          className: state.page <= 1 ? "pointer-events-none opacity-50" : "",
+        })}
       >
         Previous
       </a>
-      <span className="text-gray-600">
+      <span className="text-slate-600">
         Page {state.page} of {totalPages} ({totalRecords} jobs)
       </span>
       <a
         href={buildPaginationHref(state, state.page + 1)}
         aria-disabled={state.page >= totalPages}
-        className={`rounded-md border px-3 py-2 ${
-          state.page >= totalPages
-            ? "pointer-events-none border-gray-200 text-gray-400"
-            : "border-gray-300 text-gray-700"
-        }`}
+        className={buttonVariants({
+          variant: "outline",
+          size: "sm",
+          className:
+            state.page >= totalPages ? "pointer-events-none opacity-50" : "",
+        })}
       >
         Next
       </a>

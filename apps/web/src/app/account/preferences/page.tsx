@@ -1,4 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { AccountPreferencesClient } from "@/features/preferences/components/account-preferences-client";
 import {
   loadPreferencesDraftFromCookie,
@@ -50,7 +52,7 @@ export default async function AccountPreferencesPage() {
       redirect(buildLoginHref("/account/preferences"));
     }
     infoMessage =
-      "Premium status could not be verified from billing/status. Using temporary fallback.";
+      "We could not refresh premium status right now. Using your last known account status.";
     if (!profileSubscriptionState && !fallbackPremium) {
       subscriptionState = "status_unavailable";
     }
@@ -99,28 +101,23 @@ export default async function AccountPreferencesPage() {
   if (!initialPreferences) {
     return (
       <AppShell>
-        <main className="grid gap-4" role="main">
-          <div className="grid gap-1">
-            <h2 className="text-xl font-semibold">Preferences</h2>
-            <p className="text-sm text-gray-600">
-              Configure keywords, location, and job type for personalized
-              notifications.
-            </p>
-          </div>
-          <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <main className="grid gap-5" role="main">
+          <PageHeader
+            eyebrow="Preferences"
+            title="Preferences"
+            description="Configure keywords, locations, and job types to power personalized matching."
+          />
+          <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
             <h3 className="text-lg font-semibold text-red-900">
               Failed to load preferences
             </h3>
             <p className="text-sm text-red-800">
-              Preferences data is currently unavailable. Please refresh
-              the page.
+              Preferences data is currently unavailable. Please refresh the
+              page.
             </p>
-            <a
-              href="/account/preferences"
-              className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
+            <ButtonLink href="/account/preferences" variant="danger">
               Try again
-            </a>
+            </ButtonLink>
           </section>
         </main>
       </AppShell>
@@ -129,13 +126,12 @@ export default async function AccountPreferencesPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <div className="grid gap-1">
-          <h2 className="text-xl font-semibold">Preferences</h2>
-          <p className="text-sm text-gray-600">
-            Configure keywords, location, and job type for personalized notifications.
-          </p>
-        </div>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Preferences"
+          title="Preferences"
+          description="Configure keywords, locations, and job types to power personalized matching."
+        />
         <AccountPreferencesClient
           initialPreferences={initialPreferences}
           initialUpdatedAt={initialUpdatedAt}

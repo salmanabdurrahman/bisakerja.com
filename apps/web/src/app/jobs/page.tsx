@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { JobsList } from "@/features/jobs/components/jobs-list";
 import { JobsPagination } from "@/features/jobs/components/jobs-pagination";
 import { JobsSearchForm } from "@/features/jobs/components/jobs-search-form";
@@ -35,8 +36,12 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Jobs discovery</h2>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Discovery"
+          title="Jobs discovery"
+          description="Search by keyword, location, salary, and source with URL-driven filters you can share."
+        />
         <JobsSearchForm state={state} />
         {renderJobsView(viewState, state, currentHref)}
       </main>

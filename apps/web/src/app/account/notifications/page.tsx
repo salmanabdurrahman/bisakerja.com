@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { AccountNotificationsClient } from "@/features/growth/components/account-notifications-client";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
@@ -26,13 +28,12 @@ export default async function AccountNotificationsPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <div className="grid gap-1">
-          <h2 className="text-xl font-semibold">Notifications</h2>
-          <p className="text-sm text-gray-600">
-            View notification history and mark updates as read.
-          </p>
-        </div>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Growth"
+          title="Notifications"
+          description="Review delivery history, focus unread updates, and close the loop with read status."
+        />
         {renderNotificationsView(viewState)}
       </main>
     </AppShell>
@@ -63,19 +64,16 @@ async function loadNotificationsViewState(
 function renderNotificationsView(viewState: NotificationsPageViewState) {
   if (viewState.kind === "error") {
     return (
-      <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+      <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
         <h3 className="text-lg font-semibold text-red-900">
           Failed to load notifications
         </h3>
         <p className="text-sm text-red-800">
           Notifications are currently unavailable. Please refresh the page.
         </p>
-        <a
-          href="/account/notifications"
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <ButtonLink href="/account/notifications" variant="danger">
           Try again
-        </a>
+        </ButtonLink>
       </section>
     );
   }

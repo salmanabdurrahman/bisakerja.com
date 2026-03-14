@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { registerUser } from "@/services/auth";
 
@@ -52,36 +53,34 @@ export function RegisterForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-4 rounded-lg border border-gray-200 p-4"
+      className="bk-card grid gap-5 p-6 sm:p-8"
       aria-label="Register form"
     >
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Name</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Name</span>
         <input
           type="text"
           name="name"
           autoComplete="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
           required
-          minLength={2}
-          maxLength={100}
         />
         {fieldErrors.name ? (
           <span className="text-sm text-red-600">{fieldErrors.name}</span>
         ) : null}
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Email</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Email</span>
         <input
           type="email"
           name="email"
           autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
           required
         />
         {fieldErrors.email ? (
@@ -89,15 +88,15 @@ export function RegisterForm() {
         ) : null}
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Password</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Password</span>
         <input
           type="password"
           name="password"
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
           required
           minLength={8}
         />
@@ -112,17 +111,13 @@ export function RegisterForm() {
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isSubmitting}
-      >
+      <Button type="submit" variant="primary" size="lg" disabled={isSubmitting}>
         {isSubmitting ? "Creating account..." : "Create account"}
-      </button>
+      </Button>
 
-      <p className="text-sm text-gray-600">
+      <p className="text-[14px] text-[#666666]">
         Already have an account?{" "}
-        <a href="/auth/login" className="text-blue-700 underline">
+        <a href="/auth/login" className="bk-link text-black underline">
           Sign in here
         </a>
       </p>

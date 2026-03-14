@@ -4,12 +4,16 @@ import { describe, expect, it } from "vitest";
 import Home from "@/app/page";
 
 describe("Home page", () => {
-  it("renders phase 0 sections", () => {
+  it("renders polished hero content", () => {
     render(<Home />);
 
     expect(
-      screen.getByRole("heading", { name: "Bisakerja" }),
+      screen.getByRole("heading", { name: "Bisakerja", level: 1 }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Phase 0 foundation/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: /the professional workspace for job discovery/i,
+      }),
+    ).toBeInTheDocument();
   });
 });

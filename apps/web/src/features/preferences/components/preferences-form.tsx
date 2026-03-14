@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import type {
   PreferredJobType,
@@ -104,9 +105,7 @@ export function PreferencesForm({
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
           onUnauthorized(normalizedInput);
-          setFormMessage(
-            "Session expired. Please sign in again to continue.",
-          );
+          setFormMessage("Session expired. Please sign in again to continue.");
           return;
         }
         if (error.status === 429) {
@@ -133,16 +132,16 @@ export function PreferencesForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-4 rounded-lg border border-gray-200 p-4"
+      className="bk-card grid gap-4 p-5"
       aria-label="Preferences form"
     >
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Keywords</span>
+        <span className="font-medium text-slate-700">Keywords</span>
         <textarea
           value={keywordsInput}
           onChange={(event) => setKeywordsInput(event.target.value)}
           rows={3}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-textarea"
           placeholder="golang, backend, software engineer"
         />
         {fieldErrors.keywords ? (
@@ -151,12 +150,12 @@ export function PreferencesForm({
       </label>
 
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Locations</span>
+        <span className="font-medium text-slate-700">Locations</span>
         <textarea
           value={locationsInput}
           onChange={(event) => setLocationsInput(event.target.value)}
           rows={2}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-textarea"
           placeholder="jakarta, remote"
         />
         {fieldErrors.locations ? (
@@ -165,7 +164,9 @@ export function PreferencesForm({
       </label>
 
       <fieldset className="grid gap-2">
-        <legend className="text-sm font-medium text-gray-700">Job types</legend>
+        <legend className="text-sm font-medium text-slate-700">
+          Job types
+        </legend>
         <div className="flex flex-wrap gap-3">
           {preferenceJobTypeOptions.map((jobType) => (
             <label
@@ -193,14 +194,14 @@ export function PreferencesForm({
       </fieldset>
 
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Salary minimum</span>
+        <span className="font-medium text-slate-700">Salary minimum</span>
         <input
           type="number"
           min={0}
           max={maxSalary}
           value={salaryMinInput}
           onChange={(event) => setSalaryMinInput(event.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
         />
         {fieldErrors.salary_min ? (
           <span className="text-sm text-red-600">{fieldErrors.salary_min}</span>
@@ -208,16 +209,16 @@ export function PreferencesForm({
       </label>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting || !isValid || !isDirty}
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          variant="secondary"
         >
           {isSubmitting ? "Saving..." : "Save preferences"}
-        </button>
+        </Button>
         {lastUpdatedAt ? (
-          <span className="text-sm text-gray-500">
-            Updated at: {new Date(lastUpdatedAt).toLocaleString("id-ID")}
+          <span className="text-sm text-slate-500">
+            Updated at: {new Date(lastUpdatedAt).toLocaleString("en-US")}
           </span>
         ) : null}
       </div>

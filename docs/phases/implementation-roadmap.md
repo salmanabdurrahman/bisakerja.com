@@ -32,7 +32,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | M1 | Migrasi fondasi persistence ke PostgreSQL | ✅ Complete | Adapter PostgreSQL + wiring API/worker + migration cutover + queue persistence sudah aktif |
 | M2 | Pass komentar/docstrings sesuai standar | ✅ Complete | Doc comments Go untuk simbol exported + TSDoc pada service/lib frontend sudah ditambahkan |
 | M3 | Migrasi copy UI + API user-facing ke English | ✅ Complete | Seluruh copy user-facing frontend + pesan notifier backend sudah di-English-kan tanpa mengubah kontrak |
-| M4 | Redesign frontend ala SaaS + hardening growth | ⬜ Pending | Sekaligus menutup observability + e2e growth yang masih pending |
+| M4 | Redesign frontend ala SaaS + hardening growth | ✅ Complete | UI frontend sudah direfresh berbasis design tokens + observability web vitals + e2e growth coverage + refinement visual pass ala Paper sudah ditutup |
 | M5 | Eksekusi Phase 4 backend | ⬜ Pending | Dimulai hanya setelah M1-M4 lulus gate |
 
 Aturan eksekusi:

@@ -57,6 +57,7 @@ Standar ini ditujukan untuk `apps/web` (Next.js App Router).
 - Split komponen berat dengan dynamic import bila perlu.
 - Hindari client state berlebih di root layout.
 - Pantau web vitals untuk halaman kritikal.
+- Wajib kirim metrik Web Vitals via observer client (`WebVitalsObserver`) ke endpoint same-origin (`/api/web-vitals`) agar bisa dipantau tanpa CORS/regress lintas origin.
 
 ## 9) Testing Minimum
 

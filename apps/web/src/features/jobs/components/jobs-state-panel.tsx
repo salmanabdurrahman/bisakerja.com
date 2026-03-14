@@ -1,3 +1,5 @@
+import { ButtonLink } from "@/components/ui/button";
+
 interface JobsStatePanelProps {
   title: string;
   description: string;
@@ -12,19 +14,18 @@ export function JobsStatePanel({
   actionLabel,
 }: JobsStatePanelProps) {
   return (
-    <section
-      className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-      aria-live="polite"
-    >
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-      <p className="mt-2 text-sm text-gray-600">{description}</p>
+    <section className="bk-card-muted p-5" aria-live="polite">
+      <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+      <p className="mt-2 text-sm text-slate-600">{description}</p>
       {actionHref && actionLabel ? (
-        <a
+        <ButtonLink
           href={actionHref}
-          className="mt-3 inline-flex rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-white"
+          variant="outline"
+          size="sm"
+          className="mt-3"
         >
           {actionLabel}
-        </a>
+        </ButtonLink>
       ) : null}
     </section>
   );

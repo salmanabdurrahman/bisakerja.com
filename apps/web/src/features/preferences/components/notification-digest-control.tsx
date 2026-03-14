@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import type {
   NotificationAlertMode,
@@ -128,31 +129,31 @@ export function NotificationDigestControl({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-4 rounded-lg border border-gray-200 p-4"
+      className="bk-card grid gap-4 p-5"
       aria-label="Notification digest control form"
     >
-      <h3 className="text-lg font-semibold text-gray-900">
+      <h3 className="text-lg font-semibold text-slate-900">
         Notification frequency settings
       </h3>
 
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Alert mode</span>
+        <span className="font-medium text-slate-700">Alert mode</span>
         <select
           value={alertMode}
           onChange={(event) =>
             setAlertMode(event.target.value as NotificationAlertMode)
           }
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-select"
         >
-          <option value="instant">instant</option>
-          <option value="daily_digest">daily_digest</option>
-          <option value="weekly_digest">weekly_digest</option>
+          <option value="instant">Instant</option>
+          <option value="daily_digest">Daily Digest</option>
+          <option value="weekly_digest">Weekly Digest</option>
         </select>
       </label>
 
       {isDigestMode ? (
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">
+          <span className="font-medium text-slate-700">
             Digest hour (optional, 0-23)
           </span>
           <input
@@ -161,30 +162,30 @@ export function NotificationDigestControl({
             max={23}
             value={digestHourInput}
             onChange={(event) => setDigestHourInput(event.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2"
+            className="bk-input"
             placeholder="9"
           />
           {digestHourError ? (
             <span className="text-sm text-red-600">{digestHourError}</span>
           ) : (
             <span className="text-xs text-gray-500">
-              If left empty, backend uses the default hour `9`.
+              If left empty, uses the default hour `9`.
             </span>
           )}
         </label>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting || !isDirty || Boolean(digestHourError)}
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          variant="secondary"
         >
           {isSubmitting ? "Saving..." : "Save notification settings"}
-        </button>
+        </Button>
         {lastUpdatedAt ? (
-          <span className="text-sm text-gray-500">
-            Updated at: {new Date(lastUpdatedAt).toLocaleString("id-ID")}
+          <span className="text-sm text-slate-500">
+            Updated at: {new Date(lastUpdatedAt).toLocaleString("en-US")}
           </span>
         ) : null}
       </div>

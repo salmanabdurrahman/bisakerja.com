@@ -8,36 +8,36 @@ interface SubscriptionBadgeProps {
 }
 
 const labels: Record<BadgeState, string> = {
-  free: "free",
-  pending_payment: "pending_payment",
-  premium_active: "premium_active",
-  premium_expired: "premium_expired",
-  status_unavailable: "status_unavailable",
+  free: "Free",
+  pending_payment: "Pending payment",
+  premium_active: "Premium active",
+  premium_expired: "Premium expired",
+  status_unavailable: "Status unavailable",
 };
 
 const toneByState: Record<BadgeState, string> = {
-  free: "border-gray-300 bg-gray-50 text-gray-700",
-  pending_payment: "border-amber-300 bg-amber-50 text-amber-800",
-  premium_active: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  premium_expired: "border-orange-300 bg-orange-50 text-orange-800",
-  status_unavailable: "border-red-300 bg-red-50 text-red-700",
+  free: "border-slate-300 bg-slate-100 text-slate-700",
+  pending_payment: "border-amber-300 bg-amber-100 text-amber-900",
+  premium_active: "border-emerald-300 bg-emerald-100 text-emerald-900",
+  premium_expired: "border-orange-300 bg-orange-100 text-orange-900",
+  status_unavailable: "border-red-300 bg-red-100 text-red-800",
 };
 
 const sourceLabel: Record<SubscriptionBadgeProps["source"], string> = {
-  billing: "Source: billing/status",
-  profile_fallback: "Source: profile fallback",
-  unavailable: "Source: unavailable",
+  billing: "Live billing sync",
+  profile_fallback: "Profile fallback",
+  unavailable: "Sync unavailable",
 };
 
 export function SubscriptionBadge({ state, source }: SubscriptionBadgeProps) {
   return (
     <div className="grid gap-1">
       <span
-        className={`inline-flex w-fit rounded-md border px-2 py-1 text-sm font-medium ${toneByState[state]}`}
+        className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${toneByState[state]}`}
       >
         {labels[state]}
       </span>
-      <span className="text-xs text-gray-500">{sourceLabel[source]}</span>
+      <span className="text-xs text-slate-500">{sourceLabel[source]}</span>
     </div>
   );
 }

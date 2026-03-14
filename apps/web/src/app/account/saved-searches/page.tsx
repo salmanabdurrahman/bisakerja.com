@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { AccountSavedSearchesClient } from "@/features/growth/components/account-saved-searches-client";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
@@ -24,13 +26,12 @@ export default async function AccountSavedSearchesPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <div className="grid gap-1">
-          <h2 className="text-xl font-semibold">Saved searches</h2>
-          <p className="text-sm text-gray-600">
-            Save favorite queries to speed up job discovery.
-          </p>
-        </div>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Growth"
+          title="Saved searches"
+          description="Store high-signal query presets so you can reuse them in one click."
+        />
         {renderSavedSearchesView(viewState)}
       </main>
     </AppShell>
@@ -57,20 +58,16 @@ async function loadSavedSearchesViewState(
 function renderSavedSearchesView(viewState: SavedSearchesPageViewState) {
   if (viewState.kind === "error") {
     return (
-      <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+      <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
         <h3 className="text-lg font-semibold text-red-900">
           Failed to load saved searches
         </h3>
         <p className="text-sm text-red-800">
-          Saved searches are currently unavailable. Please refresh
-          the page.
+          Saved searches are currently unavailable. Please refresh the page.
         </p>
-        <a
-          href="/account/saved-searches"
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <ButtonLink href="/account/saved-searches" variant="danger">
           Try again
-        </a>
+        </ButtonLink>
       </section>
     );
   }

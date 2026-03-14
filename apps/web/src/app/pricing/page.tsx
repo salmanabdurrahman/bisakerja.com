@@ -1,4 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { SubscriptionStatusCard } from "@/features/billing/components/subscription-status-card";
 import { UpgradeCTA } from "@/features/billing/components/upgrade-cta";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
@@ -29,8 +31,12 @@ export default async function PricingPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Pricing</h2>
+      <main className="grid gap-6 mx-auto w-full" role="main">
+        <PageHeader
+          eyebrow="Monetization"
+          title="Pricing"
+          description="Start checkout, monitor payment progress, and keep your premium plan in sync."
+        />
         {renderPricingView(viewState)}
       </main>
     </AppShell>
@@ -77,7 +83,7 @@ async function loadPricingViewState(
       subscriptionState: profileFallbackState,
       source: "profile_fallback",
       warningMessage:
-        "Billing status is unavailable. Showing temporary fallback from profile.",
+        "Live billing status is temporarily unavailable. Showing your last known account status.",
     };
   }
 }
@@ -85,19 +91,16 @@ async function loadPricingViewState(
 function renderPricingView(viewState: PricingViewState) {
   if (viewState.kind === "error") {
     return (
-      <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-        <h3 className="text-lg font-semibold text-red-900">
+      <section className="bk-card grid gap-4 border-red-200 bg-red-50 p-6 sm:p-8">
+        <h3 className="text-[24px] font-normal text-red-900">
           Pricing unavailable
         </h3>
-        <p className="text-sm text-red-800">
+        <p className="text-[14px] text-red-800">
           Pricing data is currently unavailable. Please try again shortly.
         </p>
-        <a
-          href="/pricing"
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <ButtonLink href="/pricing" variant="danger">
           Retry
-        </a>
+        </ButtonLink>
       </section>
     );
   }
@@ -117,12 +120,9 @@ function renderPricingView(viewState: PricingViewState) {
         subscriptionState={viewState.subscriptionState}
         lastTransactionStatus={viewState.lastTransactionStatus}
       />
-      <a
-        href="/account/subscription"
-        className="text-sm text-blue-700 underline"
-      >
-        Lihat status subscription detail
-      </a>
+      <ButtonLink href="/account/subscription" variant="outline" size="sm">
+        View detailed subscription status
+      </ButtonLink>
     </>
   );
 }

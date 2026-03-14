@@ -1,4 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { SubscriptionStatusCard } from "@/features/billing/components/subscription-status-card";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
@@ -31,8 +33,12 @@ export default async function BillingSuccessPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Payment verification</h2>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Billing Callback"
+          title="Payment verification"
+          description="We verify payment and refresh your premium status automatically."
+        />
         {renderVerifyState(verifyState)}
       </main>
     </AppShell>
@@ -69,19 +75,16 @@ async function loadVerifyState(accessToken: string): Promise<VerifyState> {
 function renderVerifyState(state: VerifyState) {
   if (state.kind === "verify_error") {
     return (
-      <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+      <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
         <h3 className="text-lg font-semibold text-red-900">
           Verification unavailable
         </h3>
         <p className="text-sm text-red-800">
           We are unable to verify your payment status right now.
         </p>
-        <a
-          href="/billing/success"
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <ButtonLink href="/billing/success" variant="danger">
           Try again
-        </a>
+        </ButtonLink>
       </section>
     );
   }
@@ -97,12 +100,9 @@ function renderVerifyState(state: VerifyState) {
         <p className="text-sm text-emerald-700">
           Payment verified. Your premium subscription is now active.
         </p>
-        <a
-          href="/account/subscription"
-          className="text-sm text-blue-700 underline"
-        >
+        <ButtonLink href="/account/subscription" variant="secondary" size="sm">
           View subscription details
-        </a>
+        </ButtonLink>
       </section>
     );
   }
@@ -118,9 +118,9 @@ function renderVerifyState(state: VerifyState) {
         <p className="text-sm text-amber-700">
           Payment has not completed yet. You can start a new checkout.
         </p>
-        <a href="/pricing" className="text-sm text-blue-700 underline">
+        <ButtonLink href="/pricing" variant="outline" size="sm">
           Back to pricing
-        </a>
+        </ButtonLink>
       </section>
     );
   }
@@ -132,12 +132,12 @@ function renderVerifyState(state: VerifyState) {
         lastTransactionStatus={state.status.last_transaction_status}
         premiumExpiredAt={state.status.premium_expired_at}
       />
-        <p className="text-sm text-amber-700">
-          Payment is still being processed. Check the status again shortly.
-        </p>
-        <a href="/billing/success" className="text-sm text-blue-700 underline">
+      <p className="text-sm text-amber-700">
+        Payment is still being processed. Check the status again shortly.
+      </p>
+      <ButtonLink href="/billing/success" variant="outline" size="sm">
         Refresh status
-      </a>
+      </ButtonLink>
     </section>
   );
 }

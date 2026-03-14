@@ -69,3 +69,11 @@ Untuk perubahan yang memengaruhi aksesibilitas/performance:
 - [ ] Perubahan tidak mendorong halaman kritikal melewati target Web Vitals.
 - [ ] UI states (loading/empty/error/success) tetap lengkap.
 - [ ] Dokumen arsitektur terkait sudah diupdate jika ada perubahan behavior.
+
+## 6) Current Implementation Notes (M4)
+
+- Web Vitals observer frontend berada di `apps/web/src/features/observability/components/web-vitals-observer.tsx`.
+- Normalisasi payload metrik berada di `apps/web/src/lib/observability/web-vitals.ts`.
+- Collector endpoint same-origin berada di `apps/web/src/app/api/web-vitals/route.ts`.
+- Instrumentasi ini dipasang dari `apps/web/src/app/layout.tsx` untuk mencakup halaman kritikal tanpa risiko CORS.
+- Refinement visual pass ala Paper sudah diterapkan di shell global (`app-shell`), hero homepage, dan komponen status billing agar copy user-facing lebih natural (tanpa placeholder teknis).

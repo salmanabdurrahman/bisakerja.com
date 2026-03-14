@@ -8,18 +8,38 @@ interface SubscriptionStatusCardProps {
   source?: "billing" | "profile_fallback" | "unavailable";
 }
 
+const subscriptionLabels: Record<
+  SubscriptionStatusCardProps["subscriptionState"],
+  string
+> = {
+  free: "Free",
+  pending_payment: "Pending payment",
+  premium_active: "Premium active",
+  premium_expired: "Premium expired",
+  status_unavailable: "Status unavailable",
+};
+
 const subscriptionDescriptions: Record<
   SubscriptionStatusCardProps["subscriptionState"],
   string
 > = {
   free: "Your account is currently on the free plan. Upgrade to enable premium notifications.",
   pending_payment:
-    "Payment is still pending. Continue payment or wait for webhook synchronization.",
+    "Payment is still pending. Continue checkout or wait for status confirmation.",
   premium_active: "Premium is active. You can use all premium features.",
   premium_expired:
     "Premium has expired. Upgrade again to reactivate premium features.",
   status_unavailable:
-    "Subscription status cannot be verified from billing/status right now.",
+    "We could not confirm your premium status right now. Please refresh shortly.",
+};
+
+const sourceLabel: Record<
+  NonNullable<SubscriptionStatusCardProps["source"]>,
+  string
+> = {
+  billing: "Live billing data",
+  profile_fallback: "Profile fallback",
+  unavailable: "Temporarily unavailable",
 };
 
 export function SubscriptionStatusCard({
@@ -29,28 +49,38 @@ export function SubscriptionStatusCard({
   source = "billing",
 }: SubscriptionStatusCardProps) {
   return (
-    <section className="grid gap-2 rounded-lg border border-gray-200 p-4">
-      <h3 className="text-lg font-semibold text-gray-900">
+    <section className="bk-card grid gap-4 p-6 sm:p-8">
+      <h3 className="text-[24px] font-normal text-black">
         Subscription overview
       </h3>
-      <p className="text-sm text-gray-700">
-        State: <span className="font-semibold">{subscriptionState}</span>
+      <p className="text-[14px] text-[#666666]">
+        Current plan:{" "}
+        <span className="rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3 py-1 font-medium text-black">
+          {subscriptionLabels[subscriptionState]}
+        </span>
       </p>
-      <p className="text-sm text-gray-700">
+      <p className="text-[14px] text-[#666666]">
         {subscriptionDescriptions[subscriptionState]}
       </p>
       {lastTransactionStatus ? (
-        <p className="text-sm text-gray-700">
+        <p className="text-[14px] text-[#666666]">
           Last transaction status:{" "}
-          <span className="font-medium">{lastTransactionStatus}</span>
+          <span className="font-medium text-black">
+            {lastTransactionStatus}
+          </span>
         </p>
       ) : null}
       {premiumExpiredAt ? (
-        <p className="text-sm text-gray-700">
-          Premium expiry: {new Date(premiumExpiredAt).toLocaleString("en-US")}
+        <p className="text-[14px] text-[#666666]">
+          Premium expiry:{" "}
+          <span className="text-black">
+            {new Date(premiumExpiredAt).toLocaleString("en-US")}
+          </span>
         </p>
       ) : null}
-      <p className="text-xs text-gray-500">Source: {source}</p>
+      <p className="text-[12px] font-medium text-[#888888] uppercase tracking-wider mt-2">
+        Status sync: {sourceLabel[source]}
+      </p>
     </section>
   );
 }

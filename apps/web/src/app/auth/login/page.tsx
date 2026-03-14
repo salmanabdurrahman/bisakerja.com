@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { normalizeRedirectPath } from "@/lib/auth/redirect-path";
 
@@ -14,11 +15,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Login</h2>
-        <p className="text-sm text-gray-600">
-          Sign in to manage your account and job notification preferences.
-        </p>
+      <main className="mx-auto grid w-full max-w-2xl gap-6" role="main">
+        <PageHeader
+          eyebrow="Authentication"
+          title="Login"
+          description="Sign in to continue managing your account, growth preferences, and premium billing."
+        />
         <LoginForm
           redirectPath={redirectPath}
           initialEmail={initialEmail}

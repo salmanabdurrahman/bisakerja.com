@@ -1,4 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { AccountPageClient } from "@/features/profile/components/account-page-client";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
@@ -29,8 +31,12 @@ export default async function AccountPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Account</h2>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Account"
+          title="Account"
+          description="Review profile identity, premium entitlement, and shortcuts to growth settings."
+        />
         {renderAccountView(viewState)}
       </main>
     </AppShell>
@@ -65,7 +71,7 @@ async function loadAccountViewState(
         redirect(buildLoginHref("/account"));
       }
       warningMessage =
-        "Subscription status could not be verified from billing/status. Showing fallback from profile.";
+        "We could not refresh your latest subscription status. Showing your last known account data.";
       badgeSource = "profile_fallback";
     }
 
@@ -87,19 +93,16 @@ async function loadAccountViewState(
 function renderAccountView(viewState: AccountPageViewState) {
   if (viewState.kind === "error") {
     return (
-      <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+      <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
         <h3 className="text-lg font-semibold text-red-900">
           Failed to load account
         </h3>
         <p className="text-sm text-red-800">
           Account data is currently unavailable. Please refresh the page.
         </p>
-        <a
-          href="/account"
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <ButtonLink href="/account" variant="danger">
           Try again
-        </a>
+        </ButtonLink>
       </section>
     );
   }

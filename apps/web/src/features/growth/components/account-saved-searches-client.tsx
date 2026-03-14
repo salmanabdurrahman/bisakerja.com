@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/session-provider";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { clearBrowserSession } from "@/lib/auth/session-cookie";
@@ -125,20 +126,20 @@ export function AccountSavedSearchesClient({
     <section className="grid gap-4">
       <form
         onSubmit={handleCreateSavedSearch}
-        className="grid gap-3 rounded-lg border border-gray-200 p-4"
+        className="bk-card grid gap-3 p-5"
         aria-label="Saved search form"
       >
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-slate-900">
           Add saved search
         </h3>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Query</span>
+          <span className="font-medium text-slate-700">Query</span>
           <input
             type="text"
             value={queryInput}
             onChange={(event) => setQueryInput(event.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2"
+            className="bk-input"
             placeholder="golang backend"
             required
           />
@@ -146,26 +147,28 @@ export function AccountSavedSearchesClient({
 
         <div className="grid gap-3 md:grid-cols-2">
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-slate-700">
               Location (optional)
             </span>
             <input
               type="text"
               value={locationInput}
               onChange={(event) => setLocationInput(event.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="bk-input"
               placeholder="jakarta"
             />
           </label>
 
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-gray-700">Source (optional)</span>
+            <span className="font-medium text-slate-700">
+              Source (optional)
+            </span>
             <select
               value={sourceInput}
               onChange={(event) =>
                 setSourceInput((event.target.value as JobSource | "") ?? "")
               }
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="bk-select"
             >
               <option value="">All sources</option>
               {sourceOptions.map((source) => (
@@ -177,7 +180,7 @@ export function AccountSavedSearchesClient({
           </label>
 
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-slate-700">
               Salary minimum (optional)
             </span>
             <input
@@ -185,19 +188,19 @@ export function AccountSavedSearchesClient({
               min={0}
               value={salaryMinInput}
               onChange={(event) => setSalaryMinInput(event.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="bk-input"
               placeholder="12000000"
             />
           </label>
 
           <label className="grid gap-1 text-sm">
-            <span className="font-medium text-gray-700">Alert frequency</span>
+            <span className="font-medium text-slate-700">Alert frequency</span>
             <select
               value={frequencyInput}
               onChange={(event) =>
                 setFrequencyInput(event.target.value as NotificationAlertMode)
               }
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="bk-select"
             >
               {frequencyOptions.map((frequency) => (
                 <option key={frequency} value={frequency}>
@@ -208,27 +211,27 @@ export function AccountSavedSearchesClient({
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={isSubmitting} variant="secondary">
           {isSubmitting ? "Saving..." : "Add saved search"}
-        </button>
+        </Button>
 
         {statusMessage ? (
-          <p className="text-sm text-gray-700" role="status" aria-live="polite">
+          <p
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+            role="status"
+            aria-live="polite"
+          >
             {statusMessage}
           </p>
         ) : null}
       </form>
 
-      <section className="grid gap-3 rounded-lg border border-gray-200 p-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <section className="bk-card grid gap-3 p-5">
+        <h3 className="text-lg font-semibold text-slate-900">
           Saved searches list
         </h3>
         {savedSearches.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             No saved searches yet. Add your first query.
           </p>
         ) : (
@@ -236,10 +239,10 @@ export function AccountSavedSearchesClient({
             {savedSearches.map((item) => (
               <li
                 key={item.id}
-                className="grid gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700"
+                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
               >
                 <p className="font-medium">{item.query}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-slate-500">
                   {item.location
                     ? `Location: ${item.location}`
                     : "Location: all"}
@@ -249,17 +252,18 @@ export function AccountSavedSearchesClient({
                   Frequency: {item.frequency}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-gray-100 px-2 py-1 text-xs">
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs">
                     {item.is_active ? "active" : "inactive"}
                   </span>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void handleDeleteSavedSearch(item.id)}
                     disabled={deletingID === item.id}
-                    className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    variant="danger"
+                    size="sm"
                   >
                     {deletingID === item.id ? "Deleting..." : "Delete"}
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}

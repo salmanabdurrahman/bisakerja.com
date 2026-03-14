@@ -1,4 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { BillingHistoryList } from "@/features/billing/components/billing-history-list";
 import { SubscriptionStatusCard } from "@/features/billing/components/subscription-status-card";
 import { UpgradeCTA } from "@/features/billing/components/upgrade-cta";
@@ -27,8 +29,12 @@ export default async function AccountSubscriptionPage() {
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
-        <h2 className="text-xl font-semibold">Subscription</h2>
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Monetization"
+          title="Subscription"
+          description="Track canonical subscription state, latest transactions, and available upgrade actions."
+        />
         {renderSubscriptionView(viewState)}
       </main>
     </AppShell>
@@ -76,19 +82,16 @@ async function loadSubscriptionViewState(
 function renderSubscriptionView(viewState: SubscriptionViewState) {
   if (viewState.kind === "error") {
     return (
-      <section className="grid gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+      <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
         <h3 className="text-lg font-semibold text-red-900">
           Subscription data unavailable
         </h3>
         <p className="text-sm text-red-800">
           Subscription status could not be loaded. Please try again shortly.
         </p>
-        <a
-          href="/account/subscription"
-          className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <ButtonLink href="/account/subscription" variant="danger">
           Retry
-        </a>
+        </ButtonLink>
       </section>
     );
   }

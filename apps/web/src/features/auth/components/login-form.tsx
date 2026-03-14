@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import {
   clearBrowserSession,
   writeBrowserSession,
@@ -85,24 +86,24 @@ export function LoginForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-4 rounded-lg border border-gray-200 p-4"
+      className="bk-card grid gap-5 p-6 sm:p-8"
       aria-label="Login form"
     >
       {successMessage ? (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-800">
           {successMessage}
         </p>
       ) : null}
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Email</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Email</span>
         <input
           type="email"
           name="email"
           autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
           required
         />
         {fieldErrors.email ? (
@@ -110,15 +111,15 @@ export function LoginForm({
         ) : null}
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Password</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Password</span>
         <input
           type="password"
           name="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
           required
           minLength={8}
         />
@@ -133,17 +134,13 @@ export function LoginForm({
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isSubmitting}
-      >
+      <Button type="submit" variant="primary" size="lg" disabled={isSubmitting}>
         {isSubmitting ? "Signing in..." : "Sign in"}
-      </button>
+      </Button>
 
-      <p className="text-sm text-gray-600" aria-live="polite">
+      <p className="text-[14px] text-[#666666]" aria-live="polite">
         Don&apos;t have an account?{" "}
-        <a href="/auth/register" className="text-blue-700 underline">
+        <a href="/auth/register" className="bk-link text-black underline">
           Register here
         </a>
       </p>
@@ -166,7 +163,7 @@ function extractFieldErrors(error: APIRequestError): LoginFieldErrors {
 
 function toLoginMessage(error: APIRequestError): string {
   if (error.status === 401) {
-    return "Email atau password salah.";
+    return "Email or password is incorrect.";
   }
   if (error.status === 429) {
     return "Too many login attempts. Please wait a moment and try again.";

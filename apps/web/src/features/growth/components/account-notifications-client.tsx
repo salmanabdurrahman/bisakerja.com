@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/session-provider";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { clearBrowserSession } from "@/lib/auth/session-cookie";
@@ -99,9 +100,9 @@ export function AccountNotificationsClient({
   const canNext = currentPage < totalPages;
 
   return (
-    <section className="grid gap-4 rounded-lg border border-gray-200 p-4">
+    <section className="bk-card grid gap-4 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-slate-900">
           Notification center
         </h3>
         <label className="inline-flex items-center gap-2 text-sm">
@@ -119,13 +120,17 @@ export function AccountNotificationsClient({
       </div>
 
       {statusMessage ? (
-        <p className="text-sm text-gray-700" role="status" aria-live="polite">
+        <p
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+          role="status"
+          aria-live="polite"
+        >
           {statusMessage}
         </p>
       ) : null}
 
       {notifications.length === 0 ? (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-slate-600">
           No notifications found for the current filter.
         </p>
       ) : (
@@ -135,37 +140,38 @@ export function AccountNotificationsClient({
             return (
               <li
                 key={notification.id}
-                className="grid gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm"
+                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
               >
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-slate-900">
                   Job ID: {notification.job_id}
                 </p>
-                <p className="text-gray-700">
+                <p className="text-slate-700">
                   Channel: {notification.channel} · Status:{" "}
                   {notification.status}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-slate-500">
                   Sent at:{" "}
-                  {new Date(notification.sent_at).toLocaleString("id-ID")}
+                  {new Date(notification.sent_at).toLocaleString("en-US")}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-slate-500">
                   {notification.read_at
                     ? `Read at: ${new Date(notification.read_at).toLocaleString(
-                        "id-ID",
+                        "en-US",
                       )}`
                     : "Unread"}
                 </p>
                 {isUnread ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void handleMarkRead(notification.id)}
                     disabled={markingID === notification.id}
-                    className="w-fit rounded-md border border-blue-300 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    variant="outline"
+                    size="sm"
                   >
                     {markingID === notification.id
-                      ? "Menyimpan..."
+                      ? "Saving..."
                       : "Mark as read"}
-                  </button>
+                  </Button>
                 ) : null}
               </li>
             );
@@ -174,25 +180,27 @@ export function AccountNotificationsClient({
       )}
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
           disabled={!canPrev || isLoading}
           onClick={() => void loadNotifications(currentPage - 1, unreadOnly)}
-          className="rounded-md border border-gray-300 px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          variant="outline"
+          size="sm"
         >
           Prev
-        </button>
-        <p className="text-sm text-gray-600">
+        </Button>
+        <p className="text-sm text-slate-600">
           Page {currentPage} / {totalPages}
         </p>
-        <button
+        <Button
           type="button"
           disabled={!canNext || isLoading}
           onClick={() => void loadNotifications(currentPage + 1, unreadOnly)}
-          className="rounded-md border border-gray-300 px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          variant="outline"
+          size="sm"
         >
           Next
-        </button>
+        </Button>
       </div>
     </section>
   );

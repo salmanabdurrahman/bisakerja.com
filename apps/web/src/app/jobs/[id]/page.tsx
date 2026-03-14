@@ -1,4 +1,13 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { JobsStatePanel } from "@/features/jobs/components/jobs-state-panel";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { getJobDetail, type JobDetail } from "@/services/jobs";
@@ -24,7 +33,12 @@ export default async function JobDetailPage({
 
   return (
     <AppShell>
-      <main className="grid gap-4" role="main">
+      <main className="grid gap-5" role="main">
+        <PageHeader
+          eyebrow="Job Detail"
+          title="Opportunity overview"
+          description="Review role details, compensation context, and apply directly on the source site."
+        />
         {renderDetailView(viewState, backHref)}
       </main>
     </AppShell>
@@ -57,29 +71,36 @@ function renderDetailView(viewState: JobDetailViewState, backHref: string) {
   const job = viewState.job;
   return (
     <>
-      <a href={backHref} className="text-sm text-blue-700 underline">
+      <ButtonLink href={backHref} size="sm" variant="ghost">
         Back to search results
-      </a>
+      </ButtonLink>
 
-      <article className="rounded-lg border border-gray-200 p-4">
-        <h2 className="text-xl font-semibold text-gray-900">{job.title}</h2>
-        <p className="mt-2 text-sm text-gray-700">{job.company}</p>
-        <p className="mt-1 text-sm text-gray-600">{job.location}</p>
-        <p className="mt-2 text-sm text-gray-700">
-          Salary: {job.salary_range || "Not specified"}
-        </p>
-        <p className="mt-4 whitespace-pre-wrap text-sm text-gray-700">
-          {job.description}
-        </p>
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-4 inline-flex rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          Apply on source site
-        </a>
-      </article>
+      <Card>
+        <CardHeader className="gap-2">
+          <CardTitle className="text-2xl">{job.title}</CardTitle>
+          <CardDescription className="text-sm text-slate-700">
+            {job.company} · {job.location}
+          </CardDescription>
+          <p className="text-sm font-medium text-slate-700">
+            Salary: {job.salary_range || "Not specified"}
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <p className="whitespace-pre-wrap text-sm text-slate-700">
+            {job.description}
+          </p>
+          <div>
+            <ButtonLink
+              href={job.url}
+              target="_blank"
+              rel="noreferrer"
+              variant="secondary"
+            >
+              Apply on source site
+            </ButtonLink>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

@@ -1,1 +1,91 @@
 @import "tailwindcss";
+
+:root {
+  --background: #f9f9f9;
+  --background-section: #f4f4f4;
+  --card-bg: #ffffff;
+  --footer-bg: #1a1a1a;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-muted: #888888;
+  --border-light: #e5e5e5;
+  --footer-text: #e0e0e0;
+  --footer-copyright: #555555;
+
+  --bk-primary: #000000;
+  --bk-surface: #ffffff;
+  --bk-text: #000000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: var(--font-primary), Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--background);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.02) 0px,
+    rgba(0, 0, 0, 0.02) 1px,
+    transparent 1px,
+    transparent 16px
+  );
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-display), var(--font-primary), Arial, Helvetica, sans-serif;
+  font-weight: 400;
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+@layer components {
+  .bk-card {
+    @apply rounded-3xl border border-[#E5E5E5] bg-white;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
+  }
+
+  .bk-card-muted {
+    @apply rounded-3xl border border-[#E5E5E5] bg-[#F4F4F4];
+  }
+
+  .bk-section {
+    @apply rounded-[40px] overflow-hidden bg-[#F4F4F4] px-6 py-16 sm:px-12 sm:py-20;
+  }
+
+  .bk-title {
+    @apply text-xl font-normal tracking-tight text-black;
+  }
+
+  .bk-subtle {
+    @apply text-sm text-[#666666];
+  }
+
+  .bk-link {
+    @apply text-[14px] font-normal text-black underline-offset-4 transition hover:text-black hover:underline;
+  }
+
+  .bk-input {
+    @apply w-full rounded-full border border-[#E5E5E5] bg-white px-6 py-3 text-sm text-black outline-none transition placeholder:text-[#888888] focus-visible:border-black focus-visible:ring-1 focus-visible:ring-black;
+  }
+
+  .bk-textarea {
+    @apply w-full min-h-30 resize-y rounded-3xl border border-[#E5E5E5] bg-white px-6 py-4 text-sm text-black outline-none transition placeholder:text-[#888888] focus-visible:border-black focus-visible:ring-1 focus-visible:ring-black;
+  }
+
+  .bk-select {
+    @apply w-full rounded-full border border-[#E5E5E5] bg-white px-6 py-3 pr-10 text-sm text-black outline-none transition focus-visible:border-black focus-visible:ring-1 focus-visible:ring-black;
+  }
+}

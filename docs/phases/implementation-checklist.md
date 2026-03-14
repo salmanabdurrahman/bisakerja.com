@@ -40,7 +40,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | M1 | Migrasi fondasi persistence ke PostgreSQL | ✅ Complete |
 | M2 | Comments/docstrings pass sesuai standar | ✅ Complete |
 | M3 | English migration (UI + API user-facing messages) | ✅ Complete |
-| M4 | Frontend redesign + growth hardening | 📝 Documented |
+| M4 | Frontend redesign + growth hardening | ✅ Complete |
 | M5 | Phase 4 backend execution | 📝 Documented |
 
 Catatan progress M1 saat ini:
@@ -64,6 +64,14 @@ Catatan progress M3 saat ini:
 - pesan user-facing backend notifier (`apps/api/internal/app/notification/notifier.go`) sudah dimigrasikan ke English,
 - test assertion frontend yang terdampak copy migration sudah disinkronkan,
 - validasi pass: `make -C apps/api lint test build` dan root `pnpm lint test build`.
+
+Catatan progress M4 saat ini:
+
+- redesign SaaS style telah diterapkan di halaman inti frontend (auth, jobs, account area, pricing/subscription, billing verification) dengan fondasi komponen UI reusable,
+- refinement visual pass ala Paper sudah diterapkan untuk hierarchy/spacing global (hero homepage, nav/footer shell, dan card surfaces),
+- observability web vitals untuk halaman kritikal sudah aktif melalui `WebVitalsObserver` + endpoint collector same-origin `/api/web-vitals`,
+- e2e-like growth journey coverage sudah ditambahkan pada `apps/web/tests/e2e/growth-engagement-flow.test.tsx`,
+- validasi pass: `pnpm --filter web lint test build` dan root `pnpm lint test build`.
 
 ## 4) Checklist per Phase & Iteration
 

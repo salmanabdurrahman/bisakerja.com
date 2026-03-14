@@ -76,8 +76,8 @@ describe("Account subscription page", () => {
     const page = await AccountSubscriptionPage();
     render(page);
 
-    expect(screen.getByText("State:")).toBeInTheDocument();
-    expect(screen.getByText(/premium_active/i)).toBeInTheDocument();
-    expect(screen.getByText(/success - Rp49.000/i)).toBeInTheDocument();
+    expect(screen.getByText("Current plan:")).toBeInTheDocument();
+    expect(screen.getAllByText(/premium active/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/success - IDR 49,000/i)).toBeInTheDocument();
   });
 });

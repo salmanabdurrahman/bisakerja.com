@@ -1,4 +1,5 @@
 import type { JobsSearchParamsState } from "@/features/jobs/search-params";
+import { Button } from "@/components/ui/button";
 
 interface JobsSearchFormProps {
   state: JobsSearchParamsState;
@@ -9,50 +10,50 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
     <form
       action="/jobs"
       method="GET"
-      className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-2"
+      className="bk-card grid gap-5 p-6 sm:p-8 md:grid-cols-2"
       aria-label="Jobs search form"
     >
       <input type="hidden" name="page" value="1" />
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Keyword</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Keyword</span>
         <input
           type="text"
           name="q"
           defaultValue={state.q}
           placeholder="golang, backend, intern..."
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
         />
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Location</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Location</span>
         <input
           type="text"
           name="location"
           defaultValue={state.location}
           placeholder="jakarta, remote..."
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
         />
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Salary minimum</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Salary minimum</span>
         <input
           type="number"
           min={0}
           name="salary_min"
           defaultValue={state.salaryMin}
           placeholder="10000000"
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-input"
         />
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Source</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Source</span>
         <select
           name="source"
           defaultValue={state.source ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-select"
         >
           <option value="">All sources</option>
           <option value="glints">Glints</option>
@@ -61,13 +62,9 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         </select>
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Sort</span>
-        <select
-          name="sort"
-          defaultValue={state.sort}
-          className="rounded-md border border-gray-300 px-3 py-2"
-        >
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Sort</span>
+        <select name="sort" defaultValue={state.sort} className="bk-select">
           <option value="-posted_at">Newest posted</option>
           <option value="posted_at">Oldest posted</option>
           <option value="-created_at">Newest collected</option>
@@ -75,12 +72,12 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         </select>
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Limit</span>
+      <label className="grid gap-2 text-[14px]">
+        <span className="font-medium text-black">Limit</span>
         <select
           name="limit"
           defaultValue={String(state.limit)}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="bk-select"
         >
           <option value="10">10</option>
           <option value="20">20</option>
@@ -89,13 +86,15 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         </select>
       </label>
 
-      <div className="flex items-end">
-        <button
+      <div className="flex items-end md:col-span-2 mt-4">
+        <Button
           type="submit"
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          variant="secondary"
+          size="lg"
+          className="w-full md:w-auto min-w-40"
         >
           Search
-        </button>
+        </Button>
       </div>
     </form>
   );
