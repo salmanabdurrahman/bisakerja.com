@@ -14,6 +14,7 @@ import (
 	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/envloader"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/worker"
 )
@@ -25,6 +26,11 @@ func main() {
 	if *healthcheck {
 		worker.Healthcheck("notifier")
 		return
+	}
+
+	if err := envloader.LoadAPIEnv(); err != nil {
+		slog.Error("failed to load api environment", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	cfg := config.Load()

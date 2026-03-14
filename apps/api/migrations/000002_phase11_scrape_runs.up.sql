@@ -20,11 +20,49 @@ CREATE INDEX IF NOT EXISTS idx_scrape_runs_source_created
 CREATE INDEX IF NOT EXISTS idx_jobs_title_trgm
   ON jobs USING gin (title gin_trgm_ops);
 
-CREATE INDEX IF NOT EXISTS idx_jobs_company_name_trgm
-  ON jobs USING gin (company_name gin_trgm_ops);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'company_name'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_jobs_company_name_trgm ON jobs USING gin (company_name gin_trgm_ops)';
+  ELSIF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'company'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_jobs_company_name_trgm ON jobs USING gin (company gin_trgm_ops)';
+  END IF;
+END
+$$;
 
-CREATE INDEX IF NOT EXISTS idx_jobs_published_at
-  ON jobs (published_at DESC);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'published_at'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_jobs_published_at ON jobs (published_at DESC)';
+  ELSIF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'posted_at'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_jobs_published_at ON jobs (posted_at DESC)';
+  END IF;
+END
+$$;
 
 CREATE INDEX IF NOT EXISTS idx_jobs_created_at
   ON jobs (created_at DESC);

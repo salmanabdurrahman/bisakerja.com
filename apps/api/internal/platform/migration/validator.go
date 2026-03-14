@@ -13,10 +13,25 @@ type pair struct {
 	down bool
 }
 
+type FileSet struct {
+	Key      string
+	UpPath   string
+	DownPath string
+}
+
 func ValidateDirectory(path string) (int, error) {
+	files, err := CollectDirectory(path)
+	if err != nil {
+		return 0, err
+	}
+
+	return len(files), nil
+}
+
+func CollectDirectory(path string) ([]FileSet, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return 0, fmt.Errorf("read migration dir: %w", err)
+		return nil, fmt.Errorf("read migration dir: %w", err)
 	}
 
 	pairs := make(map[string]*pair)
@@ -43,7 +58,7 @@ func ValidateDirectory(path string) (int, error) {
 	}
 
 	if len(pairs) == 0 {
-		return 0, fmt.Errorf("no migration pair found in %s", filepath.Clean(path))
+		return nil, fmt.Errorf("no migration pair found in %s", filepath.Clean(path))
 	}
 
 	missing := make([]string, 0)
@@ -55,8 +70,23 @@ func ValidateDirectory(path string) (int, error) {
 
 	if len(missing) > 0 {
 		sort.Strings(missing)
-		return 0, fmt.Errorf("migration pair incomplete for: %s", strings.Join(missing, ", "))
+		return nil, fmt.Errorf("migration pair incomplete for: %s", strings.Join(missing, ", "))
 	}
 
-	return len(pairs), nil
+	keys := make([]string, 0, len(pairs))
+	for key := range pairs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	result := make([]FileSet, 0, len(keys))
+	for _, key := range keys {
+		result = append(result, FileSet{
+			Key:      key,
+			UpPath:   filepath.Join(path, key+".up.sql"),
+			DownPath: filepath.Join(path, key+".down.sql"),
+		})
+	}
+
+	return result, nil
 }

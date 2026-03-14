@@ -1,4 +1,4 @@
-.PHONY: fmt vet test build lint run-api run-scraper run-notifier run-billing-worker check-migrations
+.PHONY: fmt vet test build lint run-api run-scraper run-notifier run-billing-worker check-migrations migrate-up migrate-down
 
 fmt:
 	go fmt ./...
@@ -27,4 +27,10 @@ run-billing-worker:
 	go run ./cmd/billing-worker
 
 check-migrations:
-	go run ./cmd/migrate -direction up
+	go run ./cmd/migrate -mode validate
+
+migrate-up:
+	go run ./cmd/migrate -mode up -direction up
+
+migrate-down:
+	go run ./cmd/migrate -mode down -direction down

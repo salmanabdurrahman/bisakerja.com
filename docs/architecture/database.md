@@ -2,6 +2,57 @@
 
 Database utama menggunakan **PostgreSQL 16+**.
 
+## 0. Bootstrap Lokal
+
+Runtime PostgreSQL lokal memerlukan dua langkah eksplisit:
+
+1. Pastikan environment backend tersedia di `apps/api/.env` atau sudah diexport ke process.
+2. Jalankan migration SQL ke database target sebelum menyalakan API/worker.
+
+Command minimum:
+
+```bash
+make -C apps/api check-migrations
+make -C apps/api migrate-up
+make -C apps/api run-api
+```
+
+Catatan:
+
+- `check-migrations` hanya memvalidasi pasangan file `.up.sql` / `.down.sql`.
+- `migrate-up` mengeksekusi migration pending ke PostgreSQL memakai `DATABASE_URL`.
+- `run-api`, `run-scraper`, `run-notifier`, dan `run-billing-worker` akan mencoba membaca `apps/api/.env` otomatis jika env process belum diset.
+
+### 0.1 Known Migration Issue & Mitigation
+
+Gejala yang pernah muncul saat cutover PostgreSQL:
+
+- `migration up failed: execute migration 000002_phase11_scrape_runs: ERROR: column "company_name" does not exist`
+- atau gagal pada `RENAME COLUMN` di `000003_phase3_persistence_cutover`.
+
+Akar masalah:
+
+- schema database sudah berada di bentuk terbaru (`jobs.company`, `jobs.posted_at`), tetapi histori `schema_migrations` kosong/tidak sinkron,
+- data historis dapat berisi duplikasi `(provider, mayar_transaction_id)` pada tabel `transactions` sebelum unique index dibuat.
+
+Mitigasi yang sudah diterapkan:
+
+- migrasi `000002` dan `000003` dibuat lebih defensif terhadap drift kolom lama/baru (`company_name/company`, `published_at/posted_at`),
+- migrasi `000003` menormalisasi `mayar_transaction_id` kosong menjadi `NULL` dan menonaktifkan duplikasi lama sebelum membuat unique index.
+
+Recovery runbook:
+
+```bash
+make -C apps/api check-migrations
+make -C apps/api migrate-up
+```
+
+Lalu verifikasi versi:
+
+```sql
+SELECT version FROM schema_migrations ORDER BY version;
+```
+
 ## 1. Prinsip Desain
 
 - **Normalized core data** untuk user, jobs, transaksi, dan notifikasi.

@@ -20,6 +20,7 @@ import (
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/envloader"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/server"
 )
@@ -27,6 +28,11 @@ import (
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	if err := envloader.LoadAPIEnv(); err != nil {
+		slog.Error("failed to load api environment", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
 
 	cfg := config.Load()
 	appLogger := logger.New(cfg.Environment)

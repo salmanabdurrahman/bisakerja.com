@@ -49,7 +49,8 @@ Catatan progress M1 saat ini:
 - wiring runtime `cmd/api`, `cmd/scraper`, `cmd/notifier`, `cmd/billing-worker` sudah pindah ke PostgreSQL pool + fail-fast connection,
 - migration cutover `000003_phase3_persistence_cutover` sudah ditambahkan,
 - persistence queue notifier sudah dipindah ke PostgreSQL (`000004_phase3_notification_queue_postgres` + adapter queue PostgreSQL),
-- validasi pass: `pnpm lint`, `pnpm test`, `pnpm build`, serta `make -C apps/api check-migrations`.
+- hardening migrasi drift schema sudah ditambahkan di `000002` dan `000003` untuk kasus histori `schema_migrations` kosong pada database yang sudah pernah dicutover,
+- bootstrap runtime lokal memakai `make -C apps/api check-migrations` + `make -C apps/api migrate-up` sebelum `make -C apps/api run-api`.
 
 ## 4) Checklist per Phase & Iteration
 

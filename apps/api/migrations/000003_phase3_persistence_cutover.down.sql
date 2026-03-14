@@ -29,18 +29,66 @@ ALTER TABLE IF EXISTS jobs
   DROP COLUMN IF EXISTS raw_data,
   DROP COLUMN IF EXISTS salary_range;
 
-ALTER TABLE IF EXISTS jobs
-  RENAME COLUMN posted_at TO published_at;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'posted_at'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'published_at'
+  ) THEN
+    ALTER TABLE jobs RENAME COLUMN posted_at TO published_at;
+  END IF;
+END
+$$;
 
-ALTER TABLE IF EXISTS jobs
-  RENAME COLUMN company TO company_name;
-
-UPDATE user_preferences
-SET updated_at = now()
-WHERE updated_at IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'company'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'jobs'
+      AND column_name = 'company_name'
+  ) THEN
+    ALTER TABLE jobs RENAME COLUMN company TO company_name;
+  END IF;
+END
+$$;
 
 ALTER TABLE IF EXISTS user_preferences
   DROP COLUMN IF EXISTS digest_hour,
-  DROP COLUMN IF EXISTS alert_mode,
-  ALTER COLUMN updated_at SET DEFAULT now(),
-  ALTER COLUMN updated_at SET NOT NULL;
+  DROP COLUMN IF EXISTS alert_mode;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'user_preferences'
+      AND column_name = 'updated_at'
+  ) THEN
+    UPDATE user_preferences
+    SET updated_at = now()
+    WHERE updated_at IS NULL;
+
+    ALTER TABLE user_preferences
+      ALTER COLUMN updated_at SET DEFAULT now(),
+      ALTER COLUMN updated_at SET NOT NULL;
+  END IF;
+END
+$$;

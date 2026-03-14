@@ -30,6 +30,26 @@ func TestValidateDirectory_IncompletePair(t *testing.T) {
 	}
 }
 
+func TestCollectDirectory_ReturnsSortedPaths(t *testing.T) {
+	dir := t.TempDir()
+	mustWriteFile(t, dir, "000002_jobs.up.sql")
+	mustWriteFile(t, dir, "000002_jobs.down.sql")
+	mustWriteFile(t, dir, "000001_init.up.sql")
+	mustWriteFile(t, dir, "000001_init.down.sql")
+
+	files, err := CollectDirectory(dir)
+	if err != nil {
+		t.Fatalf("collect directory: %v", err)
+	}
+
+	if len(files) != 2 {
+		t.Fatalf("expected 2 filesets, got %d", len(files))
+	}
+	if files[0].Key != "000001_init" || files[1].Key != "000002_jobs" {
+		t.Fatalf("unexpected order: %#v", files)
+	}
+}
+
 func mustWriteFile(t *testing.T, dir, name string) {
 	t.Helper()
 

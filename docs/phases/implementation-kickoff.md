@@ -46,6 +46,10 @@ Semua poin berikut harus siap:
   [`../architecture/monorepo-project-layout.md`](../architecture/monorepo-project-layout.md)
 - Siapkan baseline CI dan gate merge sesuai:
   [`../standards/ci-quality-gates.md`](../standards/ci-quality-gates.md)
+- Untuk runtime PostgreSQL lokal, jalankan validasi migrasi lalu apply migration sebelum start API:
+  `make -C apps/api check-migrations` lalu `make -C apps/api migrate-up`
+- Jika environment lama mengalami drift schema/histori migrasi kosong, ikuti runbook di:
+  [`../architecture/database.md`](../architecture/database.md) (bagian *Known Migration Issue & Mitigation*).
 - Pastikan observability minimum tersedia untuk flow kritikal:
   [`../standards/security-observability-standards.md`](../standards/security-observability-standards.md)
 
