@@ -163,7 +163,84 @@ Endpoint ini menghasilkan ringkasan kecocokan profil user terhadap lowongan tert
 - `502 BAD_GATEWAY` (`AI_PROVIDER_UPSTREAM_ERROR`) jika respons provider tidak valid.
 - `503 SERVICE_UNAVAILABLE` (`AI_PROVIDER_RATE_LIMITED`, `AI_PROVIDER_UNAVAILABLE`) jika provider rate-limited/down.
 
-## 3) Get AI Usage
+## 3) Generate Cover Letter Draft (Premium)
+
+- **Method**: `POST`
+- **Path**: `/ai/cover-letter-draft`
+- **Auth**: Bearer Token (user)
+
+Endpoint ini menghasilkan draft cover letter berdasarkan lowongan, preferensi user, dan tone yang dipilih.
+
+### Request Body
+
+```json
+{
+  "job_id": "job_01H...",
+  "tone": "professional",
+  "highlights": [
+    "Built and scaled Golang APIs",
+    "Owned backend reliability initiatives"
+  ]
+}
+```
+
+### Validation
+
+| Field | Rules |
+|---|---|
+| `job_id` | wajib, string non-empty |
+| `tone` | opsional, salah satu: `professional`, `confident`, `friendly`, `concise` |
+| `highlights` | opsional, array string (maks 5 item) |
+
+### Entitlement & Quota Rules
+
+- Endpoint ini **premium-only**.
+- Jika user tidak premium aktif, endpoint mengembalikan `403 FORBIDDEN`.
+- Quota harian mengikuti `AI_DAILY_QUOTA_PREMIUM` (default `30`).
+- Jika quota habis, endpoint mengembalikan `429` dengan code `AI_QUOTA_EXCEEDED`.
+
+### Response `200 OK`
+
+```json
+{
+  "meta": {
+    "code": 200,
+    "status": "success",
+    "message": "AI cover letter draft generated",
+    "request_id": "req_01J..."
+  },
+  "data": {
+    "feature": "cover_letter_draft",
+    "job_id": "job_01H...",
+    "tone": "professional",
+    "draft": "Dear Hiring Team, I am excited to apply for the Backend Engineer role...",
+    "key_points": [
+      "Go backend delivery experience",
+      "API scalability and reliability ownership"
+    ],
+    "summary": "Professional draft focused on backend impact and role alignment.",
+    "tier": "premium",
+    "provider": "openai_compatible",
+    "model": "gpt-4.1-mini",
+    "daily_quota": 30,
+    "used_today": 7,
+    "quota_remaining": 23,
+    "reset_at": "2026-03-20T00:00:00Z"
+  }
+}
+```
+
+### Error
+
+- `400 BAD_REQUEST` (`BAD_REQUEST`) jika `job_id` kosong atau `tone` tidak valid.
+- `401 UNAUTHORIZED` (`UNAUTHORIZED`) jika token invalid/tidak ada.
+- `403 FORBIDDEN` (`FORBIDDEN`) jika user belum premium aktif.
+- `404 NOT_FOUND` (`NOT_FOUND`) jika `job_id` tidak ditemukan.
+- `429 TOO_MANY_REQUESTS` (`AI_QUOTA_EXCEEDED`) jika quota habis.
+- `502 BAD_GATEWAY` (`AI_PROVIDER_UPSTREAM_ERROR`) jika respons provider tidak valid.
+- `503 SERVICE_UNAVAILABLE` (`AI_PROVIDER_RATE_LIMITED`, `AI_PROVIDER_UNAVAILABLE`) jika provider rate-limited/down.
+
+## 4) Get AI Usage
 
 - **Method**: `GET`
 - **Path**: `/ai/usage`
@@ -175,7 +252,7 @@ Endpoint read model untuk menampilkan quota harian AI di UI.
 
 | Name | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `feature` | string | no | `search_assistant` | nilai yang didukung: `search_assistant`, `job_fit_summary` |
+| `feature` | string | no | `search_assistant` | nilai yang didukung: `search_assistant`, `job_fit_summary`, `cover_letter_draft` |
 
 ### Response `200 OK`
 
@@ -204,7 +281,7 @@ Endpoint read model untuk menampilkan quota harian AI di UI.
 - `401 UNAUTHORIZED` (`UNAUTHORIZED`) jika token invalid/tidak ada.
 - `500 INTERNAL_SERVER_ERROR` untuk kegagalan internal.
 
-## 4) Konfigurasi Runtime
+## 5) Konfigurasi Runtime
 
 Konfigurasi minimum untuk AI gateway:
 

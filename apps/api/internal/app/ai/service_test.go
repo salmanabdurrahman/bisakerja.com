@@ -19,6 +19,9 @@ type aiProviderStub struct {
 	jobFitSummaryResult   aidomain.JobFitSummaryResult
 	jobFitSummaryErr      error
 	jobFitSummaryCalls    int
+	coverLetterResult     aidomain.CoverLetterDraftResult
+	coverLetterErr        error
+	coverLetterCalls      int
 }
 
 func (s *aiProviderStub) GenerateSearchAssistant(
@@ -41,6 +44,17 @@ func (s *aiProviderStub) GenerateJobFitSummary(
 		return aidomain.JobFitSummaryResult{}, s.jobFitSummaryErr
 	}
 	return s.jobFitSummaryResult, nil
+}
+
+func (s *aiProviderStub) GenerateCoverLetterDraft(
+	_ context.Context,
+	_ aidomain.CoverLetterDraftInput,
+) (aidomain.CoverLetterDraftResult, error) {
+	s.coverLetterCalls++
+	if s.coverLetterErr != nil {
+		return aidomain.CoverLetterDraftResult{}, s.coverLetterErr
+	}
+	return s.coverLetterResult, nil
 }
 
 func TestService_GenerateSearchAssistant_Success(t *testing.T) {
@@ -452,4 +466,102 @@ func TestService_GenerateJobFitSummary_JobIDRequired(t *testing.T) {
 
 func ptrTime(value time.Time) *time.Time {
 	return &value
+}
+
+func TestService_GenerateCoverLetterDraft_Success(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	expiry := time.Now().UTC().Add(24 * time.Hour)
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:            "ai-cover-letter@example.com",
+		PasswordHash:     "hash",
+		Name:             "Cover Letter User",
+		Role:             identity.RoleUser,
+		IsPremium:        true,
+		PremiumExpiredAt: &expiry,
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	jobsRepository := memory.NewJobsRepository()
+	upsertResult, err := jobsRepository.UpsertMany(context.Background(), job.SourceGlints, []job.UpsertInput{
+		{
+			OriginalJobID: "cover-letter-1",
+			Title:         "Backend Engineer",
+			Company:       "Acme",
+			Location:      "Jakarta",
+			Description:   "Build and maintain Go APIs.",
+			URL:           "https://example.com/jobs/cover-letter-1",
+		},
+	})
+	if err != nil {
+		t.Fatalf("seed job: %v", err)
+	}
+
+	provider := &aiProviderStub{
+		coverLetterResult: aidomain.CoverLetterDraftResult{
+			Tone:      "professional",
+			Draft:     "Dear Hiring Team, I am excited to apply for Backend Engineer role at Acme...",
+			KeyPoints: []string{"5+ years Go backend", "API scalability", "production reliability"},
+			Summary:   "Professional draft focused on backend impact.",
+			Provider:  "openai_compatible",
+			Model:     "gpt-test-model",
+			TokensIn:  95,
+			TokensOut: 140,
+		},
+	}
+	service := NewService(identityRepository, jobsRepository, memory.NewAIRepository(), provider, Config{
+		DailyQuotaFree:    1,
+		DailyQuotaPremium: 3,
+	})
+
+	result, err := service.GenerateCoverLetterDraft(context.Background(), GenerateCoverLetterDraftInput{
+		UserID:     user.ID,
+		JobID:      upsertResult.Inserted[0].ID,
+		Tone:       "professional",
+		Highlights: []string{"Golang API architecture", "Observability leadership"},
+	})
+	if err != nil {
+		t.Fatalf("generate cover letter draft: %v", err)
+	}
+	if result.Feature != aidomain.FeatureCoverLetterDraft {
+		t.Fatalf("expected cover_letter_draft feature, got %q", result.Feature)
+	}
+	if result.Tier != "premium" {
+		t.Fatalf("expected premium tier, got %q", result.Tier)
+	}
+	if result.Tone != "professional" || result.Draft == "" {
+		t.Fatalf("unexpected cover letter payload: %+v", result)
+	}
+	if result.Quota.DailyQuota != 3 || result.Quota.Used != 1 || result.Quota.Remaining != 2 {
+		t.Fatalf("unexpected quota payload: %+v", result.Quota)
+	}
+	if provider.coverLetterCalls != 1 {
+		t.Fatalf("expected cover-letter provider called once, got %d", provider.coverLetterCalls)
+	}
+}
+
+func TestService_GenerateCoverLetterDraft_InvalidTone(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:            "ai-cover-invalid-tone@example.com",
+		PasswordHash:     "hash",
+		Name:             "Cover Invalid Tone",
+		Role:             identity.RoleUser,
+		IsPremium:        true,
+		PremiumExpiredAt: ptrTime(time.Now().UTC().Add(24 * time.Hour)),
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	service := NewService(identityRepository, memory.NewJobsRepository(), memory.NewAIRepository(), &aiProviderStub{}, Config{})
+	_, err = service.GenerateCoverLetterDraft(context.Background(), GenerateCoverLetterDraftInput{
+		UserID: user.ID,
+		JobID:  "job_1",
+		Tone:   "aggressive",
+	})
+	if !errors.Is(err, ErrInvalidTone) {
+		t.Fatalf("expected ErrInvalidTone, got %v", err)
+	}
 }

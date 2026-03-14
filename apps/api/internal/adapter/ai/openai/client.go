@@ -49,6 +49,19 @@ Rules:
 - strengths/gaps/next_actions should be concise and practical.
 - Never return markdown fences, explanations, or extra keys.`
 
+const coverLetterSystemPrompt = `You are an AI assistant that drafts concise job application cover letters.
+Return ONLY a valid JSON object with this shape:
+{
+  "tone": "professional|confident|friendly|concise",
+  "draft": "string",
+  "key_points": ["string"],
+  "summary": "string"
+}
+Rules:
+- Keep draft actionable and professional.
+- key_points should summarize important strengths referenced in the draft.
+- Never return markdown fences, explanations, or extra keys.`
+
 // ClientConfig stores configuration values for OpenAI-compatible client.
 type ClientConfig struct {
 	BaseURL    string
@@ -325,6 +338,121 @@ func (c *Client) GenerateJobFitSummary(
 	return parsed, nil
 }
 
+// GenerateCoverLetterDraft generates cover letter draft from AI provider.
+func (c *Client) GenerateCoverLetterDraft(
+	ctx context.Context,
+	input aidomain.CoverLetterDraftInput,
+) (aidomain.CoverLetterDraftResult, error) {
+	if strings.TrimSpace(c.apiKey) == "" {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: ai provider api key is empty", aidomain.ErrProviderUnavailable)
+	}
+
+	requestPayload := map[string]any{
+		"model":       c.model,
+		"temperature": 0.2,
+		"messages": []map[string]string{
+			{
+				"role":    "system",
+				"content": coverLetterSystemPrompt,
+			},
+			{
+				"role":    "user",
+				"content": buildCoverLetterPrompt(input),
+			},
+		},
+	}
+
+	body, err := json.Marshal(requestPayload)
+	if err != nil {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: encode request payload", aidomain.ErrProviderUpstream)
+	}
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		c.baseURL+"/chat/completions",
+		bytes.NewReader(body),
+	)
+	if err != nil {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: build request", aidomain.ErrProviderUpstream)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: execute request: %v", aidomain.ErrProviderUnavailable, err)
+	}
+
+	responseBody, err := readBody(response.Body)
+	if err != nil {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: read response body: %v", aidomain.ErrProviderUnavailable, err)
+	}
+
+	if response.StatusCode == http.StatusTooManyRequests {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf(
+			"%w: provider returned status %d (%s)",
+			aidomain.ErrProviderRateLimited,
+			response.StatusCode,
+			summarizeBody(responseBody),
+		)
+	}
+	if response.StatusCode >= http.StatusInternalServerError {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf(
+			"%w: provider returned status %d (%s)",
+			aidomain.ErrProviderUnavailable,
+			response.StatusCode,
+			summarizeBody(responseBody),
+		)
+	}
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf(
+			"%w: provider returned status %d (%s)",
+			aidomain.ErrProviderUpstream,
+			response.StatusCode,
+			summarizeBody(responseBody),
+		)
+	}
+
+	var completion chatCompletionResponse
+	if err := json.Unmarshal(responseBody, &completion); err != nil {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: invalid response JSON", aidomain.ErrProviderUpstream)
+	}
+	if len(completion.Choices) == 0 {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: empty choices", aidomain.ErrProviderUpstream)
+	}
+
+	content := extractMessageContent(completion.Choices[0].Message.Content)
+	if content == "" {
+		return aidomain.CoverLetterDraftResult{}, fmt.Errorf("%w: empty completion content", aidomain.ErrProviderUpstream)
+	}
+
+	parsed, ok := parseCoverLetterPayload(content)
+	if !ok {
+		parsed = aidomain.CoverLetterDraftResult{
+			Tone:      "professional",
+			Draft:     truncate(content, 1500),
+			KeyPoints: []string{"Adapt this draft with your concrete achievements before sending."},
+			Summary:   "Cover letter draft generated from fallback provider output.",
+		}
+	}
+	if strings.TrimSpace(parsed.Draft) == "" {
+		parsed.Draft = "Dear Hiring Team, I am excited to apply and would welcome the opportunity to discuss my relevant experience for this role."
+	}
+	if strings.TrimSpace(parsed.Summary) == "" {
+		parsed.Summary = "Cover letter draft generated."
+	}
+
+	parsed.Provider = "openai_compatible"
+	parsed.Model = strings.TrimSpace(completion.Model)
+	if parsed.Model == "" {
+		parsed.Model = c.model
+	}
+	parsed.TokensIn = max(completion.Usage.PromptTokens, 0)
+	parsed.TokensOut = max(completion.Usage.CompletionTokens, 0)
+	return parsed, nil
+}
+
 type chatCompletionResponse struct {
 	Model   string `json:"model"`
 	Choices []struct {
@@ -399,6 +527,40 @@ func buildJobFitPrompt(input aidomain.JobFitSummaryInput) string {
 	return builder.String()
 }
 
+func buildCoverLetterPrompt(input aidomain.CoverLetterDraftInput) string {
+	builder := strings.Builder{}
+	builder.WriteString("Applicant profile context:\n")
+	if name := strings.TrimSpace(input.UserName); name != "" {
+		builder.WriteString("- Name: " + name + "\n")
+	}
+	builder.WriteString("- Preferred keywords: " + strings.Join(input.Preferences.Keywords, ", ") + "\n")
+	builder.WriteString("- Preferred locations: " + strings.Join(input.Preferences.Locations, ", ") + "\n")
+	builder.WriteString("- Preferred job types: " + strings.Join(input.Preferences.JobTypes, ", ") + "\n")
+	if input.Preferences.SalaryMin > 0 {
+		builder.WriteString("- Preferred minimum salary: " + strconv.FormatInt(input.Preferences.SalaryMin, 10) + "\n")
+	}
+
+	builder.WriteString("\nTarget job context:\n")
+	builder.WriteString("- Job ID: " + strings.TrimSpace(input.Job.JobID) + "\n")
+	builder.WriteString("- Title: " + strings.TrimSpace(input.Job.Title) + "\n")
+	builder.WriteString("- Company: " + strings.TrimSpace(input.Job.Company) + "\n")
+	builder.WriteString("- Location: " + strings.TrimSpace(input.Job.Location) + "\n")
+	if description := strings.TrimSpace(input.Job.Description); description != "" {
+		builder.WriteString("- Description: " + truncate(description, 2000) + "\n")
+	}
+
+	tone := strings.TrimSpace(input.Tone)
+	if tone == "" {
+		tone = "professional"
+	}
+	builder.WriteString("\nTone: " + tone + "\n")
+	if len(input.Highlights) > 0 {
+		builder.WriteString("Highlights to include: " + strings.Join(input.Highlights, "; ") + "\n")
+	}
+
+	return builder.String()
+}
+
 func parseAssistantPayload(raw string) (aidomain.SearchAssistantResult, bool) {
 	jsonCandidate := extractJSONCandidate(raw)
 	if jsonCandidate == "" {
@@ -457,6 +619,32 @@ func parseJobFitSummaryPayload(raw string) (aidomain.JobFitSummaryResult, bool) 
 		Gaps:        pickStringList(payload, "gaps", "weaknesses"),
 		NextActions: pickStringList(payload, "next_actions", "action_items"),
 		Summary:     summary,
+	}, true
+}
+
+func parseCoverLetterPayload(raw string) (aidomain.CoverLetterDraftResult, bool) {
+	jsonCandidate := extractJSONCandidate(raw)
+	if jsonCandidate == "" {
+		return aidomain.CoverLetterDraftResult{}, false
+	}
+
+	payload := map[string]any{}
+	if err := json.Unmarshal([]byte(jsonCandidate), &payload); err != nil {
+		return aidomain.CoverLetterDraftResult{}, false
+	}
+
+	draft := pickString(payload, "draft", "cover_letter")
+	tone := pickString(payload, "tone")
+	summary := pickString(payload, "summary", "rationale")
+	if draft == "" && tone == "" && summary == "" {
+		return aidomain.CoverLetterDraftResult{}, false
+	}
+
+	return aidomain.CoverLetterDraftResult{
+		Tone:      strings.ToLower(strings.TrimSpace(tone)),
+		Draft:     draft,
+		KeyPoints: pickStringList(payload, "key_points", "highlights"),
+		Summary:   summary,
 	}, true
 }
 

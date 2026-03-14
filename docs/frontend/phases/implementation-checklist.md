@@ -51,7 +51,7 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0 frontend** suda
 | `PUT /api/v1/preferences/notification`  | `alert_mode`, `digest_hour`, `updated_at`                                                   | 📝     | dipakai kontrol digest mode                |
 | `POST /api/v1/ai/search-assistant`      | `prompt`, `suggested_query`, `suggested_filters`, `quota_remaining`                         | 🟡     | backend increment 1 tersedia (`docs/api/ai.md`) |
 | `POST /api/v1/ai/job-fit-summary`       | `job_id`, `fit_score`, `strengths`, `gaps`, `next_actions`                                  | 🟡     | backend increment 2 tersedia (`docs/api/ai.md`) |
-| `POST /api/v1/ai/cover-letter-draft`    | `job_id`, `tone`, `draft`, `quota_remaining`                                                 | 📝     | planned premium AI writing aid             |
+| `POST /api/v1/ai/cover-letter-draft`    | `job_id`, `tone`, `draft`, `quota_remaining`                                                 | 🟡     | backend increment 3 tersedia (`docs/api/ai.md`) |
 | `POST /api/v1/ai/interview-prep`        | `job_id`, `questions`, `answer_tips`, `practice_plan`                                        | 📝     | planned free+premium AI prep               |
 | `GET /api/v1/ai/usage`                  | `tier`, `daily_quota`, `used`, `remaining`, `reset_at`                                       | 🟡     | backend increment 1 tersedia (`docs/api/ai.md`) |
 

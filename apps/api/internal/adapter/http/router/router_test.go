@@ -291,6 +291,18 @@ func TestNew_RegistersAIRoutesWhenDependencyProvided(t *testing.T) {
 		t.Fatalf("expected ai job-fit route to be protected with 401, got %d", jobFitResponse.Code)
 	}
 
+	coverLetterRequest := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/ai/cover-letter-draft",
+		strings.NewReader(`{"job_id":"job_1","tone":"professional"}`),
+	)
+	coverLetterRequest.Header.Set("Content-Type", "application/json")
+	coverLetterResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(coverLetterResponse, coverLetterRequest)
+	if coverLetterResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected ai cover-letter route to be protected with 401, got %d", coverLetterResponse.Code)
+	}
+
 	usageRequest := httptest.NewRequest(http.MethodGet, "/api/v1/ai/usage", nil)
 	usageResponse := httptest.NewRecorder()
 	appHandler.ServeHTTP(usageResponse, usageRequest)
@@ -336,6 +348,13 @@ func (s *routerTestAIService) GenerateJobFitSummary(
 	_ aiapp.GenerateJobFitSummaryInput,
 ) (aiapp.JobFitSummaryResult, error) {
 	return aiapp.JobFitSummaryResult{}, nil
+}
+
+func (s *routerTestAIService) GenerateCoverLetterDraft(
+	_ context.Context,
+	_ aiapp.GenerateCoverLetterDraftInput,
+) (aiapp.CoverLetterDraftResult, error) {
+	return aiapp.CoverLetterDraftResult{}, nil
 }
 
 func (s *routerTestAIService) GetUsage(

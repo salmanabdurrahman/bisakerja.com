@@ -19,6 +19,7 @@ const (
 	defaultPromptMinChars    = 5
 	defaultPromptMaxChars    = 500
 	defaultFocusMaxChars     = 300
+	defaultToneMaxChars      = 40
 	defaultDailyQuotaFree    = 5
 	defaultDailyQuotaPremium = 30
 
@@ -27,6 +28,10 @@ const (
 	jobFitVerdictStrong = "strong_match"
 	jobFitVerdictMedium = "moderate_match"
 	jobFitVerdictLow    = "low_match"
+	toneProfessional    = "professional"
+	toneConfident       = "confident"
+	toneFriendly        = "friendly"
+	toneConcise         = "concise"
 )
 
 var (
@@ -35,6 +40,7 @@ var (
 	ErrPromptTooLong       = errors.New("prompt is too long")
 	ErrFocusTooLong        = errors.New("focus is too long")
 	ErrJobIDRequired       = errors.New("job_id is required")
+	ErrInvalidTone         = errors.New("tone is invalid")
 	ErrPremiumRequired     = errors.New("premium subscription is required")
 	ErrInvalidFeature      = errors.New("invalid ai feature")
 	ErrQuotaExceeded       = errors.New("ai quota exceeded")
@@ -48,6 +54,13 @@ var allowedJobTypes = map[string]struct{}{
 	"parttime":   {},
 	"contract":   {},
 	"internship": {},
+}
+
+var allowedTones = map[string]struct{}{
+	toneProfessional: {},
+	toneConfident:    {},
+	toneFriendly:     {},
+	toneConcise:      {},
 }
 
 // Config stores configuration values for AI service.
@@ -125,6 +138,28 @@ type JobFitSummaryResult struct {
 	Provider    string
 	Model       string
 	Quota       UsageQuota
+}
+
+// GenerateCoverLetterDraftInput contains input parameters for cover letter draft generation.
+type GenerateCoverLetterDraftInput struct {
+	UserID     string
+	JobID      string
+	Tone       string
+	Highlights []string
+}
+
+// CoverLetterDraftResult represents AI cover letter draft output.
+type CoverLetterDraftResult struct {
+	Feature   aidomain.Feature
+	JobID     string
+	Tone      string
+	Draft     string
+	KeyPoints []string
+	Summary   string
+	Tier      string
+	Provider  string
+	Model     string
+	Quota     UsageQuota
 }
 
 // GetUsageInput contains input parameters for usage query.
@@ -384,6 +419,132 @@ func (s *Service) GenerateJobFitSummary(
 	}, nil
 }
 
+// GenerateCoverLetterDraft generates AI cover letter draft for premium users.
+func (s *Service) GenerateCoverLetterDraft(
+	ctx context.Context,
+	input GenerateCoverLetterDraftInput,
+) (CoverLetterDraftResult, error) {
+	if s.identityRepository == nil || s.jobsRepository == nil || s.repository == nil || s.provider == nil {
+		return CoverLetterDraftResult{}, errors.New("ai service dependency is not fully configured")
+	}
+
+	userID := strings.TrimSpace(input.UserID)
+	if userID == "" {
+		return CoverLetterDraftResult{}, identity.ErrUserNotFound
+	}
+
+	jobID := strings.TrimSpace(input.JobID)
+	if jobID == "" {
+		return CoverLetterDraftResult{}, ErrJobIDRequired
+	}
+
+	tone, err := normalizeTone(input.Tone)
+	if err != nil {
+		return CoverLetterDraftResult{}, err
+	}
+	highlights := normalizeStringList(input.Highlights, 5, 140)
+
+	now := s.now().UTC()
+	user, err := s.identityRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return CoverLetterDraftResult{}, fmt.Errorf("get user profile: %w", err)
+	}
+
+	tier := resolveTier(user, now)
+	if tier != tierPremium {
+		return CoverLetterDraftResult{}, ErrPremiumRequired
+	}
+
+	jobDetail, err := s.jobsRepository.GetByID(ctx, jobID)
+	if err != nil {
+		return CoverLetterDraftResult{}, fmt.Errorf("get job detail: %w", err)
+	}
+
+	preferences, err := s.identityRepository.GetPreferences(ctx, userID)
+	if err != nil {
+		return CoverLetterDraftResult{}, fmt.Errorf("get user preferences: %w", err)
+	}
+
+	feature := aidomain.FeatureCoverLetterDraft
+	quotaLimit := s.quotaForTier(tier)
+	windowStart := usageWindowStart(now)
+	resetAt := windowStart.Add(24 * time.Hour)
+	usedCount, err := s.repository.CountUsageSince(ctx, userID, feature, windowStart)
+	if err != nil {
+		return CoverLetterDraftResult{}, fmt.Errorf("count ai usage: %w", err)
+	}
+	if usedCount >= quotaLimit {
+		return CoverLetterDraftResult{}, ErrQuotaExceeded
+	}
+
+	providerResult, err := s.provider.GenerateCoverLetterDraft(ctx, aidomain.CoverLetterDraftInput{
+		Tone:       tone,
+		Highlights: highlights,
+		Job: aidomain.JobFitJobContext{
+			JobID:       jobDetail.ID,
+			Title:       strings.TrimSpace(jobDetail.Title),
+			Company:     strings.TrimSpace(jobDetail.Company),
+			Location:    strings.TrimSpace(jobDetail.Location),
+			Description: strings.TrimSpace(jobDetail.Description),
+			SalaryMin:   cloneInt64(jobDetail.SalaryMin),
+			SalaryMax:   cloneInt64(jobDetail.SalaryMax),
+			SalaryRange: strings.TrimSpace(jobDetail.SalaryRange),
+			PublishedAt: cloneTime(jobDetail.PostedAt),
+		},
+		Preferences: aidomain.JobFitUserPreferences{
+			Keywords:  normalizeStringList(preferences.Keywords, 8, 60),
+			Locations: normalizeStringList(preferences.Locations, 8, 60),
+			JobTypes:  normalizeJobTypes(preferences.JobTypes),
+			SalaryMin: max(preferences.SalaryMin, 0),
+		},
+		UserName: strings.TrimSpace(user.Name),
+	})
+	if err != nil {
+		return CoverLetterDraftResult{}, mapProviderError(err)
+	}
+
+	normalizedResult := normalizeCoverLetterResult(providerResult, tone)
+	createdAt := s.now().UTC()
+	_, err = s.repository.CreateUsageLog(ctx, aidomain.CreateUsageLogInput{
+		UserID:     userID,
+		Feature:    feature,
+		Tier:       tier,
+		Provider:   normalizedResult.Provider,
+		Model:      normalizedResult.Model,
+		TokensIn:   max(normalizedResult.TokensIn, 0),
+		TokensOut:  max(normalizedResult.TokensOut, 0),
+		PromptHash: hashPrompt(fmt.Sprintf("job:%s|tone:%s|highlights:%d", jobID, tone, len(highlights))),
+		Metadata: map[string]any{
+			"job_id":           jobID,
+			"tone":             tone,
+			"highlights_count": len(highlights),
+		},
+		CreatedAt: createdAt,
+	})
+	if err != nil {
+		return CoverLetterDraftResult{}, fmt.Errorf("create ai usage log: %w", err)
+	}
+
+	usedAfter := usedCount + 1
+	return CoverLetterDraftResult{
+		Feature:   feature,
+		JobID:     jobID,
+		Tone:      normalizedResult.Tone,
+		Draft:     normalizedResult.Draft,
+		KeyPoints: normalizedResult.KeyPoints,
+		Summary:   normalizedResult.Summary,
+		Tier:      tier,
+		Provider:  normalizedResult.Provider,
+		Model:     normalizedResult.Model,
+		Quota: UsageQuota{
+			DailyQuota: quotaLimit,
+			Used:       usedAfter,
+			Remaining:  max(quotaLimit-usedAfter, 0),
+			ResetAt:    resetAt,
+		},
+	}, nil
+}
+
 // GetUsage returns AI usage quota for the user.
 func (s *Service) GetUsage(ctx context.Context, input GetUsageInput) (UsageSnapshot, error) {
 	if s.identityRepository == nil || s.repository == nil {
@@ -454,6 +615,9 @@ func parseFeature(raw string) (aidomain.Feature, error) {
 	}
 	if normalized == string(aidomain.FeatureJobFitSummary) {
 		return aidomain.FeatureJobFitSummary, nil
+	}
+	if normalized == string(aidomain.FeatureCoverLetterDraft) {
+		return aidomain.FeatureCoverLetterDraft, nil
 	}
 	return "", ErrInvalidFeature
 }
@@ -593,6 +757,20 @@ func normalizeFocus(raw string) (string, error) {
 	return normalized, nil
 }
 
+func normalizeTone(raw string) (string, error) {
+	normalized := strings.ToLower(strings.TrimSpace(raw))
+	if normalized == "" {
+		return toneProfessional, nil
+	}
+	if len([]rune(normalized)) > defaultToneMaxChars {
+		return "", ErrInvalidTone
+	}
+	if _, ok := allowedTones[normalized]; !ok {
+		return "", ErrInvalidTone
+	}
+	return normalized, nil
+}
+
 func normalizeJobFitProviderResult(result aidomain.JobFitSummaryResult) aidomain.JobFitSummaryResult {
 	score := max(min(result.FitScore, 100), 0)
 	verdict := strings.TrimSpace(strings.ToLower(result.Verdict))
@@ -628,6 +806,47 @@ func normalizeJobFitProviderResult(result aidomain.JobFitSummaryResult) aidomain
 		Model:       model,
 		TokensIn:    max(result.TokensIn, 0),
 		TokensOut:   max(result.TokensOut, 0),
+	}
+}
+
+func normalizeCoverLetterResult(result aidomain.CoverLetterDraftResult, fallbackTone string) aidomain.CoverLetterDraftResult {
+	tone := strings.ToLower(strings.TrimSpace(result.Tone))
+	if _, ok := allowedTones[tone]; !ok {
+		tone = fallbackTone
+	}
+	if tone == "" {
+		tone = toneProfessional
+	}
+
+	draft := strings.TrimSpace(result.Draft)
+	if draft == "" {
+		draft = "Thank you for considering my application. I am excited to contribute and would welcome the opportunity to discuss how my experience aligns with this role."
+	}
+
+	summary := strings.TrimSpace(result.Summary)
+	if summary == "" {
+		summary = "Cover letter draft generated."
+	}
+
+	provider := strings.TrimSpace(result.Provider)
+	if provider == "" {
+		provider = "openai_compatible"
+	}
+
+	model := strings.TrimSpace(result.Model)
+	if model == "" {
+		model = "unknown"
+	}
+
+	return aidomain.CoverLetterDraftResult{
+		Tone:      tone,
+		Draft:     draft,
+		KeyPoints: normalizeStringList(result.KeyPoints, 6, 160),
+		Summary:   summary,
+		Provider:  provider,
+		Model:     model,
+		TokensIn:  max(result.TokensIn, 0),
+		TokensOut: max(result.TokensOut, 0),
 	}
 }
 

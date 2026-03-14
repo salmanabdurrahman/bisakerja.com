@@ -19,6 +19,7 @@ import (
 type AIService interface {
 	GenerateSearchAssistant(ctx context.Context, input aiapp.GenerateSearchAssistantInput) (aiapp.SearchAssistantResult, error)
 	GenerateJobFitSummary(ctx context.Context, input aiapp.GenerateJobFitSummaryInput) (aiapp.JobFitSummaryResult, error)
+	GenerateCoverLetterDraft(ctx context.Context, input aiapp.GenerateCoverLetterDraftInput) (aiapp.CoverLetterDraftResult, error)
 	GetUsage(ctx context.Context, input aiapp.GetUsageInput) (aiapp.UsageSnapshot, error)
 }
 
@@ -41,6 +42,12 @@ type aiSearchAssistantContext struct {
 type aiJobFitSummaryRequest struct {
 	JobID string `json:"job_id"`
 	Focus string `json:"focus"`
+}
+
+type aiCoverLetterDraftRequest struct {
+	JobID      string   `json:"job_id"`
+	Tone       string   `json:"tone"`
+	Highlights []string `json:"highlights"`
 }
 
 // NewAIHandler creates a new AI handler instance.
@@ -153,6 +160,55 @@ func (h *AIHandler) GenerateJobFitSummary(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// GenerateCoverLetterDraft generates AI cover letter draft for premium users.
+func (h *AIHandler) GenerateCoverLetterDraft(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	authUser, ok := middleware.AuthUserFromContext(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+			Code:    errcode.Unauthorized,
+			Message: "authentication context missing",
+		}})
+		return
+	}
+
+	var request aiCoverLetterDraftRequest
+	if err := decodeJSONBody(r, &request); err != nil {
+		response.WriteError(w, http.StatusBadRequest, "Invalid request body", requestID, []response.ErrorItem{{
+			Code:    errcode.BadRequest,
+			Message: "request body must be valid JSON",
+		}})
+		return
+	}
+
+	result, err := h.service.GenerateCoverLetterDraft(r.Context(), aiapp.GenerateCoverLetterDraftInput{
+		UserID:     authUser.UserID,
+		JobID:      request.JobID,
+		Tone:       request.Tone,
+		Highlights: request.Highlights,
+	})
+	if err != nil {
+		h.writeServiceError(w, requestID, err)
+		return
+	}
+
+	response.WriteSuccess(w, http.StatusOK, "AI cover letter draft generated", requestID, map[string]any{
+		"feature":         result.Feature,
+		"job_id":          result.JobID,
+		"tone":            result.Tone,
+		"draft":           result.Draft,
+		"key_points":      result.KeyPoints,
+		"summary":         result.Summary,
+		"tier":            result.Tier,
+		"provider":        result.Provider,
+		"model":           result.Model,
+		"daily_quota":     result.Quota.DailyQuota,
+		"used_today":      result.Quota.Used,
+		"quota_remaining": result.Quota.Remaining,
+		"reset_at":        result.Quota.ResetAt,
+	})
+}
+
 // GetUsage returns AI usage state for authenticated user.
 func (h *AIHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
@@ -201,6 +257,12 @@ func (h *AIHandler) writeServiceError(w http.ResponseWriter, requestID string, e
 			Code:    errcode.BadRequest,
 			Message: "focus must be <= 300 characters",
 		}})
+	case errors.Is(err, aiapp.ErrInvalidTone):
+		response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+			Field:   "tone",
+			Code:    errcode.BadRequest,
+			Message: "tone must be one of: professional, confident, friendly, concise",
+		}})
 	case errors.Is(err, aiapp.ErrJobIDRequired):
 		response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
 			Field:   "job_id",
@@ -211,7 +273,7 @@ func (h *AIHandler) writeServiceError(w http.ResponseWriter, requestID string, e
 		response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
 			Field:   "feature",
 			Code:    errcode.InvalidAIFeature,
-			Message: "feature must be search_assistant or job_fit_summary",
+			Message: "feature must be search_assistant, job_fit_summary, or cover_letter_draft",
 		}})
 	case errors.Is(err, aiapp.ErrPremiumRequired):
 		response.WriteError(w, http.StatusForbidden, "Forbidden", requestID, []response.ErrorItem{{

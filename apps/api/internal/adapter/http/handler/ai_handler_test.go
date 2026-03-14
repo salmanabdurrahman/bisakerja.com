@@ -25,6 +25,8 @@ type aiHandlerServiceStub struct {
 	generateErr    error
 	jobFitResult   aiapp.JobFitSummaryResult
 	jobFitErr      error
+	coverResult    aiapp.CoverLetterDraftResult
+	coverErr       error
 	getUsageResult aiapp.UsageSnapshot
 	getUsageErr    error
 }
@@ -47,6 +49,16 @@ func (s *aiHandlerServiceStub) GenerateJobFitSummary(
 		return aiapp.JobFitSummaryResult{}, s.jobFitErr
 	}
 	return s.jobFitResult, nil
+}
+
+func (s *aiHandlerServiceStub) GenerateCoverLetterDraft(
+	_ context.Context,
+	_ aiapp.GenerateCoverLetterDraftInput,
+) (aiapp.CoverLetterDraftResult, error) {
+	if s.coverErr != nil {
+		return aiapp.CoverLetterDraftResult{}, s.coverErr
+	}
+	return s.coverResult, nil
 }
 
 func (s *aiHandlerServiceStub) GetUsage(_ context.Context, _ aiapp.GetUsageInput) (aiapp.UsageSnapshot, error) {
@@ -310,6 +322,102 @@ func TestAIHandler_GenerateJobFitSummary_ErrorMatrix(t *testing.T) {
 
 			responseRecorder := httptest.NewRecorder()
 			handler.GenerateJobFitSummary(responseRecorder, request)
+			if responseRecorder.Code != testCase.expectedCode {
+				t.Fatalf("expected status %d, got %d (%s)", testCase.expectedCode, responseRecorder.Code, responseRecorder.Body.String())
+			}
+			if !strings.Contains(responseRecorder.Body.String(), testCase.errorCode) {
+				t.Fatalf("expected response body to contain %q, got %s", testCase.errorCode, responseRecorder.Body.String())
+			}
+		})
+	}
+}
+
+func TestAIHandler_GenerateCoverLetterDraft_Success(t *testing.T) {
+	resetAt := time.Date(2026, 3, 20, 0, 0, 0, 0, time.UTC)
+	handler := NewAIHandler(&aiHandlerServiceStub{
+		coverResult: aiapp.CoverLetterDraftResult{
+			Feature:   aidomain.FeatureCoverLetterDraft,
+			JobID:     "job_1",
+			Tone:      "professional",
+			Draft:     "Dear Hiring Team, I am excited to apply for this role...",
+			KeyPoints: []string{"Go backend delivery", "API reliability"},
+			Summary:   "Professional draft generated.",
+			Tier:      "premium",
+			Provider:  "openai_compatible",
+			Model:     "gpt-test-model",
+			Quota: aiapp.UsageQuota{
+				DailyQuota: 30,
+				Used:       3,
+				Remaining:  27,
+				ResetAt:    resetAt,
+			},
+		},
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/ai/cover-letter-draft", strings.NewReader(`{"job_id":"job_1","tone":"professional","highlights":["Go backend delivery"]}`))
+	request.Header.Set("Content-Type", "application/json")
+	request = request.WithContext(observability.WithRequestID(request.Context(), "req_ai_cover_letter_success"))
+	request = request.WithContext(middleware.WithAuthUser(request.Context(), middleware.AuthUser{
+		UserID: "usr_1",
+		Role:   identity.RoleUser,
+	}))
+
+	responseRecorder := httptest.NewRecorder()
+	handler.GenerateCoverLetterDraft(responseRecorder, request)
+	if responseRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", responseRecorder.Code, responseRecorder.Body.String())
+	}
+	if !strings.Contains(responseRecorder.Body.String(), "cover_letter_draft") {
+		t.Fatalf("expected cover_letter_draft in response body, got %s", responseRecorder.Body.String())
+	}
+	if !strings.Contains(responseRecorder.Body.String(), "\"tone\":\"professional\"") {
+		t.Fatalf("expected professional tone in response body, got %s", responseRecorder.Body.String())
+	}
+}
+
+func TestAIHandler_GenerateCoverLetterDraft_ErrorMatrix(t *testing.T) {
+	testCases := []struct {
+		name         string
+		serviceError error
+		expectedCode int
+		errorCode    string
+	}{
+		{
+			name:         "invalid tone",
+			serviceError: aiapp.ErrInvalidTone,
+			expectedCode: http.StatusBadRequest,
+			errorCode:    "BAD_REQUEST",
+		},
+		{
+			name:         "premium required",
+			serviceError: aiapp.ErrPremiumRequired,
+			expectedCode: http.StatusForbidden,
+			errorCode:    "FORBIDDEN",
+		},
+		{
+			name:         "quota exceeded",
+			serviceError: aiapp.ErrQuotaExceeded,
+			expectedCode: http.StatusTooManyRequests,
+			errorCode:    "AI_QUOTA_EXCEEDED",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			handler := NewAIHandler(&aiHandlerServiceStub{
+				coverErr: testCase.serviceError,
+			})
+
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/ai/cover-letter-draft", strings.NewReader(`{"job_id":"job_1","tone":"professional"}`))
+			request.Header.Set("Content-Type", "application/json")
+			request = request.WithContext(observability.WithRequestID(request.Context(), "req_ai_cover_letter_error"))
+			request = request.WithContext(middleware.WithAuthUser(request.Context(), middleware.AuthUser{
+				UserID: "usr_1",
+				Role:   identity.RoleUser,
+			}))
+
+			responseRecorder := httptest.NewRecorder()
+			handler.GenerateCoverLetterDraft(responseRecorder, request)
 			if responseRecorder.Code != testCase.expectedCode {
 				t.Fatalf("expected status %d, got %d (%s)", testCase.expectedCode, responseRecorder.Code, responseRecorder.Body.String())
 			}

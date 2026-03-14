@@ -218,3 +218,63 @@ func TestClient_GenerateJobFitSummary_Success(t *testing.T) {
 		t.Fatalf("unexpected token usage: in=%d out=%d", result.TokensIn, result.TokensOut)
 	}
 }
+
+func TestClient_GenerateCoverLetterDraft_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"model": "gpt-test-model",
+			"usage": map[string]any{
+				"prompt_tokens":     80,
+				"completion_tokens": 120,
+			},
+			"choices": []map[string]any{
+				{
+					"message": map[string]any{
+						"content": "```json\n{\"tone\":\"professional\",\"draft\":\"Dear Hiring Team, I am excited to apply for the Backend Engineer role...\",\"key_points\":[\"Go backend delivery\",\"API scalability\"],\"summary\":\"Professional draft with measurable backend strengths.\"}\n```",
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(ClientConfig{
+		BaseURL: server.URL + "/v1",
+		APIKey:  "test-key",
+		Model:   "gpt-test-model",
+	})
+
+	result, err := client.GenerateCoverLetterDraft(context.Background(), aidomain.CoverLetterDraftInput{
+		Tone:       "professional",
+		Highlights: []string{"Go backend delivery", "API scalability"},
+		Job: aidomain.JobFitJobContext{
+			JobID:       "job_1",
+			Title:       "Backend Engineer",
+			Company:     "Acme",
+			Location:    "Jakarta",
+			Description: "Build scalable backend services.",
+		},
+		Preferences: aidomain.JobFitUserPreferences{
+			Keywords:  []string{"golang", "backend"},
+			Locations: []string{"Jakarta"},
+			JobTypes:  []string{"fulltime"},
+			SalaryMin: 15_000_000,
+		},
+		UserName: "Alex",
+	})
+	if err != nil {
+		t.Fatalf("generate cover letter draft: %v", err)
+	}
+	if result.Tone != "professional" || result.Draft == "" {
+		t.Fatalf("unexpected draft payload: %+v", result)
+	}
+	if len(result.KeyPoints) != 2 {
+		t.Fatalf("expected 2 key points, got %#v", result.KeyPoints)
+	}
+	if result.Provider != "openai_compatible" || result.Model != "gpt-test-model" {
+		t.Fatalf("unexpected provider/model: %+v", result)
+	}
+	if result.TokensIn != 80 || result.TokensOut != 120 {
+		t.Fatalf("unexpected token usage: in=%d out=%d", result.TokensIn, result.TokensOut)
+	}
+}

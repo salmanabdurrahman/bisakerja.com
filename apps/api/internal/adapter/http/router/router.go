@@ -84,6 +84,10 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GenerateJobFitSummary)),
 		)
 		mux.Handle(
+			"POST /api/v1/ai/cover-letter-draft",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GenerateCoverLetterDraft)),
+		)
+		mux.Handle(
 			"GET /api/v1/ai/usage",
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GetUsage)),
 		)

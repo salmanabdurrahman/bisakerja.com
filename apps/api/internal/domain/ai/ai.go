@@ -10,8 +10,9 @@ import (
 type Feature string
 
 const (
-	FeatureSearchAssistant Feature = "search_assistant"
-	FeatureJobFitSummary   Feature = "job_fit_summary"
+	FeatureSearchAssistant  Feature = "search_assistant"
+	FeatureJobFitSummary    Feature = "job_fit_summary"
+	FeatureCoverLetterDraft Feature = "cover_letter_draft"
 )
 
 var (
@@ -88,6 +89,27 @@ type JobFitSummaryResult struct {
 	TokensOut   int
 }
 
+// CoverLetterDraftInput contains input parameters for cover letter draft generation.
+type CoverLetterDraftInput struct {
+	Tone        string
+	Highlights  []string
+	Job         JobFitJobContext
+	Preferences JobFitUserPreferences
+	UserName    string
+}
+
+// CoverLetterDraftResult represents AI cover letter draft output.
+type CoverLetterDraftResult struct {
+	Tone      string
+	Draft     string
+	KeyPoints []string
+	Summary   string
+	Provider  string
+	Model     string
+	TokensIn  int
+	TokensOut int
+}
+
 // UsageLog represents persisted AI usage event.
 type UsageLog struct {
 	ID         string
@@ -127,4 +149,5 @@ type Repository interface {
 type Provider interface {
 	GenerateSearchAssistant(ctx context.Context, input SearchAssistantInput) (SearchAssistantResult, error)
 	GenerateJobFitSummary(ctx context.Context, input JobFitSummaryInput) (JobFitSummaryResult, error)
+	GenerateCoverLetterDraft(ctx context.Context, input CoverLetterDraftInput) (CoverLetterDraftResult, error)
 }

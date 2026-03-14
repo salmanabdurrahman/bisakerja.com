@@ -20,9 +20,9 @@ Implementasi backend saat ini:
 - **Iteration 2.3 backend** sudah diimplementasikan (`GET /billing/status` + `GET /billing/transactions`, reconciliation ke Mayar `GET /invoice/{id}`, retry-aware recovery path, dan anomaly warning pada billing worker).
 - **Phase 3 backend** sudah diimplementasikan (saved searches, company watchlist, notification center, dan preference digest control).
 - **Phase 4 backend increment 1** sudah mulai diimplementasikan (coupon-enabled checkout: validasi `coupon_code` ke Mayar + invoice amount diskon + metadata amount response).
-- **Phase 5 (AI Career Intelligence & Value Layer)** sudah mulai diimplementasikan pada increment 1-2 backend (`POST /ai/search-assistant`, `POST /ai/job-fit-summary`, `GET /ai/usage`, quota metering, OpenAI-compatible gateway).
+- **Phase 5 (AI Career Intelligence & Value Layer)** sudah mulai diimplementasikan pada increment 1-3 backend (`POST /ai/search-assistant`, `POST /ai/job-fit-summary`, `POST /ai/cover-letter-draft`, `GET /ai/usage`, quota metering, OpenAI-compatible gateway).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1) + Phase 5 in progress (increment 1-2 backend)**.
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1) + Phase 5 in progress (increment 1-3 backend)**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -36,7 +36,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | M3 | Migrasi copy UI + API user-facing ke English | ✅ Complete | Seluruh copy user-facing frontend + pesan notifier backend sudah di-English-kan tanpa mengubah kontrak |
 | M4 | Redesign frontend ala SaaS + hardening growth | ✅ Complete | UI frontend sudah direfresh berbasis design tokens + observability web vitals + e2e growth coverage + refinement visual pass ala Paper sudah ditutup |
 | M5 | Eksekusi Phase 4 backend | 🟡 In Progress | Increment 1 aktif: coupon-enabled checkout pada billing |
-| M6 | Phase 5 AI value layer (backend + frontend) | 🟡 In Progress | Increment 1-2 backend aktif: AI search assistant + AI job-fit summary + usage quota API + OpenAI-compatible gateway |
+| M6 | Phase 5 AI value layer (backend + frontend) | 🟡 In Progress | Increment 1-3 backend aktif: AI search assistant + AI job-fit summary + AI cover letter draft + usage quota API + OpenAI-compatible gateway |
 
 Aturan eksekusi:
 
@@ -217,10 +217,11 @@ Menambahkan value nyata berbasis AI untuk user free dan premium tanpa mengorbank
 - Usage metering + quota enforcement per user/tier agar biaya AI terkendali.
 - Audit-safe observability: structured logs tanpa menyimpan prompt sensitif mentah.
 
-Progress increment 1-2 yang sudah aktif di backend:
+Progress increment 1-3 yang sudah aktif di backend:
 
 - endpoint `POST /api/v1/ai/search-assistant`,
 - endpoint `POST /api/v1/ai/job-fit-summary`,
+- endpoint `POST /api/v1/ai/cover-letter-draft`,
 - endpoint `GET /api/v1/ai/usage`,
 - migration `ai_usage_logs` untuk metering + quota harian per tier.
 

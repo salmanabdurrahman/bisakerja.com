@@ -17,7 +17,7 @@ Dokumen ini merinci fitur tambahan yang tidak wajib untuk MVP, tetapi bernilai t
 - ✅ In-App Notification Center
 - ✅ Company Watchlist
 - 🟡 Phase 4 increment started: coupon-enabled checkout (`coupon_code` -> Mayar `/coupon/validate`)
-- 🟡 Phase 5 increment started: AI search assistant (`POST /api/v1/ai/search-assistant`) + AI job-fit summary premium (`POST /api/v1/ai/job-fit-summary`) + usage quota read model (`GET /api/v1/ai/usage`)
+- 🟡 Phase 5 increment started: AI search assistant (`POST /api/v1/ai/search-assistant`) + AI job-fit summary premium (`POST /api/v1/ai/job-fit-summary`) + AI cover letter draft premium (`POST /api/v1/ai/cover-letter-draft`) + usage quota read model (`GET /api/v1/ai/usage`)
 
 Catatan implementasi saat ini:
 
