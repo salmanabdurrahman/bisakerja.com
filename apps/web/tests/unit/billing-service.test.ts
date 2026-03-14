@@ -39,7 +39,7 @@ describe("billing services", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8080/api/v1/billing/checkout-session",
+      "/api/v1/billing/checkout-session",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -73,7 +73,7 @@ describe("billing services", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8080/api/v1/billing/transactions?page=2&limit=50&status=failed",
+      "/api/v1/billing/transactions?page=2&limit=50&status=failed",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({

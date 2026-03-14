@@ -27,6 +27,17 @@ Dokumen ini menjelaskan alur data, strategi cache, dan pendekatan state manageme
 3. Data diproses ringan di server (mapping/formatting presentasi).
 4. Hasil dirender langsung di server; Client Component menerima props minimum untuk interaksi.
 
+## 2.1) API Base URL & Proxy Flow (CORS-safe)
+
+1. Browser request wajib tetap same-origin via path runtime `/api/v1/*`.
+2. Next.js rewrite meneruskan `/api/v1/*` ke `API_ORIGIN` (upstream backend).
+3. `NEXT_PUBLIC_API_BASE_URL` diperlakukan sebagai path-only (`/api/v1`) dan dinormalisasi agar:
+   - tidak boleh memaksa cross-origin URL di browser,
+   - tetap stabil terhadap trailing slash/missing leading slash.
+4. Untuk server-side fetch (SSR), base URL dibentuk dari `API_ORIGIN + NEXT_PUBLIC_API_BASE_URL` yang sudah dinormalisasi.
+
+Praktik ini mencegah regresi bug CORS ketika env frontend terisi URL absolut backend.
+
 ## 3) Write Flow (Mutation)
 
 1. User submit action dari Client Component (form/button interaction).

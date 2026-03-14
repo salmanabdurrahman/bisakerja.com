@@ -40,6 +40,10 @@ Standar ini ditujukan untuk `apps/web` (Next.js App Router).
 - Semua call ke backend lewat layer `services/`.
 - Error handling dari API harus dipetakan ke UI message yang konsisten.
 - Jangan hardcode endpoint; gunakan env config.
+- Untuk browser, gunakan **path relatif** (`/api/v1/*`) agar request tetap same-origin dan tidak kena CORS lintas domain.
+- Gunakan `NEXT_PUBLIC_API_BASE_URL` sebagai **path-only** (contoh: `/api/v1`), bukan full URL origin.
+- Gunakan `API_ORIGIN` hanya untuk target upstream di rewrite/proxy Next.js dan kebutuhan SSR.
+- Wajib normalisasi env URL/path di helper config (hapus trailing slash, paksa leading slash, dan ekstrak pathname dari URL absolut) agar misconfig tidak langsung memicu CORS.
 
 ## 7) Security
 
