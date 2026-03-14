@@ -160,3 +160,61 @@ func TestClient_GenerateSearchAssistant_FallbackContent(t *testing.T) {
 		t.Fatal("expected fallback summary to be populated")
 	}
 }
+
+func TestClient_GenerateJobFitSummary_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"model": "gpt-test-model",
+			"usage": map[string]any{
+				"prompt_tokens":     60,
+				"completion_tokens": 35,
+			},
+			"choices": []map[string]any{
+				{
+					"message": map[string]any{
+						"content": "```json\n{\"fit_score\":86,\"verdict\":\"strong_match\",\"strengths\":[\"Strong backend API delivery\"],\"gaps\":[\"Needs deeper distributed tracing story\"],\"next_actions\":[\"Add observability achievements in CV\"],\"summary\":\"Profile strongly aligns with the role.\"}\n```",
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(ClientConfig{
+		BaseURL: server.URL + "/v1",
+		APIKey:  "test-key",
+		Model:   "gpt-test-model",
+	})
+
+	result, err := client.GenerateJobFitSummary(context.Background(), aidomain.JobFitSummaryInput{
+		Focus: "prioritize backend architecture",
+		Job: aidomain.JobFitJobContext{
+			JobID:       "job_1",
+			Title:       "Senior Backend Engineer",
+			Company:     "Acme",
+			Location:    "Jakarta",
+			Description: "Build scalable backend services.",
+		},
+		Preferences: aidomain.JobFitUserPreferences{
+			Keywords:  []string{"golang", "backend"},
+			Locations: []string{"Jakarta", "Remote"},
+			JobTypes:  []string{"fulltime"},
+			SalaryMin: 15_000_000,
+		},
+	})
+	if err != nil {
+		t.Fatalf("generate job fit summary: %v", err)
+	}
+	if result.FitScore != 86 || result.Verdict != "strong_match" {
+		t.Fatalf("unexpected fit summary result: %+v", result)
+	}
+	if len(result.Strengths) != 1 || len(result.Gaps) != 1 || len(result.NextActions) != 1 {
+		t.Fatalf("unexpected list payload: %+v", result)
+	}
+	if result.Provider != "openai_compatible" || result.Model != "gpt-test-model" {
+		t.Fatalf("unexpected provider/model: %+v", result)
+	}
+	if result.TokensIn != 60 || result.TokensOut != 35 {
+		t.Fatalf("unexpected token usage: in=%d out=%d", result.TokensIn, result.TokensOut)
+	}
+}

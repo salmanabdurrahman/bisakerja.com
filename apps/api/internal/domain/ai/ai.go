@@ -11,6 +11,7 @@ type Feature string
 
 const (
 	FeatureSearchAssistant Feature = "search_assistant"
+	FeatureJobFitSummary   Feature = "job_fit_summary"
 )
 
 var (
@@ -43,6 +44,48 @@ type SearchAssistantResult struct {
 	Model              string
 	TokensIn           int
 	TokensOut          int
+}
+
+// JobFitJobContext contains job details used for fit summary generation.
+type JobFitJobContext struct {
+	JobID       string
+	Title       string
+	Company     string
+	Location    string
+	Description string
+	SalaryMin   *int64
+	SalaryMax   *int64
+	SalaryRange string
+	PublishedAt *time.Time
+}
+
+// JobFitUserPreferences contains user preference details used for fit summary generation.
+type JobFitUserPreferences struct {
+	Keywords  []string
+	Locations []string
+	JobTypes  []string
+	SalaryMin int64
+}
+
+// JobFitSummaryInput contains input parameters for job fit summary generation.
+type JobFitSummaryInput struct {
+	Focus       string
+	Job         JobFitJobContext
+	Preferences JobFitUserPreferences
+}
+
+// JobFitSummaryResult represents AI job fit summary output.
+type JobFitSummaryResult struct {
+	FitScore    int
+	Verdict     string
+	Strengths   []string
+	Gaps        []string
+	NextActions []string
+	Summary     string
+	Provider    string
+	Model       string
+	TokensIn    int
+	TokensOut   int
 }
 
 // UsageLog represents persisted AI usage event.
@@ -83,4 +126,5 @@ type Repository interface {
 // Provider defines behavior for AI provider adapter.
 type Provider interface {
 	GenerateSearchAssistant(ctx context.Context, input SearchAssistantInput) (SearchAssistantResult, error)
+	GenerateJobFitSummary(ctx context.Context, input JobFitSummaryInput) (JobFitSummaryResult, error)
 }

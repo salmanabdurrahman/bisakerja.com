@@ -9,6 +9,7 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	aiapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/ai"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/identity"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/observability"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/errcode"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/pkg/response"
@@ -17,6 +18,7 @@ import (
 // AIService defines behavior for AI service.
 type AIService interface {
 	GenerateSearchAssistant(ctx context.Context, input aiapp.GenerateSearchAssistantInput) (aiapp.SearchAssistantResult, error)
+	GenerateJobFitSummary(ctx context.Context, input aiapp.GenerateJobFitSummaryInput) (aiapp.JobFitSummaryResult, error)
 	GetUsage(ctx context.Context, input aiapp.GetUsageInput) (aiapp.UsageSnapshot, error)
 }
 
@@ -34,6 +36,11 @@ type aiSearchAssistantContext struct {
 	Location  string   `json:"location"`
 	JobTypes  []string `json:"job_types"`
 	SalaryMin *int64   `json:"salary_min"`
+}
+
+type aiJobFitSummaryRequest struct {
+	JobID string `json:"job_id"`
+	Focus string `json:"focus"`
 }
 
 // NewAIHandler creates a new AI handler instance.
@@ -96,6 +103,56 @@ func (h *AIHandler) GenerateSearchAssistant(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+// GenerateJobFitSummary generates AI job-fit summary for premium users.
+func (h *AIHandler) GenerateJobFitSummary(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	authUser, ok := middleware.AuthUserFromContext(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
+			Code:    errcode.Unauthorized,
+			Message: "authentication context missing",
+		}})
+		return
+	}
+
+	var request aiJobFitSummaryRequest
+	if err := decodeJSONBody(r, &request); err != nil {
+		response.WriteError(w, http.StatusBadRequest, "Invalid request body", requestID, []response.ErrorItem{{
+			Code:    errcode.BadRequest,
+			Message: "request body must be valid JSON",
+		}})
+		return
+	}
+
+	result, err := h.service.GenerateJobFitSummary(r.Context(), aiapp.GenerateJobFitSummaryInput{
+		UserID: authUser.UserID,
+		JobID:  request.JobID,
+		Focus:  request.Focus,
+	})
+	if err != nil {
+		h.writeServiceError(w, requestID, err)
+		return
+	}
+
+	response.WriteSuccess(w, http.StatusOK, "AI job fit summary generated", requestID, map[string]any{
+		"feature":         result.Feature,
+		"job_id":          result.JobID,
+		"fit_score":       result.FitScore,
+		"verdict":         result.Verdict,
+		"strengths":       result.Strengths,
+		"gaps":            result.Gaps,
+		"next_actions":    result.NextActions,
+		"summary":         result.Summary,
+		"tier":            result.Tier,
+		"provider":        result.Provider,
+		"model":           result.Model,
+		"daily_quota":     result.Quota.DailyQuota,
+		"used_today":      result.Quota.Used,
+		"quota_remaining": result.Quota.Remaining,
+		"reset_at":        result.Quota.ResetAt,
+	})
+}
+
 // GetUsage returns AI usage state for authenticated user.
 func (h *AIHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
@@ -138,11 +195,33 @@ func (h *AIHandler) writeServiceError(w http.ResponseWriter, requestID string, e
 			Code:    errcode.InvalidAIPrompt,
 			Message: promptValidationMessage(err),
 		}})
+	case errors.Is(err, aiapp.ErrFocusTooLong):
+		response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+			Field:   "focus",
+			Code:    errcode.BadRequest,
+			Message: "focus must be <= 300 characters",
+		}})
+	case errors.Is(err, aiapp.ErrJobIDRequired):
+		response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+			Field:   "job_id",
+			Code:    errcode.BadRequest,
+			Message: "job_id is required",
+		}})
 	case errors.Is(err, aiapp.ErrInvalidFeature):
 		response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
 			Field:   "feature",
 			Code:    errcode.InvalidAIFeature,
-			Message: "feature must be search_assistant",
+			Message: "feature must be search_assistant or job_fit_summary",
+		}})
+	case errors.Is(err, aiapp.ErrPremiumRequired):
+		response.WriteError(w, http.StatusForbidden, "Forbidden", requestID, []response.ErrorItem{{
+			Code:    errcode.Forbidden,
+			Message: "premium subscription required",
+		}})
+	case errors.Is(err, job.ErrNotFound):
+		response.WriteError(w, http.StatusNotFound, "Not found", requestID, []response.ErrorItem{{
+			Code:    errcode.NotFound,
+			Message: "job not found",
 		}})
 	case errors.Is(err, aiapp.ErrQuotaExceeded):
 		response.WriteError(w, http.StatusTooManyRequests, "Quota exceeded", requestID, []response.ErrorItem{{

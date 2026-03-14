@@ -1,6 +1,6 @@
-# AI API (Phase 5 Increment 1)
+# AI API (Phase 5 Increment 1-2)
 
-Dokumen ini menjelaskan kontrak backend AI yang sudah diaktifkan pada increment pertama Phase 5.
+Dokumen ini menjelaskan kontrak backend AI yang sudah diaktifkan pada increment awal Phase 5.
 
 Semua endpoint:
 
@@ -85,7 +85,85 @@ Endpoint ini membantu user menyusun query dan filter pencarian lowongan yang leb
 - `502 BAD_GATEWAY` (`AI_PROVIDER_UPSTREAM_ERROR`) jika respons provider tidak valid.
 - `503 SERVICE_UNAVAILABLE` (`AI_PROVIDER_RATE_LIMITED`, `AI_PROVIDER_UNAVAILABLE`) jika provider rate-limited/down.
 
-## 2) Get AI Usage
+## 2) Generate Job Fit Summary (Premium)
+
+- **Method**: `POST`
+- **Path**: `/ai/job-fit-summary`
+- **Auth**: Bearer Token (user)
+
+Endpoint ini menghasilkan ringkasan kecocokan profil user terhadap lowongan tertentu.
+
+### Request Body
+
+```json
+{
+  "job_id": "job_01H...",
+  "focus": "prioritize architecture depth and ownership signal"
+}
+```
+
+### Validation
+
+| Field | Rules |
+|---|---|
+| `job_id` | wajib, string non-empty |
+| `focus` | opsional, maksimal 300 karakter |
+
+### Entitlement & Quota Rules
+
+- Endpoint ini **premium-only**.
+- Jika user tidak premium aktif, endpoint mengembalikan `403 FORBIDDEN`.
+- Quota harian mengikuti `AI_DAILY_QUOTA_PREMIUM` (default `30`).
+- Jika quota habis, endpoint mengembalikan `429` dengan code `AI_QUOTA_EXCEEDED`.
+
+### Response `200 OK`
+
+```json
+{
+  "meta": {
+    "code": 200,
+    "status": "success",
+    "message": "AI job fit summary generated",
+    "request_id": "req_01J..."
+  },
+  "data": {
+    "feature": "job_fit_summary",
+    "job_id": "job_01H...",
+    "fit_score": 84,
+    "verdict": "strong_match",
+    "strengths": [
+      "Strong backend API delivery experience",
+      "Relevant Golang stack alignment"
+    ],
+    "gaps": [
+      "Need deeper distributed tracing examples"
+    ],
+    "next_actions": [
+      "Highlight production impact metrics in CV"
+    ],
+    "summary": "Profile strongly aligns with the role and backend scope.",
+    "tier": "premium",
+    "provider": "openai_compatible",
+    "model": "gpt-4.1-mini",
+    "daily_quota": 30,
+    "used_today": 6,
+    "quota_remaining": 24,
+    "reset_at": "2026-03-20T00:00:00Z"
+  }
+}
+```
+
+### Error
+
+- `400 BAD_REQUEST` (`BAD_REQUEST`) jika `job_id` kosong atau `focus` terlalu panjang.
+- `401 UNAUTHORIZED` (`UNAUTHORIZED`) jika token invalid/tidak ada.
+- `403 FORBIDDEN` (`FORBIDDEN`) jika user belum premium aktif.
+- `404 NOT_FOUND` (`NOT_FOUND`) jika `job_id` tidak ditemukan.
+- `429 TOO_MANY_REQUESTS` (`AI_QUOTA_EXCEEDED`) jika quota habis.
+- `502 BAD_GATEWAY` (`AI_PROVIDER_UPSTREAM_ERROR`) jika respons provider tidak valid.
+- `503 SERVICE_UNAVAILABLE` (`AI_PROVIDER_RATE_LIMITED`, `AI_PROVIDER_UNAVAILABLE`) jika provider rate-limited/down.
+
+## 3) Get AI Usage
 
 - **Method**: `GET`
 - **Path**: `/ai/usage`
@@ -97,7 +175,7 @@ Endpoint read model untuk menampilkan quota harian AI di UI.
 
 | Name | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `feature` | string | no | `search_assistant` | saat ini hanya `search_assistant` yang didukung |
+| `feature` | string | no | `search_assistant` | nilai yang didukung: `search_assistant`, `job_fit_summary` |
 
 ### Response `200 OK`
 
@@ -126,7 +204,7 @@ Endpoint read model untuk menampilkan quota harian AI di UI.
 - `401 UNAUTHORIZED` (`UNAUTHORIZED`) jika token invalid/tidak ada.
 - `500 INTERNAL_SERVER_ERROR` untuk kegagalan internal.
 
-## 3) Konfigurasi Runtime
+## 4) Konfigurasi Runtime
 
 Konfigurasi minimum untuk AI gateway:
 

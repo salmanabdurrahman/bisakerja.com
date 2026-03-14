@@ -279,6 +279,18 @@ func TestNew_RegistersAIRoutesWhenDependencyProvided(t *testing.T) {
 		t.Fatalf("expected ai search route to be protected with 401, got %d", searchResponse.Code)
 	}
 
+	jobFitRequest := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/ai/job-fit-summary",
+		strings.NewReader(`{"job_id":"job_1"}`),
+	)
+	jobFitRequest.Header.Set("Content-Type", "application/json")
+	jobFitResponse := httptest.NewRecorder()
+	appHandler.ServeHTTP(jobFitResponse, jobFitRequest)
+	if jobFitResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("expected ai job-fit route to be protected with 401, got %d", jobFitResponse.Code)
+	}
+
 	usageRequest := httptest.NewRequest(http.MethodGet, "/api/v1/ai/usage", nil)
 	usageResponse := httptest.NewRecorder()
 	appHandler.ServeHTTP(usageResponse, usageRequest)
@@ -317,6 +329,13 @@ func (s *routerTestAIService) GenerateSearchAssistant(
 	_ aiapp.GenerateSearchAssistantInput,
 ) (aiapp.SearchAssistantResult, error) {
 	return aiapp.SearchAssistantResult{}, nil
+}
+
+func (s *routerTestAIService) GenerateJobFitSummary(
+	_ context.Context,
+	_ aiapp.GenerateJobFitSummaryInput,
+) (aiapp.JobFitSummaryResult, error) {
+	return aiapp.JobFitSummaryResult{}, nil
 }
 
 func (s *routerTestAIService) GetUsage(

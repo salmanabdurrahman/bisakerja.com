@@ -90,7 +90,7 @@ func main() {
 		Model:   cfg.AIProviderModelDefault,
 		Timeout: cfg.AIProviderTimeout,
 	})
-	aiService := aiapp.NewService(identityRepository, aiRepository, aiProvider, aiapp.Config{
+	aiService := aiapp.NewService(identityRepository, jobsRepository, aiRepository, aiProvider, aiapp.Config{
 		DailyQuotaFree:    cfg.AIDailyQuotaFree,
 		DailyQuotaPremium: cfg.AIDailyQuotaPremium,
 	})

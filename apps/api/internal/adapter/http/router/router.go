@@ -80,6 +80,10 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GenerateSearchAssistant)),
 		)
 		mux.Handle(
+			"POST /api/v1/ai/job-fit-summary",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GenerateJobFitSummary)),
+		)
+		mux.Handle(
 			"GET /api/v1/ai/usage",
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.AIHandler.GetUsage)),
 		)

@@ -60,6 +60,7 @@ Dokumen ini menetapkan standar error lintas endpoint.
 | billing | `MAYAR_UPSTREAM_ERROR` | 502 | Mayar memberi error non-rate-limit. |
 | ai | `INVALID_AI_PROMPT` | 400 | Prompt AI kosong/terlalu pendek/terlalu panjang. |
 | ai | `INVALID_AI_FEATURE` | 400 | Feature AI tidak didukung endpoint usage. |
+| ai | `FORBIDDEN` | 403 | Endpoint AI premium-only dipanggil oleh user non-premium aktif. |
 | ai | `AI_QUOTA_EXCEEDED` | 429 | Quota AI harian user sudah habis. |
 | ai | `AI_PROVIDER_RATE_LIMITED` | 503 | Provider AI mengembalikan rate limit. |
 | ai | `AI_PROVIDER_UPSTREAM_ERROR` | 502 | Provider AI memberi respons invalid/non-2xx. |

@@ -9,23 +9,38 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
 	aidomain "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/ai"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/identity"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/job"
 )
 
 type aiProviderStub struct {
-	result aidomain.SearchAssistantResult
-	err    error
-	calls  int
+	searchAssistantResult aidomain.SearchAssistantResult
+	searchAssistantErr    error
+	searchAssistantCalls  int
+	jobFitSummaryResult   aidomain.JobFitSummaryResult
+	jobFitSummaryErr      error
+	jobFitSummaryCalls    int
 }
 
 func (s *aiProviderStub) GenerateSearchAssistant(
 	_ context.Context,
 	_ aidomain.SearchAssistantInput,
 ) (aidomain.SearchAssistantResult, error) {
-	s.calls++
-	if s.err != nil {
-		return aidomain.SearchAssistantResult{}, s.err
+	s.searchAssistantCalls++
+	if s.searchAssistantErr != nil {
+		return aidomain.SearchAssistantResult{}, s.searchAssistantErr
 	}
-	return s.result, nil
+	return s.searchAssistantResult, nil
+}
+
+func (s *aiProviderStub) GenerateJobFitSummary(
+	_ context.Context,
+	_ aidomain.JobFitSummaryInput,
+) (aidomain.JobFitSummaryResult, error) {
+	s.jobFitSummaryCalls++
+	if s.jobFitSummaryErr != nil {
+		return aidomain.JobFitSummaryResult{}, s.jobFitSummaryErr
+	}
+	return s.jobFitSummaryResult, nil
 }
 
 func TestService_GenerateSearchAssistant_Success(t *testing.T) {
@@ -42,7 +57,7 @@ func TestService_GenerateSearchAssistant_Success(t *testing.T) {
 
 	usageRepository := memory.NewAIRepository()
 	provider := &aiProviderStub{
-		result: aidomain.SearchAssistantResult{
+		searchAssistantResult: aidomain.SearchAssistantResult{
 			SuggestedQuery:     "golang backend remote",
 			SuggestedLocations: []string{"Jakarta", "Remote"},
 			SuggestedJobTypes:  []string{"fulltime"},
@@ -53,7 +68,7 @@ func TestService_GenerateSearchAssistant_Success(t *testing.T) {
 			TokensOut:          18,
 		},
 	}
-	service := NewService(identityRepository, usageRepository, provider, Config{
+	service := NewService(identityRepository, memory.NewJobsRepository(), usageRepository, provider, Config{
 		DailyQuotaFree:    2,
 		DailyQuotaPremium: 10,
 	})
@@ -77,8 +92,8 @@ func TestService_GenerateSearchAssistant_Success(t *testing.T) {
 	if result.Quota.DailyQuota != 2 || result.Quota.Used != 1 || result.Quota.Remaining != 1 {
 		t.Fatalf("unexpected quota payload: %+v", result.Quota)
 	}
-	if provider.calls != 1 {
-		t.Fatalf("expected provider to be called once, got %d", provider.calls)
+	if provider.searchAssistantCalls != 1 {
+		t.Fatalf("expected provider to be called once, got %d", provider.searchAssistantCalls)
 	}
 
 	usage, err := service.GetUsage(context.Background(), GetUsageInput{
@@ -106,12 +121,12 @@ func TestService_GenerateSearchAssistant_QuotaExceeded(t *testing.T) {
 
 	usageRepository := memory.NewAIRepository()
 	provider := &aiProviderStub{
-		result: aidomain.SearchAssistantResult{
+		searchAssistantResult: aidomain.SearchAssistantResult{
 			SuggestedQuery: "golang backend remote",
 			Summary:        "Use focused search terms.",
 		},
 	}
-	service := NewService(identityRepository, usageRepository, provider, Config{
+	service := NewService(identityRepository, memory.NewJobsRepository(), usageRepository, provider, Config{
 		DailyQuotaFree:    1,
 		DailyQuotaPremium: 5,
 	})
@@ -150,12 +165,12 @@ func TestService_GenerateSearchAssistant_PremiumTierQuota(t *testing.T) {
 
 	usageRepository := memory.NewAIRepository()
 	provider := &aiProviderStub{
-		result: aidomain.SearchAssistantResult{
+		searchAssistantResult: aidomain.SearchAssistantResult{
 			SuggestedQuery: "senior golang backend",
 			Summary:        "Focus on senior backend roles.",
 		},
 	}
-	service := NewService(identityRepository, usageRepository, provider, Config{
+	service := NewService(identityRepository, memory.NewJobsRepository(), usageRepository, provider, Config{
 		DailyQuotaFree:    1,
 		DailyQuotaPremium: 3,
 	})
@@ -211,8 +226,8 @@ func TestService_GenerateSearchAssistant_ProviderErrorMapping(t *testing.T) {
 				t.Fatalf("seed user: %v", err)
 			}
 
-			service := NewService(identityRepository, memory.NewAIRepository(), &aiProviderStub{
-				err: testCase.providerErr,
+			service := NewService(identityRepository, memory.NewJobsRepository(), memory.NewAIRepository(), &aiProviderStub{
+				searchAssistantErr: testCase.providerErr,
 			}, Config{
 				DailyQuotaFree:    5,
 				DailyQuotaPremium: 10,
@@ -241,8 +256,8 @@ func TestService_GetUsage_InvalidFeature(t *testing.T) {
 		t.Fatalf("seed user: %v", err)
 	}
 
-	service := NewService(identityRepository, memory.NewAIRepository(), &aiProviderStub{
-		result: aidomain.SearchAssistantResult{
+	service := NewService(identityRepository, memory.NewJobsRepository(), memory.NewAIRepository(), &aiProviderStub{
+		searchAssistantResult: aidomain.SearchAssistantResult{
 			SuggestedQuery: "golang",
 			Summary:        "golang",
 		},
@@ -255,4 +270,186 @@ func TestService_GetUsage_InvalidFeature(t *testing.T) {
 	if !errors.Is(err, ErrInvalidFeature) {
 		t.Fatalf("expected ErrInvalidFeature, got %v", err)
 	}
+}
+
+func TestService_GenerateJobFitSummary_Success(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	expiry := time.Now().UTC().Add(24 * time.Hour)
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:            "ai-job-fit@example.com",
+		PasswordHash:     "hash",
+		Name:             "AI Job Fit User",
+		Role:             identity.RoleUser,
+		IsPremium:        true,
+		PremiumExpiredAt: &expiry,
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	_, err = identityRepository.SavePreferences(context.Background(), identity.Preferences{
+		UserID:    user.ID,
+		Keywords:  []string{"golang", "backend", "microservices"},
+		Locations: []string{"Jakarta", "Remote"},
+		JobTypes:  []string{"fulltime"},
+		SalaryMin: 15_000_000,
+		AlertMode: identity.NotificationAlertModeInstant,
+		UpdatedAt: ptrTime(time.Now().UTC()),
+	})
+	if err != nil {
+		t.Fatalf("seed preferences: %v", err)
+	}
+
+	jobsRepository := memory.NewJobsRepository()
+	upsertResult, err := jobsRepository.UpsertMany(context.Background(), job.SourceGlints, []job.UpsertInput{
+		{
+			OriginalJobID: "job-fit-1",
+			Title:         "Senior Backend Engineer",
+			Company:       "Acme Tech",
+			Location:      "Jakarta",
+			Description:   "Build scalable Go services and API integrations.",
+			URL:           "https://example.com/jobs/job-fit-1",
+		},
+	})
+	if err != nil {
+		t.Fatalf("seed job: %v", err)
+	}
+	if len(upsertResult.Inserted) != 1 {
+		t.Fatalf("expected one inserted job, got %d", len(upsertResult.Inserted))
+	}
+
+	provider := &aiProviderStub{
+		jobFitSummaryResult: aidomain.JobFitSummaryResult{
+			FitScore:    82,
+			Verdict:     "strong_match",
+			Strengths:   []string{"Strong Go backend alignment"},
+			Gaps:        []string{"Needs stronger event-driven architecture exposure"},
+			NextActions: []string{"Highlight API scale achievements in CV"},
+			Summary:     "Profile is strongly aligned with backend responsibilities.",
+			Provider:    "openai_compatible",
+			Model:       "gpt-test-model",
+			TokensIn:    72,
+			TokensOut:   55,
+		},
+	}
+	service := NewService(identityRepository, jobsRepository, memory.NewAIRepository(), provider, Config{
+		DailyQuotaFree:    1,
+		DailyQuotaPremium: 3,
+	})
+
+	result, err := service.GenerateJobFitSummary(context.Background(), GenerateJobFitSummaryInput{
+		UserID: user.ID,
+		JobID:  upsertResult.Inserted[0].ID,
+		Focus:  "prioritize backend architecture and api ownership",
+	})
+	if err != nil {
+		t.Fatalf("generate job fit summary: %v", err)
+	}
+	if result.Feature != aidomain.FeatureJobFitSummary {
+		t.Fatalf("expected feature job_fit_summary, got %q", result.Feature)
+	}
+	if result.Tier != "premium" {
+		t.Fatalf("expected premium tier, got %q", result.Tier)
+	}
+	if result.FitScore != 82 || result.Verdict != "strong_match" {
+		t.Fatalf("unexpected job fit result: %+v", result)
+	}
+	if result.Quota.DailyQuota != 3 || result.Quota.Used != 1 || result.Quota.Remaining != 2 {
+		t.Fatalf("unexpected quota payload: %+v", result.Quota)
+	}
+	if provider.jobFitSummaryCalls != 1 {
+		t.Fatalf("expected job-fit provider to be called once, got %d", provider.jobFitSummaryCalls)
+	}
+
+	usage, err := service.GetUsage(context.Background(), GetUsageInput{
+		UserID:  user.ID,
+		Feature: "job_fit_summary",
+	})
+	if err != nil {
+		t.Fatalf("get usage: %v", err)
+	}
+	if usage.Quota.Used != 1 || usage.Feature != aidomain.FeatureJobFitSummary {
+		t.Fatalf("unexpected usage snapshot: %+v", usage)
+	}
+}
+
+func TestService_GenerateJobFitSummary_PremiumRequired(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:        "ai-job-fit-free@example.com",
+		PasswordHash: "hash",
+		Name:         "AI Free User",
+		Role:         identity.RoleUser,
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	jobsRepository := memory.NewJobsRepository()
+	upsertResult, err := jobsRepository.UpsertMany(context.Background(), job.SourceGlints, []job.UpsertInput{
+		{
+			OriginalJobID: "job-fit-free-1",
+			Title:         "Backend Engineer",
+			Company:       "Acme",
+			URL:           "https://example.com/jobs/job-fit-free-1",
+		},
+	})
+	if err != nil {
+		t.Fatalf("seed job: %v", err)
+	}
+
+	service := NewService(identityRepository, jobsRepository, memory.NewAIRepository(), &aiProviderStub{
+		jobFitSummaryResult: aidomain.JobFitSummaryResult{
+			FitScore:  75,
+			Verdict:   "moderate_match",
+			Summary:   "Moderate match.",
+			Provider:  "openai_compatible",
+			Model:     "gpt-test-model",
+			TokensIn:  20,
+			TokensOut: 10,
+		},
+	}, Config{
+		DailyQuotaFree:    1,
+		DailyQuotaPremium: 2,
+	})
+
+	_, err = service.GenerateJobFitSummary(context.Background(), GenerateJobFitSummaryInput{
+		UserID: user.ID,
+		JobID:  upsertResult.Inserted[0].ID,
+	})
+	if !errors.Is(err, ErrPremiumRequired) {
+		t.Fatalf("expected ErrPremiumRequired, got %v", err)
+	}
+}
+
+func TestService_GenerateJobFitSummary_JobIDRequired(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
+		Email:            "ai-job-fit-missing-job@example.com",
+		PasswordHash:     "hash",
+		Name:             "AI Missing Job ID",
+		Role:             identity.RoleUser,
+		IsPremium:        true,
+		PremiumExpiredAt: ptrTime(time.Now().UTC().Add(24 * time.Hour)),
+	})
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	service := NewService(identityRepository, memory.NewJobsRepository(), memory.NewAIRepository(), &aiProviderStub{}, Config{
+		DailyQuotaFree:    1,
+		DailyQuotaPremium: 2,
+	})
+
+	_, err = service.GenerateJobFitSummary(context.Background(), GenerateJobFitSummaryInput{
+		UserID: user.ID,
+		JobID:  " ",
+	})
+	if !errors.Is(err, ErrJobIDRequired) {
+		t.Fatalf("expected ErrJobIDRequired, got %v", err)
+	}
+}
+
+func ptrTime(value time.Time) *time.Time {
+	return &value
 }

@@ -19,7 +19,7 @@ const (
 	defaultModel   = "gpt-4.1-mini"
 )
 
-const systemPrompt = `You are an AI assistant for job search optimization.
+const searchAssistantSystemPrompt = `You are an AI assistant for job search optimization.
 Return ONLY a valid JSON object with this shape:
 {
   "query": "string",
@@ -33,6 +33,21 @@ Rules:
 - Include only relevant locations/job_types; use empty arrays when unknown.
 - Use salary_min as integer without separators, or omit/null when unknown.
 - Never return markdown fences, explanations, or additional keys.`
+
+const jobFitSystemPrompt = `You are an AI assistant that evaluates profile-to-job fit.
+Return ONLY a valid JSON object with this shape:
+{
+  "fit_score": 0,
+  "verdict": "strong_match|moderate_match|low_match",
+  "strengths": ["string"],
+  "gaps": ["string"],
+  "next_actions": ["string"],
+  "summary": "string"
+}
+Rules:
+- fit_score must be integer 0..100.
+- strengths/gaps/next_actions should be concise and practical.
+- Never return markdown fences, explanations, or extra keys.`
 
 // ClientConfig stores configuration values for OpenAI-compatible client.
 type ClientConfig struct {
@@ -98,7 +113,7 @@ func (c *Client) GenerateSearchAssistant(
 		"messages": []map[string]string{
 			{
 				"role":    "system",
-				"content": systemPrompt,
+				"content": searchAssistantSystemPrompt,
 			},
 			{
 				"role":    "user",
@@ -196,6 +211,120 @@ func (c *Client) GenerateSearchAssistant(
 	return parsed, nil
 }
 
+// GenerateJobFitSummary generates job-fit summary from AI provider.
+func (c *Client) GenerateJobFitSummary(
+	ctx context.Context,
+	input aidomain.JobFitSummaryInput,
+) (aidomain.JobFitSummaryResult, error) {
+	if strings.TrimSpace(c.apiKey) == "" {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: ai provider api key is empty", aidomain.ErrProviderUnavailable)
+	}
+
+	requestPayload := map[string]any{
+		"model":       c.model,
+		"temperature": 0.1,
+		"messages": []map[string]string{
+			{
+				"role":    "system",
+				"content": jobFitSystemPrompt,
+			},
+			{
+				"role":    "user",
+				"content": buildJobFitPrompt(input),
+			},
+		},
+	}
+
+	body, err := json.Marshal(requestPayload)
+	if err != nil {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: encode request payload", aidomain.ErrProviderUpstream)
+	}
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		c.baseURL+"/chat/completions",
+		bytes.NewReader(body),
+	)
+	if err != nil {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: build request", aidomain.ErrProviderUpstream)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: execute request: %v", aidomain.ErrProviderUnavailable, err)
+	}
+
+	responseBody, err := readBody(response.Body)
+	if err != nil {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: read response body: %v", aidomain.ErrProviderUnavailable, err)
+	}
+
+	if response.StatusCode == http.StatusTooManyRequests {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf(
+			"%w: provider returned status %d (%s)",
+			aidomain.ErrProviderRateLimited,
+			response.StatusCode,
+			summarizeBody(responseBody),
+		)
+	}
+	if response.StatusCode >= http.StatusInternalServerError {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf(
+			"%w: provider returned status %d (%s)",
+			aidomain.ErrProviderUnavailable,
+			response.StatusCode,
+			summarizeBody(responseBody),
+		)
+	}
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf(
+			"%w: provider returned status %d (%s)",
+			aidomain.ErrProviderUpstream,
+			response.StatusCode,
+			summarizeBody(responseBody),
+		)
+	}
+
+	var completion chatCompletionResponse
+	if err := json.Unmarshal(responseBody, &completion); err != nil {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: invalid response JSON", aidomain.ErrProviderUpstream)
+	}
+	if len(completion.Choices) == 0 {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: empty choices", aidomain.ErrProviderUpstream)
+	}
+
+	content := extractMessageContent(completion.Choices[0].Message.Content)
+	if content == "" {
+		return aidomain.JobFitSummaryResult{}, fmt.Errorf("%w: empty completion content", aidomain.ErrProviderUpstream)
+	}
+
+	parsed, ok := parseJobFitSummaryPayload(content)
+	if !ok {
+		parsed = aidomain.JobFitSummaryResult{
+			FitScore:    50,
+			Verdict:     "moderate_match",
+			Strengths:   []string{"Baseline alignment inferred from available profile and job context."},
+			Gaps:        []string{"Detailed fit analysis unavailable from provider payload."},
+			NextActions: []string{"Review job requirements and refine profile highlights manually."},
+			Summary:     truncate(content, 600),
+		}
+	}
+	if strings.TrimSpace(parsed.Summary) == "" {
+		parsed.Summary = "Job-fit summary generated."
+	}
+
+	parsed.Provider = "openai_compatible"
+	parsed.Model = strings.TrimSpace(completion.Model)
+	if parsed.Model == "" {
+		parsed.Model = c.model
+	}
+	parsed.TokensIn = max(completion.Usage.PromptTokens, 0)
+	parsed.TokensOut = max(completion.Usage.CompletionTokens, 0)
+	return parsed, nil
+}
+
 type chatCompletionResponse struct {
 	Model   string `json:"model"`
 	Choices []struct {
@@ -230,6 +359,46 @@ func buildUserPrompt(input aidomain.SearchAssistantInput) string {
 	return builder.String()
 }
 
+func buildJobFitPrompt(input aidomain.JobFitSummaryInput) string {
+	builder := strings.Builder{}
+	builder.WriteString("Job context:\n")
+	builder.WriteString("- Job ID: " + strings.TrimSpace(input.Job.JobID) + "\n")
+	builder.WriteString("- Title: " + strings.TrimSpace(input.Job.Title) + "\n")
+	builder.WriteString("- Company: " + strings.TrimSpace(input.Job.Company) + "\n")
+	builder.WriteString("- Location: " + strings.TrimSpace(input.Job.Location) + "\n")
+	if salaryRange := strings.TrimSpace(input.Job.SalaryRange); salaryRange != "" {
+		builder.WriteString("- Salary range: " + salaryRange + "\n")
+	}
+	if input.Job.SalaryMin != nil {
+		builder.WriteString("- Salary min: " + strconv.FormatInt(*input.Job.SalaryMin, 10) + "\n")
+	}
+	if input.Job.SalaryMax != nil {
+		builder.WriteString("- Salary max: " + strconv.FormatInt(*input.Job.SalaryMax, 10) + "\n")
+	}
+	if input.Job.PublishedAt != nil {
+		builder.WriteString("- Posted at: " + input.Job.PublishedAt.UTC().Format(time.RFC3339) + "\n")
+	}
+	description := strings.TrimSpace(input.Job.Description)
+	if description != "" {
+		builder.WriteString("- Description: " + truncate(description, 2000) + "\n")
+	}
+
+	builder.WriteString("\nUser profile preferences:\n")
+	builder.WriteString("- Keywords: " + strings.Join(input.Preferences.Keywords, ", ") + "\n")
+	builder.WriteString("- Preferred locations: " + strings.Join(input.Preferences.Locations, ", ") + "\n")
+	builder.WriteString("- Preferred job types: " + strings.Join(input.Preferences.JobTypes, ", ") + "\n")
+	if input.Preferences.SalaryMin > 0 {
+		builder.WriteString("- Preferred minimum salary: " + strconv.FormatInt(input.Preferences.SalaryMin, 10) + "\n")
+	}
+
+	if focus := strings.TrimSpace(input.Focus); focus != "" {
+		builder.WriteString("\nFocus instruction: ")
+		builder.WriteString(focus)
+	}
+
+	return builder.String()
+}
+
 func parseAssistantPayload(raw string) (aidomain.SearchAssistantResult, bool) {
 	jsonCandidate := extractJSONCandidate(raw)
 	if jsonCandidate == "" {
@@ -253,6 +422,41 @@ func parseAssistantPayload(raw string) (aidomain.SearchAssistantResult, bool) {
 		SuggestedJobTypes:  pickStringList(payload, "job_types", "suggested_job_types"),
 		SuggestedSalaryMin: pickInt64Pointer(payload, "salary_min", "suggested_salary_min"),
 		Summary:            summary,
+	}, true
+}
+
+func parseJobFitSummaryPayload(raw string) (aidomain.JobFitSummaryResult, bool) {
+	jsonCandidate := extractJSONCandidate(raw)
+	if jsonCandidate == "" {
+		return aidomain.JobFitSummaryResult{}, false
+	}
+
+	payload := map[string]any{}
+	if err := json.Unmarshal([]byte(jsonCandidate), &payload); err != nil {
+		return aidomain.JobFitSummaryResult{}, false
+	}
+
+	score, scoreOK := pickInt(payload, "fit_score", "score")
+	verdict := pickString(payload, "verdict", "fit_level")
+	summary := pickString(payload, "summary", "rationale", "reasoning")
+	if !scoreOK && verdict == "" && summary == "" {
+		return aidomain.JobFitSummaryResult{}, false
+	}
+
+	if !scoreOK {
+		score = 50
+	}
+	if verdict == "" {
+		verdict = "moderate_match"
+	}
+
+	return aidomain.JobFitSummaryResult{
+		FitScore:    max(min(score, 100), 0),
+		Verdict:     strings.ToLower(strings.TrimSpace(verdict)),
+		Strengths:   pickStringList(payload, "strengths"),
+		Gaps:        pickStringList(payload, "gaps", "weaknesses"),
+		NextActions: pickStringList(payload, "next_actions", "action_items"),
+		Summary:     summary,
 	}, true
 }
 
@@ -384,6 +588,21 @@ func pickInt64Pointer(payload map[string]any, keys ...string) *int64 {
 		return &cloned
 	}
 	return nil
+}
+
+func pickInt(payload map[string]any, keys ...string) (int, bool) {
+	for _, key := range keys {
+		value, ok := payload[key]
+		if !ok {
+			continue
+		}
+		parsed, parsedOK := toInt64(value)
+		if !parsedOK {
+			continue
+		}
+		return int(parsed), true
+	}
+	return 0, false
 }
 
 func toString(value any) string {
