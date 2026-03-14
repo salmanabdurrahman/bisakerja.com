@@ -1,0 +1,67 @@
+import type { BillingStatus, TransactionStatus } from "@/services/billing";
+import type { SubscriptionState } from "@/services/auth";
+
+interface SubscriptionStatusCardProps {
+  subscriptionState: SubscriptionState | "status_unavailable";
+  lastTransactionStatus?: TransactionStatus;
+  premiumExpiredAt?: string | null;
+  source?: "billing" | "profile_fallback" | "unavailable";
+}
+
+const subscriptionDescriptions: Record<
+  SubscriptionStatusCardProps["subscriptionState"],
+  string
+> = {
+  free: "Akun saat ini masih free. Upgrade untuk mengaktifkan notifikasi premium.",
+  pending_payment:
+    "Pembayaran masih pending. Lanjutkan pembayaran atau tunggu sinkronisasi webhook.",
+  premium_active: "Premium aktif. Kamu bisa memakai semua fitur premium.",
+  premium_expired:
+    "Premium sudah berakhir. Lakukan upgrade ulang untuk mengaktifkan premium kembali.",
+  status_unavailable:
+    "Status langganan belum bisa diverifikasi dari billing/status saat ini.",
+};
+
+export function SubscriptionStatusCard({
+  subscriptionState,
+  lastTransactionStatus,
+  premiumExpiredAt,
+  source = "billing",
+}: SubscriptionStatusCardProps) {
+  return (
+    <section className="grid gap-2 rounded-lg border border-gray-200 p-4">
+      <h3 className="text-lg font-semibold text-gray-900">
+        Subscription overview
+      </h3>
+      <p className="text-sm text-gray-700">
+        State: <span className="font-semibold">{subscriptionState}</span>
+      </p>
+      <p className="text-sm text-gray-700">
+        {subscriptionDescriptions[subscriptionState]}
+      </p>
+      {lastTransactionStatus ? (
+        <p className="text-sm text-gray-700">
+          Last transaction status:{" "}
+          <span className="font-medium">{lastTransactionStatus}</span>
+        </p>
+      ) : null}
+      {premiumExpiredAt ? (
+        <p className="text-sm text-gray-700">
+          Premium expiry: {new Date(premiumExpiredAt).toLocaleString("id-ID")}
+        </p>
+      ) : null}
+      <p className="text-xs text-gray-500">Source: {source}</p>
+    </section>
+  );
+}
+
+export function toSubscriptionCardProps(
+  status: BillingStatus,
+): SubscriptionStatusCardProps {
+  return {
+    subscriptionState: status.subscription_state,
+    lastTransactionStatus: status.last_transaction_status,
+    premiumExpiredAt: status.premium_expired_at,
+    source: "billing",
+  };
+}

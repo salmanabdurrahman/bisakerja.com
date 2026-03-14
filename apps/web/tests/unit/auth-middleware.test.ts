@@ -41,4 +41,14 @@ describe("auth proxy", () => {
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost/account");
   });
+
+  it("protects pricing route for anonymous users", () => {
+    const request = new NextRequest("http://localhost/pricing");
+    const response = proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "http://localhost/auth/login?redirect=%2Fpricing",
+    );
+  });
 });

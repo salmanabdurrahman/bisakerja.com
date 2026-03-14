@@ -7,7 +7,16 @@ import {
 import type { APIResponse } from "@/lib/types/api";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { getMe, refreshAuthToken, type AuthMe } from "@/services/auth";
-import { getBillingStatus, type BillingStatus } from "@/services/billing";
+import {
+  createCheckoutSession,
+  getBillingStatus,
+  getBillingTransactions,
+  type BillingStatus,
+  type BillingTransaction,
+  type BillingTransactionsQuery,
+  type CheckoutSession,
+  type CreateCheckoutSessionInput,
+} from "@/services/billing";
 import {
   getPreferences,
   updatePreferences,
@@ -32,6 +41,12 @@ const defaultDependencies: SessionClientDependencies = {
 export interface SessionAPIClient {
   getMe: () => Promise<APIResponse<AuthMe>>;
   getBillingStatus: () => Promise<APIResponse<BillingStatus>>;
+  createCheckoutSession: (
+    input: CreateCheckoutSessionInput,
+  ) => Promise<APIResponse<CheckoutSession>>;
+  getBillingTransactions: (
+    query?: BillingTransactionsQuery,
+  ) => Promise<APIResponse<BillingTransaction[]>>;
   getPreferences: () => Promise<APIResponse<UserPreferences>>;
   updatePreferences: (
     input: UpdatePreferencesInput,
@@ -69,6 +84,10 @@ export function createSessionAPIClient(
     getMe: () => withAuthorizedRequest((token) => getMe(token)),
     getBillingStatus: () =>
       withAuthorizedRequest((token) => getBillingStatus(token)),
+    createCheckoutSession: (input) =>
+      withAuthorizedRequest((token) => createCheckoutSession(token, input)),
+    getBillingTransactions: (query) =>
+      withAuthorizedRequest((token) => getBillingTransactions(token, query)),
     getPreferences: () =>
       withAuthorizedRequest((token) => getPreferences(token)),
     updatePreferences: (input) =>
@@ -117,7 +136,8 @@ async function refreshAccessTokenSingleFlight(
   }
 
   const session = deps.getSession();
-  if (!session.refreshToken) {
+  const refreshToken = session.refreshToken;
+  if (!refreshToken) {
     deps.clearSession();
     return null;
   }
@@ -125,7 +145,7 @@ async function refreshAccessTokenSingleFlight(
   refreshInFlight = (async () => {
     try {
       const response = await deps.refresh({
-        refresh_token: session.refreshToken as string,
+        refresh_token: refreshToken,
       });
 
       deps.updateAccessToken({

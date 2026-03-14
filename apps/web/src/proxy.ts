@@ -12,8 +12,12 @@ export function proxy(request: NextRequest) {
     request.cookies.get(ACCESS_TOKEN_COOKIE)?.value ||
     request.cookies.get(REFRESH_TOKEN_COOKIE)?.value,
   );
+  const isProtectedPath =
+    pathname.startsWith("/account") ||
+    pathname === "/pricing" ||
+    pathname.startsWith("/billing/success");
 
-  if (pathname.startsWith("/account") && !hasSession) {
+  if (isProtectedPath && !hasSession) {
     const redirectPath = normalizeRedirectPath(
       `${pathname}${request.nextUrl.search}`,
     );
@@ -35,5 +39,11 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/account/:path*", "/auth/login", "/auth/register"],
+  matcher: [
+    "/account/:path*",
+    "/pricing",
+    "/billing/success",
+    "/auth/login",
+    "/auth/register",
+  ],
 };

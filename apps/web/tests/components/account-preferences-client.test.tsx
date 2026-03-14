@@ -48,6 +48,8 @@ describe("AccountPreferencesClient", () => {
     vi.mocked(createSessionAPIClient).mockReturnValue({
       getPreferences: vi.fn(),
       getBillingStatus: vi.fn(),
+      createCheckoutSession: vi.fn(),
+      getBillingTransactions: vi.fn(),
       getMe: vi.fn(),
       updatePreferences: updatePreferencesMock,
     });
