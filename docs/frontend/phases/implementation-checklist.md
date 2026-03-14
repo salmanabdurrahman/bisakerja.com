@@ -49,11 +49,11 @@ Berdasarkan struktur repository saat ini, implementasi **Phase 0 frontend** suda
 | `GET /api/v1/notifications`             | `data[]`, `meta.pagination`                                                                 | 📝     | dipakai notification center                |
 | `PATCH /api/v1/notifications/:id/read`  | `id`, `read_at`                                                                             | 📝     | dipakai mark as read                       |
 | `PUT /api/v1/preferences/notification`  | `alert_mode`, `digest_hour`, `updated_at`                                                   | 📝     | dipakai kontrol digest mode                |
-| `POST /api/v1/ai/search-assistant`      | `prompt`, `suggested_query`, `suggested_filters`, `quota_remaining`                         | 🟡     | backend increment 1 tersedia (`docs/api/ai.md`) |
-| `POST /api/v1/ai/job-fit-summary`       | `job_id`, `fit_score`, `strengths`, `gaps`, `next_actions`                                  | 🟡     | backend increment 2 tersedia (`docs/api/ai.md`) |
-| `POST /api/v1/ai/cover-letter-draft`    | `job_id`, `tone`, `draft`, `quota_remaining`                                                 | 🟡     | backend increment 3 tersedia (`docs/api/ai.md`) |
+| `POST /api/v1/ai/search-assistant`      | `prompt`, `suggested_query`, `suggested_filters`, `quota_remaining`                         | 🟡     | frontend account AI tools sudah konsumsi endpoint (`apps/web/src/features/ai/components/account-ai-tools-client.tsx`) |
+| `POST /api/v1/ai/job-fit-summary`       | `job_id`, `fit_score`, `strengths`, `gaps`, `next_actions`                                  | 🟡     | frontend account AI tools sudah konsumsi endpoint premium (`apps/web/src/features/ai/components/account-ai-tools-client.tsx`) |
+| `POST /api/v1/ai/cover-letter-draft`    | `job_id`, `tone`, `draft`, `quota_remaining`                                                 | 🟡     | frontend account AI tools sudah konsumsi endpoint premium (`apps/web/src/features/ai/components/account-ai-tools-client.tsx`) |
 | `POST /api/v1/ai/interview-prep`        | `job_id`, `questions`, `answer_tips`, `practice_plan`                                        | 📝     | planned free+premium AI prep               |
-| `GET /api/v1/ai/usage`                  | `tier`, `daily_quota`, `used`, `remaining`, `reset_at`                                       | 🟡     | backend increment 1 tersedia (`docs/api/ai.md`) |
+| `GET /api/v1/ai/usage`                  | `tier`, `daily_quota`, `used`, `remaining`, `reset_at`                                       | 🟡     | frontend quota meter aktif di `/account/ai-tools` |
 
 ## 3.2) Rencana Lanjutan (Document-First)
 
@@ -67,7 +67,7 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | M3 | Migrasi seluruh UI copy + message user-facing ke English | ✅ Complete |
 | M4 | Redesign SaaS + penutupan web vitals dan growth e2e | ✅ Complete |
 | M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 🟡 In Progress |
-| M6 | AI experience layer (free + premium value) | 📝 Documented |
+| M6 | AI experience layer (free + premium value) | 🟡 In Progress |
 
 ## 4) Checklist per Phase & Iteration
 
@@ -138,12 +138,12 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 
 | Item | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
 | --- | --- | --- | --- | --- | --- |
-| AI search assistant UX (query rewrite/refinement) | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
-| AI job-fit summary UX pada halaman detail/account | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
-| AI cover letter composer + interview prep workspace | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md` |
-| quota meter + tier badge (free vs premium AI capability) | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/features/optional-features.md`, `docs/api/billing.md` |
-| fallback UX saat AI provider unavailable/quota exhausted | 📝 | - | - | - | `docs/frontend/phases/implementation-roadmap.md`, `docs/standards/security-observability-standards.md`, `docs/api/errors.md` |
-| traceability endpoint AI FE-BE | 📝 | - | - | - | `docs/frontend/traceability/frontend-backend-traceability.md`, `docs/frontend/phases/implementation-roadmap.md` |
+| AI search assistant UX (query rewrite/refinement) | 🟡 | `apps/web/src/app/account/ai-tools/page.tsx`, `apps/web/src/features/ai/components/account-ai-tools-client.tsx`, `apps/web/src/services/ai.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/components/account-ai-tools-client.test.tsx`, `apps/web/tests/components/account-ai-tools-page.test.tsx`, `apps/web/tests/unit/ai-service.test.ts` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/ai-career-copilot.md`, `docs/frontend/phases/implementation-roadmap.md`, `docs/api/ai.md` |
+| AI job-fit summary UX pada halaman detail/account | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx` | `apps/web/tests/components/account-ai-tools-client.test.tsx` | local gate: `pnpm --filter web test` | `docs/frontend/features/ai-career-copilot.md`, `docs/frontend/traceability/frontend-backend-traceability.md` |
+| AI cover letter composer + interview prep workspace | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx` (cover letter composer aktif, interview prep belum diimplementasi) | `apps/web/tests/components/account-ai-tools-client.test.tsx` | local gate: `pnpm --filter web test` | `docs/frontend/features/ai-career-copilot.md`, `docs/frontend/phases/implementation-roadmap.md` |
+| quota meter + tier badge (free vs premium AI capability) | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx`, `apps/web/src/app/account/ai-tools/page.tsx` | `apps/web/tests/components/account-ai-tools-client.test.tsx` | local gate: `pnpm --filter web test` | `docs/frontend/features/ai-career-copilot.md`, `docs/api/billing.md`, `docs/api/ai.md` |
+| fallback UX saat AI provider unavailable/quota exhausted | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx` | `apps/web/tests/components/account-ai-tools-client.test.tsx` | local gate: `pnpm --filter web test` | `docs/frontend/features/ai-career-copilot.md`, `docs/standards/security-observability-standards.md`, `docs/api/errors.md` |
+| traceability endpoint AI FE-BE | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx`, `apps/web/src/services/ai.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/components/account-ai-tools-client.test.tsx`, `apps/web/tests/unit/ai-service.test.ts` | local gate: `pnpm --filter web test` | `docs/frontend/traceability/frontend-backend-traceability.md`, `docs/frontend/phases/implementation-roadmap.md` |
 
 ## 5) Cara Pakai
 

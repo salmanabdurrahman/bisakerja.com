@@ -96,6 +96,10 @@ describe("Growth engagement flow (e2e-like)", () => {
       listNotifications: vi.fn(),
       markNotificationAsRead: markReadMock,
       updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
     });
 
     const savedSearchesView = render(

@@ -58,6 +58,10 @@ describe("AccountPreferencesClient", () => {
       listNotifications: vi.fn(),
       markNotificationAsRead: vi.fn(),
       updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
     });
 
     render(

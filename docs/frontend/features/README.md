@@ -44,6 +44,7 @@ Saat ada konflik data antar endpoint:
 4. [Preferences & Notifications](./preferences-notifications.md)
 5. [Profile & Account](./profile-account.md)
 6. [Growth & Engagement](./growth-engagement.md)
+7. [AI Career Copilot](./ai-career-copilot.md)
 
 ## Dependency Flow (Frontend)
 
@@ -52,12 +53,14 @@ Saat ada konflik data antar endpoint:
 - **Job Discovery** memanfaatkan state langganan untuk upsell konteks premium.
 - **Preferences & Notifications** memanfaatkan state langganan untuk gating fitur notifikasi.
 - **Growth & Engagement** menggunakan preference + session client untuk saved searches, notification center, dan digest control.
+- **AI Career Copilot** menggabungkan entitlement billing + quota usage API untuk membedakan experience free/premium pada tool AI.
 
 ## Backend API References
 
 - [Auth API](../../api/auth.md)
 - [Jobs API](../../api/jobs.md)
 - [Billing API](../../api/billing.md)
+- [AI API](../../api/ai.md)
 - [User Preferences API](../../api/preferences.md)
 - [Error Codes](../../api/errors.md)
 - [API Hub](../../api/README.md)

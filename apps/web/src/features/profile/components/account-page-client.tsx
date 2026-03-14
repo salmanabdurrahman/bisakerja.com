@@ -60,6 +60,9 @@ export function AccountPageClient({
         <ButtonLink href="/account/notifications" variant="outline">
           Notification center
         </ButtonLink>
+        <ButtonLink href="/account/ai-tools" variant="outline">
+          AI tools
+        </ButtonLink>
         <Button
           type="button"
           onClick={() => void handleLogout()}

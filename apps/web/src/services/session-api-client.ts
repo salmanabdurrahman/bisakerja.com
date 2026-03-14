@@ -37,6 +37,20 @@ import {
   type NotificationsQuery,
   type SavedSearch,
 } from "@/services/growth";
+import {
+  generateAICoverLetterDraft,
+  generateAIJobFitSummary,
+  generateAISearchAssistant,
+  getAIUsage,
+  type AICoverLetterDraftResult,
+  type AIFeature,
+  type AIJobFitSummaryResult,
+  type AISearchAssistantResult,
+  type AIUsage,
+  type GenerateAICoverLetterDraftInput,
+  type GenerateAIJobFitSummaryInput,
+  type GenerateAISearchAssistantInput,
+} from "@/services/ai";
 
 interface SessionClientDependencies {
   getSession: typeof readBrowserSession;
@@ -82,6 +96,16 @@ export interface SessionAPIClient {
   updateNotificationPreferences: (
     input: UpdateNotificationPreferencesInput,
   ) => Promise<APIResponse<NotificationPreferences>>;
+  getAIUsage: (feature: AIFeature) => Promise<APIResponse<AIUsage>>;
+  generateAISearchAssistant: (
+    input: GenerateAISearchAssistantInput,
+  ) => Promise<APIResponse<AISearchAssistantResult>>;
+  generateAIJobFitSummary: (
+    input: GenerateAIJobFitSummaryInput,
+  ) => Promise<APIResponse<AIJobFitSummaryResult>>;
+  generateAICoverLetterDraft: (
+    input: GenerateAICoverLetterDraftInput,
+  ) => Promise<APIResponse<AICoverLetterDraftResult>>;
 }
 
 let refreshInFlight: Promise<string | null> | null = null;
@@ -141,6 +165,16 @@ export function createSessionAPIClient(
     updateNotificationPreferences: (input) =>
       withAuthorizedRequest((token) =>
         updateNotificationPreferences(token, input),
+      ),
+    getAIUsage: (feature) =>
+      withAuthorizedRequest((token) => getAIUsage(token, feature)),
+    generateAISearchAssistant: (input) =>
+      withAuthorizedRequest((token) => generateAISearchAssistant(token, input)),
+    generateAIJobFitSummary: (input) =>
+      withAuthorizedRequest((token) => generateAIJobFitSummary(token, input)),
+    generateAICoverLetterDraft: (input) =>
+      withAuthorizedRequest((token) =>
+        generateAICoverLetterDraft(token, input),
       ),
   };
 }

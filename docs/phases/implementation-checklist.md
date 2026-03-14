@@ -74,6 +74,13 @@ Catatan progress M4 saat ini:
 - e2e-like growth journey coverage sudah ditambahkan pada `apps/web/tests/e2e/growth-engagement-flow.test.tsx`,
 - validasi pass: `pnpm --filter web lint test build` dan root `pnpm lint test build`.
 
+Catatan progress M6 saat ini:
+
+- backend increment 1-3 aktif (`search-assistant`, `job-fit-summary`, `cover-letter-draft`, `usage`),
+- frontend increment 1 aktif di `/account/ai-tools` dengan AI usage meter + tiga form AI utama,
+- test frontend AI slice sudah ditambahkan (`account-ai-tools-client`, `account-ai-tools-page`, `ai-service`),
+- known baseline issue tetap ada pada `apps/web/tests/components/jobs-page.test.tsx` (`useRouter` invariant) dan tidak terkait perubahan AI.
+
 ## 4) Checklist per Phase & Iteration
 
 ## Phase 0 - Foundation & Baseline

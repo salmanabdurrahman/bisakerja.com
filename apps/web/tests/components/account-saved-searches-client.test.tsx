@@ -70,6 +70,10 @@ describe("AccountSavedSearchesClient", () => {
       listNotifications: vi.fn(),
       markNotificationAsRead: vi.fn(),
       updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
     });
 
     render(<AccountSavedSearchesClient initialSavedSearches={[]} />);
@@ -77,9 +81,7 @@ describe("AccountSavedSearchesClient", () => {
     fireEvent.change(screen.getByLabelText("Query"), {
       target: { value: "golang backend" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add saved search" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Add saved search" }));
 
     await waitFor(() => {
       expect(createSavedSearchMock).toHaveBeenCalledTimes(1);

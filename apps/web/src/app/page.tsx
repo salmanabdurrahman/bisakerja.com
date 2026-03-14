@@ -431,6 +431,10 @@ export default function Home() {
                   </li>
                   <li className="flex items-center gap-3 text-[14px]">
                     <HiCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
+                    <span>Limited AI usage (daily quota)</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-[14px]">
+                    <HiCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
                     <span>Save up to 3 searches</span>
                   </li>
                   <li className="flex items-center gap-3 text-[14px]">
@@ -470,6 +474,10 @@ export default function Home() {
                   <li className="flex items-center gap-3 text-[14px]">
                     <HiCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
                     <span>Advanced salary & location filters</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-[14px]">
+                    <HiCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
+                    <span>Higher AI daily quota</span>
                   </li>
                   <li className="flex items-center gap-3 text-[14px]">
                     <HiCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />

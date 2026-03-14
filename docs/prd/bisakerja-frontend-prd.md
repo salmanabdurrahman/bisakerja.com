@@ -74,6 +74,7 @@ Untuk menghindari mismatch implementasi, frontend mengikuti kontrak backend beri
 - `/auth/login` & `/auth/register` — Alur autentikasi user.
 - `/account` — Ringkasan profil dan status akun.
 - `/account/preferences` — Pengaturan preference pencarian/notifikasi.
+- `/account/ai-tools` — Tool AI untuk search assistant, job-fit summary, dan cover letter draft.
 - `/pricing` & `/account/subscription` — Paket premium dan status subscription.
 
 ### 4.1 Tanggung Jawab Implementasi per Journey
@@ -85,6 +86,7 @@ Untuk menghindari mismatch implementasi, frontend mengikuti kontrak backend beri
 | Preferences | Validasi form, normalisasi input, draft recovery saat 401/network issue | `GET /api/v1/preferences`, `PUT /api/v1/preferences` | halaman preferences, form schema validator, test validasi + submit |
 | Premium Upgrade | CTA/gating per state, checkout initiation, verifikasi status pasca redirect | `/api/v1/billing/checkout-session`, `/api/v1/billing/status`, `/api/v1/billing/transactions` | halaman pricing/subscription, checkout handler, test upgrade initiation |
 | Profile & Account | Menampilkan profile + subscription badge konsisten, logout bersih | `/api/v1/auth/me`, `/api/v1/billing/status` | halaman account, profile summary section, test state precedence |
+| AI Career Copilot | Menyediakan assistant/query refinement + premium AI tools + quota meter | `/api/v1/ai/search-assistant`, `/api/v1/ai/job-fit-summary`, `/api/v1/ai/cover-letter-draft`, `/api/v1/ai/usage`, `/api/v1/billing/status` | halaman `/account/ai-tools`, komponen AI action forms, test premium lock + quota flow |
 
 ## 5. Non-Functional Requirements Frontend (Ringkas)
 

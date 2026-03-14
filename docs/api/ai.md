@@ -1,4 +1,4 @@
-# AI API (Phase 5 Increment 1-2)
+# AI API (Phase 5 Increment 1-3)
 
 Dokumen ini menjelaskan kontrak backend AI yang sudah diaktifkan pada increment awal Phase 5.
 

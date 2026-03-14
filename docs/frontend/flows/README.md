@@ -7,6 +7,7 @@ Dokumentasi ini memetakan journey utama user dari sisi UI, termasuk transisi sta
 - [Discovery Flow](./discovery-flow.md) — alur user menemukan lowongan dari search sampai detail.
 - [Upgrade Billing Flow](./upgrade-billing-flow.md) — alur upgrade dari `free` ke `premium_active` via checkout Mayar.
 - [Growth Engagement Flow](./growth-engagement-flow.md) — alur saved searches, notification center, dan digest preferences.
+- [AI Career Copilot Flow](./ai-career-copilot-flow.md) — alur penggunaan AI assistant, premium lock, dan quota meter.
 
 ## Konvensi Istilah
 
@@ -21,5 +22,6 @@ Dokumentasi ini memetakan journey utama user dari sisi UI, termasuk transisi sta
 - Auth API: [`../../api/auth.md`](../../api/auth.md)
 - Billing API: [`../../api/billing.md`](../../api/billing.md)
 - Growth API: [`../../api/growth.md`](../../api/growth.md)
+- AI API: [`../../api/ai.md`](../../api/ai.md)
 - Webhooks API: [`../../api/webhooks.md`](../../api/webhooks.md)
 - Subscription & Billing rules: [`../../features/subscription-billing.md`](../../features/subscription-billing.md)

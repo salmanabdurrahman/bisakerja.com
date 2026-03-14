@@ -9,6 +9,7 @@ Menyediakan halaman akun yang ringkas untuk menampilkan identitas user, status l
 - Menampilkan profil user (`name`, `email`, `role`) dari session backend.
 - Menampilkan status langganan canonical (`free`, `pending_payment`, `premium_active`, `premium_expired`).
 - Menampilkan informasi masa aktif premium jika tersedia.
+- Menyediakan shortcut ke area account tools (preferences, growth, AI tools).
 - Logout client-side yang membersihkan session frontend.
 
 ## Out of Scope

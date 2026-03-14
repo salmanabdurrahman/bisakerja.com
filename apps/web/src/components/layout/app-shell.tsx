@@ -21,6 +21,7 @@ const accountLinks = [
   { href: "/account", label: "Account" },
   { href: "/account/preferences", label: "Preferences" },
   { href: "/account/saved-searches", label: "Saved searches" },
+  { href: "/account/ai-tools", label: "AI tools" },
 ];
 
 export function AppShell({ children }: PropsWithChildren) {
