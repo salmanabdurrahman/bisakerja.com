@@ -25,6 +25,7 @@ export interface BillingStatus {
  */
 export interface CreateCheckoutSessionInput {
   plan_code: "pro_monthly";
+  coupon_code?: string;
   redirect_url: string;
   idempotency_key?: string;
 }
@@ -34,9 +35,14 @@ export interface CreateCheckoutSessionInput {
  */
 export interface CheckoutSession {
   provider: "mayar";
+  plan_code?: "pro_monthly";
   invoice_id: string;
   transaction_id: string;
   checkout_url: string;
+  original_amount?: number;
+  discount_amount?: number;
+  final_amount?: number;
+  coupon_code?: string;
   expired_at: string;
   subscription_state: SubscriptionState;
   transaction_status: TransactionStatus;

@@ -19,8 +19,8 @@ sequenceDiagram
   FE-->>U: Render billing_ready
 
   U->>FE: Konfirmasi paket Pro
-  FE->>API: POST /api/v1/billing/checkout-session
-  API-->>FE: 201 (checkout_url, transaction_id, subscription_state=pending_payment, transaction_status=pending)
+  FE->>API: POST /api/v1/billing/checkout-session (+ coupon_code opsional)
+  API-->>FE: 201 (checkout_url, transaction_id, original_amount, discount_amount, final_amount, subscription_state=pending_payment, transaction_status=pending)
   FE-->>U: Render checkout_redirecting
   FE->>M: Redirect ke checkout_url
 
@@ -48,9 +48,9 @@ sequenceDiagram
   U->>FE: Konfirmasi upgrade
   FE->>API: POST /api/v1/billing/checkout-session
 
-  alt Checkout request invalid
+  alt Checkout request invalid (plan/redirect/coupon)
     API-->>FE: 400 BAD_REQUEST
-    FE-->>U: Render checkout_error_validation
+    FE-->>U: Render checkout_error_validation (pesan spesifik per error code)
   else Sudah premium aktif
     API-->>FE: 409 CONFLICT
     FE-->>U: Render already_premium
@@ -78,7 +78,7 @@ sequenceDiagram
 |---|---|---|---|
 | `billing_ready` | User klik "Lanjut bayar" | `checkout_creating` | Disable tombol submit selama request |
 | `checkout_creating` | `POST /api/v1/billing/checkout-session` sukses (`201`) | `checkout_redirecting` | Simpan `transaction_id`, lalu redirect ke `checkout_url` |
-| `checkout_creating` | `400 BAD_REQUEST` | `checkout_error_validation` | Tampilkan validasi plan/redirect URL |
+| `checkout_creating` | `400 BAD_REQUEST` | `checkout_error_validation` | Tampilkan validasi plan/redirect URL/coupon secara spesifik |
 | `checkout_creating` | `409 CONFLICT` | `already_premium` | Tampilkan status premium aktif, tanpa redirect |
 | `checkout_creating` | `502/503` | `checkout_error_retry` | Tampilkan retry action |
 | `checkout_redirecting` | User kembali dari gateway | `payment_verifying` | Mulai cek status via `/api/v1/billing/status` |

@@ -14,7 +14,7 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
 
 ## Out of Scope
 
-- Kupon, cicilan, multi-plan kompleks, refund/chargeback.
+- Cicilan, multi-plan kompleks, refund/chargeback.
 - Riwayat invoice detail dengan drill-down penuh.
 - Webhook handling di frontend (tetap tanggung jawab backend).
 
@@ -32,6 +32,7 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
 - Setelah `POST /api/v1/billing/checkout-session` sukses, frontend wajib:
   1. menyimpan `checkout_url` + `expired_at`,
   2. redirect user ke provider checkout.
+- Frontend boleh mengirim `coupon_code` opsional saat membuat checkout; jika backend mengembalikan `INVALID_COUPON_CODE`, UI wajib menampilkan error yang spesifik.
 - Halaman callback/success tidak boleh langsung menganggap pembayaran sukses; wajib konfirmasi via `GET /api/v1/billing/status`.
 - Entitlement premium **hanya** diputuskan oleh `subscription_state`; `last_transaction_status` dipakai sebagai informasi UX tambahan.
 
@@ -61,7 +62,7 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
 
 | Endpoint | Tujuan di Frontend | Field minimum yang dikonsumsi | Referensi |
 |---|---|---|---|
-| `POST /api/v1/billing/checkout-session` | Membuat sesi checkout dan mendapat `checkout_url`. | `data.checkout_url`, `data.transaction_id`, `data.expired_at`, `data.subscription_state`, `data.transaction_status` | [billing.md](../../api/billing.md) |
+| `POST /api/v1/billing/checkout-session` | Membuat sesi checkout dan mendapat `checkout_url`. | request: `plan_code`, `redirect_url`, `coupon_code?`; response: `data.checkout_url`, `data.transaction_id`, `data.expired_at`, `data.subscription_state`, `data.transaction_status`, `data.original_amount`, `data.discount_amount`, `data.final_amount`, `data.coupon_code?` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/billing/status` | Mendapatkan state subscription canonical. | `data.subscription_state`, `data.last_transaction_status`, `data.premium_expired_at` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/billing/transactions` | Menampilkan ringkasan histori pembayaran (opsional MVP ringan). | `data[].status`, `data[].amount`, `data[].created_at` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/auth/me` | Sinkron badge premium di navbar/profile. | `data.is_premium`, `data.premium_expired_at` | [auth.md](../../api/auth.md) |
@@ -72,7 +73,7 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
   - Saat fetch status billing: tampilkan status skeleton.
   - Saat create checkout: tombol upgrade tampil loading + disabled.
 - **Error**
-  - `400 BAD_REQUEST`: tampilkan pesan plan tidak valid (fallback ke plan default jika ada).
+  - `400 BAD_REQUEST`: tampilkan pesan validasi spesifik (`INVALID_PLAN_CODE`/`INVALID_COUPON_CODE`/`INVALID_REDIRECT_URL`).
   - `401 UNAUTHORIZED`: minta login ulang.
   - `409 CONFLICT`: refresh status dan tampilkan pesan informatif.
   - `502`/`503`: tampilkan error payment provider sementara + retry.

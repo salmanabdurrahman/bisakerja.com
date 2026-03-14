@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/session-provider";
 import {
+  type CachedCheckoutSession,
   clearCheckoutSession,
   loadCheckoutSession,
   saveCheckoutSession,
@@ -16,7 +17,7 @@ import { redirectToExternalURL } from "@/lib/utils/browser-navigation";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { createSessionAPIClient } from "@/services/session-api-client";
 import type { SubscriptionState } from "@/services/auth";
-import type { TransactionStatus } from "@/services/billing";
+import type { CheckoutSession, TransactionStatus } from "@/services/billing";
 
 interface UpgradeCTAProps {
   subscriptionState: SubscriptionState | "status_unavailable";
@@ -33,6 +34,7 @@ export function UpgradeCTA({
   const [cachedCheckout, setCachedCheckout] = useState(() =>
     loadCheckoutSession(),
   );
+  const [couponCodeInput, setCouponCodeInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -40,6 +42,9 @@ export function UpgradeCTA({
   const hasPendingContinueLink =
     subscriptionState === "pending_payment" &&
     Boolean(cachedCheckout?.checkout_url);
+  const checkoutAmountSummary = cachedCheckout
+    ? getCheckoutAmountSummary(cachedCheckout)
+    : null;
 
   const buttonLabel = getButtonLabel(
     subscriptionState,
@@ -58,15 +63,17 @@ export function UpgradeCTA({
     setIsSubmitting(true);
     try {
       const redirectURL = `${window.location.origin}/billing/success`;
+      const normalizedCouponCode = normalizeCouponCode(couponCodeInput);
       const response = await sessionClient.createCheckoutSession({
         plan_code: "pro_monthly",
+        ...(normalizedCouponCode ? { coupon_code: normalizedCouponCode } : {}),
         redirect_url: redirectURL,
         idempotency_key: createIdempotencyKey(),
       });
 
       saveCheckoutSession(response.data);
       setCachedCheckout(loadCheckoutSession());
-      setMessage("Checkout created. Redirecting to the payment page...");
+      setMessage(buildCheckoutSuccessMessage(response.data));
       redirectToExternalURL(response.data.checkout_url);
     } catch (error) {
       if (error instanceof APIRequestError) {
@@ -89,6 +96,12 @@ export function UpgradeCTA({
           return;
         }
         if (error.status === 400) {
+          if (error.code === "INVALID_COUPON_CODE") {
+            setMessage(
+              "Coupon code is invalid or unavailable. Please try another code.",
+            );
+            return;
+          }
           setMessage(
             "Invalid checkout request. Please ensure the plan and redirect URL are correct.",
           );
@@ -117,6 +130,50 @@ export function UpgradeCTA({
         Start or continue checkout to unlock premium features and faster
         notifications.
       </p>
+      {!isPremiumActive ? (
+        <div className="grid gap-2">
+          <label
+            htmlFor="checkout-coupon-code"
+            className="text-[12px] font-medium uppercase tracking-wider text-[#666666]"
+          >
+            Coupon code (optional)
+          </label>
+          <input
+            id="checkout-coupon-code"
+            name="coupon_code"
+            value={couponCodeInput}
+            onChange={(event) => setCouponCodeInput(event.target.value)}
+            placeholder="e.g. SAVE10"
+            autoComplete="off"
+            className="h-11 rounded-2xl border border-[#E5E5E5] bg-white px-4 text-[14px] text-black placeholder:text-[#999999] focus:border-black focus:outline-none"
+            disabled={isSubmitting || hasPendingContinueLink}
+          />
+          <p className="text-[12px] text-[#888888]">
+            Coupon is validated before checkout starts.
+          </p>
+        </div>
+      ) : null}
+      {checkoutAmountSummary ? (
+        <div className="grid gap-1 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 text-[13px] text-[#555555]">
+          <p className="text-[12px] font-medium uppercase tracking-wider text-[#777777]">
+            Latest checkout summary
+          </p>
+          <p>
+            Original amount: {formatIDRCurrency(checkoutAmountSummary.original)}
+          </p>
+          {checkoutAmountSummary.discount > 0 ? (
+            <p>
+              Discount: -{formatIDRCurrency(checkoutAmountSummary.discount)}
+              {checkoutAmountSummary.couponCode
+                ? ` (${checkoutAmountSummary.couponCode})`
+                : ""}
+            </p>
+          ) : null}
+          <p className="font-medium text-black">
+            Final amount: {formatIDRCurrency(checkoutAmountSummary.final)}
+          </p>
+        </div>
+      ) : null}
       <Button
         type="button"
         disabled={isSubmitting || isPremiumActive}
@@ -168,4 +225,56 @@ function createIdempotencyKey(): string {
     return crypto.randomUUID();
   }
   return `checkout-${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
+}
+
+function normalizeCouponCode(raw: string): string {
+  return raw.trim().toUpperCase();
+}
+
+function buildCheckoutSuccessMessage(checkout: CheckoutSession): string {
+  const discountAmount = checkout.discount_amount ?? 0;
+  const couponCode = normalizeCouponCode(checkout.coupon_code ?? "");
+  if (discountAmount > 0 && couponCode !== "") {
+    return `Checkout created with coupon ${couponCode}. Redirecting to the payment page...`;
+  }
+  return "Checkout created. Redirecting to the payment page...";
+}
+
+interface CheckoutAmountSummary {
+  original: number;
+  discount: number;
+  final: number;
+  couponCode: string;
+}
+
+function getCheckoutAmountSummary(
+  checkout: CachedCheckoutSession,
+): CheckoutAmountSummary | null {
+  const finalAmount = parseAmount(checkout.final_amount);
+  if (finalAmount === null || finalAmount <= 0) {
+    return null;
+  }
+
+  const originalAmount = parseAmount(checkout.original_amount) ?? finalAmount;
+  const calculatedDiscount = Math.max(0, originalAmount - finalAmount);
+  const discountAmount =
+    parseAmount(checkout.discount_amount) ?? calculatedDiscount;
+
+  return {
+    original: originalAmount,
+    discount: Math.max(0, discountAmount),
+    final: finalAmount,
+    couponCode: normalizeCouponCode(checkout.coupon_code ?? ""),
+  };
+}
+
+function parseAmount(value: number | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  return value;
+}
+
+function formatIDRCurrency(value: number): string {
+  return `IDR ${value.toLocaleString("en-US")}`;
 }

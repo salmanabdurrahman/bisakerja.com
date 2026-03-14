@@ -107,7 +107,8 @@ Periksa:
 
 1. perubahan schema payload source,
 2. parameter pagination yang berubah,
-3. throttling/rate-limit source.
+3. throttling/rate-limit source,
+4. structured log worker pada field `error_message`, `source_operation`, `http_status_last`, `keyword`, dan `page` untuk melihat titik gagal terakhir.
 
 ## 8) Security & Compliance Guardrails
 

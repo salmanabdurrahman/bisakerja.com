@@ -52,9 +52,14 @@ describe("UpgradeCTA", () => {
       },
       data: {
         provider: "mayar",
+        plan_code: "pro_monthly",
         invoice_id: "inv_1",
         transaction_id: "trx_1",
         checkout_url: "https://checkout.example.com/inv_1",
+        original_amount: 49000,
+        discount_amount: 10000,
+        final_amount: 39000,
+        coupon_code: "SAVE10",
         expired_at: "2030-01-01T00:00:00Z",
         subscription_state: "pending_payment",
         transaction_status: "pending",
@@ -77,11 +82,19 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
+    fireEvent.change(screen.getByLabelText("Coupon code (optional)"), {
+      target: { value: "save10" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
       expect(createCheckoutSessionMock).toHaveBeenCalledTimes(1);
     });
+    expect(createCheckoutSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coupon_code: "SAVE10",
+      }),
+    );
     expect(redirectToExternalURL).toHaveBeenCalledWith(
       "https://checkout.example.com/inv_1",
     );
@@ -118,6 +131,41 @@ describe("UpgradeCTA", () => {
       expect(
         screen.getByText(
           "The payment provider is currently unavailable. Please try again shortly.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("renders invalid coupon message for coupon validation errors", async () => {
+    vi.mocked(createSessionAPIClient).mockReturnValue({
+      getMe: vi.fn(),
+      getBillingStatus: vi.fn(),
+      createCheckoutSession: vi
+        .fn()
+        .mockRejectedValue(
+          new APIRequestError("Validation error", 400, "INVALID_COUPON_CODE"),
+        ),
+      getBillingTransactions: vi.fn(),
+      getPreferences: vi.fn(),
+      updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
+    });
+
+    render(<UpgradeCTA subscriptionState="free" />);
+    fireEvent.change(screen.getByLabelText("Coupon code (optional)"), {
+      target: { value: "BADCODE" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Coupon code is invalid or unavailable. Please try another code.",
         ),
       ).toBeInTheDocument();
     });

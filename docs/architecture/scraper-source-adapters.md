@@ -79,10 +79,13 @@ Minimum field telemetry per source run:
 - `run_id`
 - `source`
 - `keyword`
+- `page`
 - `status` (`success`, `partial`, `failed`, `failed_auth`)
 - `fetched_count`
 - `inserted_count`
 - `duplicate_count`
+- `error_message`
+- `source_operation`
 - `http_status_last`
 - `error_class`
 - `duration_ms`
@@ -91,6 +94,7 @@ Minimum field telemetry per source run:
 Rekomendasi implementasi Iteration 1.1:
 
 - Tambahkan tabel operasional terpisah (misalnya `scrape_runs` dan `scrape_run_sources`) atau simpan event structured log yang setara.
+- Structured log worker sebaiknya memancarkan field di atas agar troubleshooting tidak bergantung pada reproduksi manual.
 - Simpan hanya metadata token (`token_source`, `expires_at`), **bukan nilai token**.
 
 ## 7) Security Boundary

@@ -61,7 +61,7 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | M2 | Comments/TSDoc pass pada area frontend kritikal | ✅ Complete |
 | M3 | Migrasi seluruh UI copy + message user-facing ke English | ✅ Complete |
 | M4 | Redesign SaaS + penutupan web vitals dan growth e2e | ✅ Complete |
-| M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 📝 Documented |
+| M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 🟡 In Progress |
 
 ## 4) Checklist per Phase & Iteration
 
@@ -121,6 +121,12 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | observability web vitals halaman kritikal | ✅     | `apps/web/src/features/observability/components/web-vitals-observer.tsx`, `apps/web/src/lib/observability/web-vitals.ts`, `apps/web/src/app/api/web-vitals/route.ts`, `apps/web/src/app/layout.tsx` | `apps/web/tests/unit/web-vitals.test.ts`, `pnpm --filter web test` | `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/architecture/accessibility-performance.md`, `docs/standards/nextjs-coding-standards.md` |
 | e2e flow fitur growth prioritas           | ✅     | `apps/web/tests/e2e/growth-engagement-flow.test.tsx`, `apps/web/src/features/growth/components/account-saved-searches-client.tsx`, `apps/web/src/features/growth/components/account-notifications-client.tsx`, `apps/web/src/features/preferences/components/notification-digest-control.tsx` | `apps/web/tests/e2e/growth-engagement-flow.test.tsx`, `pnpm --filter web test` | `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/growth-engagement.md`, `docs/frontend/flows/growth-engagement-flow.md` |
 | refinement visual pass ala Paper lintas halaman | ✅     | `apps/web/src/components/layout/app-shell.tsx`, `apps/web/src/components/ui/page-header.tsx`, `apps/web/src/app/page.tsx`, `apps/web/src/app/globals.css`, `apps/web/src/features/billing/components/upgrade-cta.tsx`, `apps/web/src/features/billing/components/subscription-status-card.tsx`, `apps/web/src/features/billing/components/subscription-badge.tsx` | `apps/web/tests/components/home-page.test.tsx`, `apps/web/tests/components/app-shell.test.tsx`, `apps/web/tests/components/account-subscription-page.test.tsx`, `pnpm --filter web test` | `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `DESIGN_REFERENCE.md`, `docs/frontend/phases/implementation-roadmap.md`, `docs/frontend/phases/implementation-checklist.md` |
+
+## Phase 5 - Phase 4 Backend Follow-up (Coupon Checkout UX)
+
+| Item | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
+| --- | --- | --- | --- | --- | --- |
+| coupon-enabled checkout UX (`coupon_code` + amount breakdown) | 🟡 | `apps/web/src/features/billing/components/upgrade-cta.tsx`, `apps/web/src/features/billing/checkout-session-cache.ts`, `apps/web/src/services/billing.ts` | `apps/web/tests/components/upgrade-cta.test.tsx`, `apps/web/tests/unit/billing-service.test.ts` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/premium-upgrade.md`, `docs/frontend/flows/upgrade-billing-flow.md`, `docs/frontend/phases/implementation-roadmap.md`, `docs/api/billing.md` |
 
 ## 5) Cara Pakai
 

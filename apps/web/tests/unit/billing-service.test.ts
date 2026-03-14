@@ -34,6 +34,7 @@ describe("billing services", () => {
 
     await createCheckoutSession("access-token", {
       plan_code: "pro_monthly",
+      coupon_code: "save10",
       redirect_url: "https://app.bisakerja.com/billing/success",
       idempotency_key: "idem-123",
     });
@@ -48,6 +49,13 @@ describe("billing services", () => {
         }),
       }),
     );
+
+    const [, requestConfig] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(requestConfig.body))).toEqual({
+      plan_code: "pro_monthly",
+      coupon_code: "save10",
+      redirect_url: "https://app.bisakerja.com/billing/success",
+    });
   });
 
   it("builds query params for billing transactions endpoint", async () => {

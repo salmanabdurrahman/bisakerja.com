@@ -6,6 +6,11 @@ export interface CachedCheckoutSession {
   checkout_url: string;
   expired_at: string;
   transaction_id: string;
+  plan_code?: "pro_monthly";
+  original_amount?: number;
+  discount_amount?: number;
+  final_amount?: number;
+  coupon_code?: string;
 }
 
 export function saveCheckoutSession(session: CheckoutSession): void {
@@ -16,6 +21,11 @@ export function saveCheckoutSession(session: CheckoutSession): void {
     checkout_url: session.checkout_url,
     expired_at: session.expired_at,
     transaction_id: session.transaction_id,
+    plan_code: session.plan_code,
+    original_amount: session.original_amount,
+    discount_amount: session.discount_amount,
+    final_amount: session.final_amount,
+    coupon_code: session.coupon_code,
   };
   window.localStorage.setItem(
     checkoutSessionStorageKey,
@@ -45,6 +55,26 @@ export function loadCheckoutSession(): CachedCheckoutSession | null {
       clearCheckoutSession();
       return null;
     }
+
+    if (parsed.plan_code !== undefined && parsed.plan_code !== "pro_monthly") {
+      return null;
+    }
+    if (!isOptionalAmount(parsed.original_amount)) {
+      return null;
+    }
+    if (!isOptionalAmount(parsed.discount_amount)) {
+      return null;
+    }
+    if (!isOptionalAmount(parsed.final_amount)) {
+      return null;
+    }
+    if (
+      parsed.coupon_code !== undefined &&
+      typeof parsed.coupon_code !== "string"
+    ) {
+      return null;
+    }
+
     return parsed;
   } catch {
     return null;
@@ -64,4 +94,11 @@ export function isCheckoutExpired(expiredAt: string): boolean {
     return true;
   }
   return Date.now() >= value;
+}
+
+function isOptionalAmount(value: unknown): value is number | undefined {
+  if (value === undefined) {
+    return true;
+  }
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
