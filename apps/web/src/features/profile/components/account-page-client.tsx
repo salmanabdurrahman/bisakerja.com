@@ -1,11 +1,4 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-
-import { Button, ButtonLink } from "@/components/ui/button";
 import { SubscriptionBadge } from "@/features/billing/components/subscription-badge";
-import { useAuthSession } from "@/features/auth/session-provider";
-import { clearBrowserSession } from "@/lib/auth/session-cookie";
 import { ProfileSummary } from "@/features/profile/components/profile-summary";
 import type { AuthMe, SubscriptionState } from "@/services/auth";
 
@@ -25,15 +18,6 @@ export function AccountPageClient({
   badgeSource,
   warningMessage,
 }: AccountPageClientProps) {
-  const router = useRouter();
-  const { markAnonymous } = useAuthSession();
-
-  async function handleLogout() {
-    clearBrowserSession();
-    markAnonymous();
-    router.replace("/auth/login");
-  }
-
   return (
     <section className="grid gap-4">
       <div className="bk-card grid gap-4 p-6 sm:p-8">
@@ -49,28 +33,6 @@ export function AccountPageClient({
       </div>
 
       <ProfileSummary profile={profile} />
-
-      <div className="flex flex-wrap gap-3">
-        <ButtonLink href="/account/preferences" variant="outline">
-          Manage preferences
-        </ButtonLink>
-        <ButtonLink href="/account/saved-searches" variant="outline">
-          Saved searches
-        </ButtonLink>
-        <ButtonLink href="/account/notifications" variant="outline">
-          Notification center
-        </ButtonLink>
-        <ButtonLink href="/account/ai-tools" variant="outline">
-          AI tools
-        </ButtonLink>
-        <Button
-          type="button"
-          onClick={() => void handleLogout()}
-          variant="primary"
-        >
-          Logout
-        </Button>
-      </div>
     </section>
   );
 }

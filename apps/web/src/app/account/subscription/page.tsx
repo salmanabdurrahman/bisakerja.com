@@ -1,9 +1,8 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/page-header";
 import { BillingHistoryList } from "@/features/billing/components/billing-history-list";
 import { SubscriptionStatusCard } from "@/features/billing/components/subscription-status-card";
 import { UpgradeCTA } from "@/features/billing/components/upgrade-cta";
+import { AccountDashboardShell } from "@/features/profile/components/account-dashboard-shell";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
 import { APIRequestError } from "@/lib/utils/fetch-json";
@@ -28,16 +27,13 @@ export default async function AccountSubscriptionPage() {
   const viewState = await loadSubscriptionViewState(accessToken);
 
   return (
-    <AppShell>
-      <main className="grid gap-5" role="main">
-        <PageHeader
-          eyebrow="Monetization"
-          title="Subscription"
-          description="Track canonical subscription state, latest transactions, and available upgrade actions."
-        />
-        {renderSubscriptionView(viewState)}
-      </main>
-    </AppShell>
+    <AccountDashboardShell
+      eyebrow="Monetization"
+      title="Subscription"
+      description="Track canonical subscription state, latest transactions, and available upgrade actions."
+    >
+      {renderSubscriptionView(viewState)}
+    </AccountDashboardShell>
   );
 }
 

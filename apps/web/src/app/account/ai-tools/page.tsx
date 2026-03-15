@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/ui/page-header";
 import { AccountAIToolsClient } from "@/features/ai/components/account-ai-tools-client";
+import { AccountDashboardShell } from "@/features/profile/components/account-dashboard-shell";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
 import { APIRequestError } from "@/lib/utils/fetch-json";
@@ -23,19 +22,16 @@ export default async function AccountAIToolsPage() {
   const viewState = await loadAIToolsViewState(accessToken);
 
   return (
-    <AppShell>
-      <main className="grid gap-5" role="main">
-        <PageHeader
-          eyebrow="AI Copilot"
-          title="AI tools"
-          description="Use AI suggestions for search strategy, job-fit insights, and cover letter drafting."
-        />
-        <AccountAIToolsClient
-          subscriptionState={viewState.subscriptionState}
-          infoMessage={viewState.infoMessage}
-        />
-      </main>
-    </AppShell>
+    <AccountDashboardShell
+      eyebrow="AI Copilot"
+      title="AI tools"
+      description="Use AI suggestions for search strategy, job-fit insights, and cover letter drafting."
+    >
+      <AccountAIToolsClient
+        subscriptionState={viewState.subscriptionState}
+        infoMessage={viewState.infoMessage}
+      />
+    </AccountDashboardShell>
   );
 }
 

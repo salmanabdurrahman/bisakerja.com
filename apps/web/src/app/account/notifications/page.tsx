@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { AppShell } from "@/components/layout/app-shell";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/page-header";
 import { AccountNotificationsClient } from "@/features/growth/components/account-notifications-client";
+import { AccountDashboardShell } from "@/features/profile/components/account-dashboard-shell";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
 import type { APIPagination } from "@/lib/types/api";
@@ -27,16 +26,13 @@ export default async function AccountNotificationsPage() {
   const viewState = await loadNotificationsViewState(accessToken);
 
   return (
-    <AppShell>
-      <main className="grid gap-5" role="main">
-        <PageHeader
-          eyebrow="Growth"
-          title="Notifications"
-          description="Review delivery history, focus unread updates, and close the loop with read status."
-        />
-        {renderNotificationsView(viewState)}
-      </main>
-    </AppShell>
+    <AccountDashboardShell
+      eyebrow="Growth"
+      title="Notifications"
+      description="Review delivery history, focus unread updates, and close the loop with read status."
+    >
+      {renderNotificationsView(viewState)}
+    </AccountDashboardShell>
   );
 }
 

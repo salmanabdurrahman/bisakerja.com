@@ -1,6 +1,5 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/page-header";
+import { AccountDashboardShell } from "@/features/profile/components/account-dashboard-shell";
 import { AccountPreferencesClient } from "@/features/preferences/components/account-preferences-client";
 import {
   loadPreferencesDraftFromCookie,
@@ -100,46 +99,39 @@ export default async function AccountPreferencesPage() {
 
   if (!initialPreferences) {
     return (
-      <AppShell>
-        <main className="grid gap-5" role="main">
-          <PageHeader
-            eyebrow="Preferences"
-            title="Preferences"
-            description="Configure keywords, locations, and job types to power personalized matching."
-          />
-          <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
-            <h3 className="text-lg font-semibold text-red-900">
-              Failed to load preferences
-            </h3>
-            <p className="text-sm text-red-800">
-              Preferences data is currently unavailable. Please refresh the
-              page.
-            </p>
-            <ButtonLink href="/account/preferences" variant="danger">
-              Try again
-            </ButtonLink>
-          </section>
-        </main>
-      </AppShell>
+      <AccountDashboardShell
+        eyebrow="Preferences"
+        title="Preferences"
+        description="Configure keywords, locations, and job types to power personalized matching."
+      >
+        <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
+          <h3 className="text-lg font-semibold text-red-900">
+            Failed to load preferences
+          </h3>
+          <p className="text-sm text-red-800">
+            Preferences data is currently unavailable. Please refresh the page.
+          </p>
+          <ButtonLink href="/account/preferences" variant="danger">
+            Try again
+          </ButtonLink>
+        </section>
+      </AccountDashboardShell>
     );
   }
 
   return (
-    <AppShell>
-      <main className="grid gap-5" role="main">
-        <PageHeader
-          eyebrow="Preferences"
-          title="Preferences"
-          description="Configure keywords, locations, and job types to power personalized matching."
-        />
-        <AccountPreferencesClient
-          initialPreferences={initialPreferences}
-          initialUpdatedAt={initialUpdatedAt}
-          initialNotificationSettings={initialNotificationSettings}
-          subscriptionState={subscriptionState}
-          infoMessage={infoMessage}
-        />
-      </main>
-    </AppShell>
+    <AccountDashboardShell
+      eyebrow="Preferences"
+      title="Preferences"
+      description="Configure keywords, locations, and job types to power personalized matching."
+    >
+      <AccountPreferencesClient
+        initialPreferences={initialPreferences}
+        initialUpdatedAt={initialUpdatedAt}
+        initialNotificationSettings={initialNotificationSettings}
+        subscriptionState={subscriptionState}
+        infoMessage={infoMessage}
+      />
+    </AccountDashboardShell>
   );
 }

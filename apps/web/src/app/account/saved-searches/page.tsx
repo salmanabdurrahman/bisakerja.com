@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { AppShell } from "@/components/layout/app-shell";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/page-header";
 import { AccountSavedSearchesClient } from "@/features/growth/components/account-saved-searches-client";
+import { AccountDashboardShell } from "@/features/profile/components/account-dashboard-shell";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
 import { APIRequestError } from "@/lib/utils/fetch-json";
@@ -25,16 +24,13 @@ export default async function AccountSavedSearchesPage() {
   const viewState = await loadSavedSearchesViewState(accessToken);
 
   return (
-    <AppShell>
-      <main className="grid gap-5" role="main">
-        <PageHeader
-          eyebrow="Growth"
-          title="Saved searches"
-          description="Store high-signal query presets so you can reuse them in one click."
-        />
-        {renderSavedSearchesView(viewState)}
-      </main>
-    </AppShell>
+    <AccountDashboardShell
+      eyebrow="Growth"
+      title="Saved searches"
+      description="Store high-signal query presets so you can reuse them in one click."
+    >
+      {renderSavedSearchesView(viewState)}
+    </AccountDashboardShell>
   );
 }
 

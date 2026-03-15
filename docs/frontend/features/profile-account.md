@@ -2,14 +2,14 @@
 
 ## Objective
 
-Menyediakan halaman akun yang ringkas untuk menampilkan identitas user, status langganan, dan aksi account dasar yang relevan di MVP.
+Menyediakan halaman akun yang ringkas untuk menampilkan identitas user, status langganan, dan aksi account dasar yang relevan di MVP, dengan navigasi dashboard yang konsisten di seluruh area account.
 
 ## Scope MVP
 
 - Menampilkan profil user (`name`, `email`, `role`) dari session backend.
 - Menampilkan status langganan canonical (`free`, `pending_payment`, `premium_active`, `premium_expired`).
 - Menampilkan informasi masa aktif premium jika tersedia.
-- Menyediakan shortcut ke area account tools (preferences, growth, AI tools).
+- Menyediakan navigasi dashboard bersama di seluruh route account: `/account`, `/account/preferences`, `/account/saved-searches`, `/account/notifications`, `/account/subscription`, `/account/ai-tools`.
 - Logout client-side yang membersihkan session frontend.
 
 ## Out of Scope
@@ -23,6 +23,14 @@ Menyediakan halaman akun yang ringkas untuk menampilkan identitas user, status l
 - Halaman account hanya bisa diakses user dengan session valid.
 - Data profil diambil dari `GET /api/v1/auth/me`.
 - State langganan diambil dari `GET /api/v1/billing/status`; jika berbeda dengan indikator profil, frontend memprioritaskan `subscription_state` dari billing.
+- Semua halaman area account menampilkan navigation yang sama untuk:
+  - account overview,
+  - preferences,
+  - saved searches,
+  - notification center,
+  - subscription,
+  - AI tools,
+  - logout.
 - Status badge harus menggunakan istilah canonical tanpa sinonim tambahan:
   - `free`
   - `pending_payment`
@@ -82,6 +90,7 @@ Menyediakan halaman akun yang ringkas untuk menampilkan identitas user, status l
 
 - Halaman account menampilkan profil user login secara konsisten.
 - Badge status langganan selalu mengikuti `billing/status.subscription_state` jika tersedia.
+- Dashboard navigation shared tersedia konsisten di semua halaman account yang relevan.
 - Logout bekerja bersih tanpa menyisakan data session sensitif di client.
 - Error parsial (mis. billing gagal) tidak membuat halaman account unusable.
 - Saat refresh token gagal, user selalu diarahkan ulang ke login tanpa state account yang corrupt.
@@ -89,10 +98,11 @@ Menyediakan halaman akun yang ringkas untuk menampilkan identitas user, status l
 ## Output Implementasi Minimum
 
 - Route: `/account` (protected).
-- Komponen: `ProfileSummary`, `SubscriptionBadge`, `TransactionsSummary` (opsional MVP ringan).
+- Komponen: `ProfileSummary`, `SubscriptionBadge`, shared `AccountDashboardShell`/navigation, `TransactionsSummary` (opsional MVP ringan).
 - Service calls typed: `getMe`, `refreshToken`, `getBillingStatus`, `getBillingTransactions`.
 - Test minimum:
   - component/integration untuk `account_ready` dan `account_partial_error`,
+  - component test shared account navigation + logout,
   - integration test refresh gagal -> redirect login.
 
 ## Related Specs

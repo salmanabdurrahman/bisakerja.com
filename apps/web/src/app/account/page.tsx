@@ -1,6 +1,5 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/page-header";
+import { AccountDashboardShell } from "@/features/profile/components/account-dashboard-shell";
 import { AccountPageClient } from "@/features/profile/components/account-page-client";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { resolveServerAccessToken } from "@/lib/auth/server-session";
@@ -30,16 +29,13 @@ export default async function AccountPage() {
   const viewState = await loadAccountViewState(accessToken);
 
   return (
-    <AppShell>
-      <main className="grid gap-5" role="main">
-        <PageHeader
-          eyebrow="Account"
-          title="Account"
-          description="Review profile identity, premium entitlement, and shortcuts to growth settings."
-        />
-        {renderAccountView(viewState)}
-      </main>
-    </AppShell>
+    <AccountDashboardShell
+      eyebrow="Account"
+      title="Account"
+      description="Review profile identity, premium entitlement, and shortcuts to growth settings."
+    >
+      {renderAccountView(viewState)}
+    </AccountDashboardShell>
   );
 }
 

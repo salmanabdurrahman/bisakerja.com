@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AccountSubscriptionPage from "@/app/account/subscription/page";
@@ -76,6 +76,15 @@ describe("Account subscription page", () => {
     const page = await AccountSubscriptionPage();
     render(page);
 
+    const nav = screen.getByRole("navigation", {
+      name: "Account dashboard navigation",
+    });
+    expect(
+      within(nav).getByRole("link", { name: "Manage preferences" }),
+    ).toBeInTheDocument();
+    expect(
+      within(nav).getByRole("link", { name: "Subscription" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Current plan:")).toBeInTheDocument();
     expect(screen.getAllByText(/premium active/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/success - IDR 49,000/i)).toBeInTheDocument();
