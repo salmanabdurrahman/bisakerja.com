@@ -130,11 +130,23 @@ func (h *PreferencesHandler) UpdatePreferences(w http.ResponseWriter, r *http.Re
 				Code:    errcode.BadRequest,
 				Message: "keywords must contain 1..10 items with 2..50 chars",
 			}})
+		case errors.Is(err, identityapp.ErrLocationsRequired):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "locations",
+				Code:    errcode.BadRequest,
+				Message: "locations is required",
+			}})
 		case errors.Is(err, identityapp.ErrInvalidLocation):
 			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
 				Field:   "locations",
 				Code:    errcode.BadRequest,
-				Message: "locations must contain up to 5 items with 2..100 chars",
+				Message: "locations must contain 1..5 items with 2..100 chars",
+			}})
+		case errors.Is(err, identityapp.ErrJobTypesRequired):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "job_types",
+				Code:    errcode.BadRequest,
+				Message: "job_types is required",
 			}})
 		case errors.Is(err, identityapp.ErrInvalidJobType):
 			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{

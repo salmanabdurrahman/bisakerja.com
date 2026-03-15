@@ -22,7 +22,9 @@ var (
 	ErrInvalidToken         = errors.New("token is invalid")
 	ErrKeywordsRequired     = errors.New("keywords is required")
 	ErrInvalidKeyword       = errors.New("keywords contains invalid value")
+	ErrLocationsRequired    = errors.New("locations is required")
 	ErrInvalidLocation      = errors.New("locations contains invalid value")
+	ErrJobTypesRequired     = errors.New("job_types is required")
 	ErrInvalidJobType       = errors.New("job_types contains invalid value")
 	ErrInvalidSalaryMin     = errors.New("salary_min is invalid")
 	ErrInvalidAlertMode     = errors.New("alert_mode is invalid")
@@ -265,6 +267,12 @@ func (s *Service) UpdatePreferences(ctx context.Context, userID string, input Up
 	if !input.KeywordsSet {
 		return domain.Preferences{}, ErrKeywordsRequired
 	}
+	if !input.LocationsSet {
+		return domain.Preferences{}, ErrLocationsRequired
+	}
+	if !input.JobTypesSet {
+		return domain.Preferences{}, ErrJobTypesRequired
+	}
 
 	current, err := s.repository.GetPreferences(ctx, trimmedUserID)
 	if err != nil {
@@ -276,22 +284,14 @@ func (s *Service) UpdatePreferences(ctx context.Context, userID string, input Up
 		return domain.Preferences{}, ErrInvalidKeyword
 	}
 
-	locations := current.Locations
-	if input.LocationsSet {
-		normalizedLocations, locationErr := normalizeStringList(input.Locations, 0, 5, 2, 100)
-		if locationErr != nil {
-			return domain.Preferences{}, ErrInvalidLocation
-		}
-		locations = normalizedLocations
+	locations, locationErr := normalizeStringList(input.Locations, 1, 5, 2, 100)
+	if locationErr != nil {
+		return domain.Preferences{}, ErrInvalidLocation
 	}
 
-	jobTypes := current.JobTypes
-	if input.JobTypesSet {
-		normalizedJobTypes, jobTypeErr := normalizeJobTypes(input.JobTypes)
-		if jobTypeErr != nil {
-			return domain.Preferences{}, ErrInvalidJobType
-		}
-		jobTypes = normalizedJobTypes
+	jobTypes, jobTypeErr := normalizeJobTypes(input.JobTypes)
+	if jobTypeErr != nil {
+		return domain.Preferences{}, ErrInvalidJobType
 	}
 
 	salaryMin := current.SalaryMin
@@ -458,7 +458,7 @@ func normalizeStringList(values []string, minItems, maxItems, minLen, maxLen int
 }
 
 func normalizeJobTypes(values []string) ([]string, error) {
-	result, err := normalizeStringList(values, 0, 4, 4, 10)
+	result, err := normalizeStringList(values, 1, 4, 4, 10)
 	if err != nil {
 		return nil, err
 	}

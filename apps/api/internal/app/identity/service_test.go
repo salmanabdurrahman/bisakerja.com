@@ -108,10 +108,12 @@ func TestService_UpdatePreferences_NormalizesAndValidates(t *testing.T) {
 	}
 
 	_, err = service.UpdatePreferences(context.Background(), user.ID, UpdatePreferencesInput{
-		Keywords:    []string{"go"},
-		KeywordsSet: true,
-		JobTypes:    []string{"invalid-type"},
-		JobTypesSet: true,
+		Keywords:     []string{"go"},
+		KeywordsSet:  true,
+		Locations:    []string{"jakarta"},
+		LocationsSet: true,
+		JobTypes:     []string{"invalid-type"},
+		JobTypesSet:  true,
 	})
 	if !errors.Is(err, ErrInvalidJobType) {
 		t.Fatalf("expected invalid job type error, got %v", err)

@@ -156,7 +156,7 @@ export function PreferencesForm({
           onChange={(event) => setLocationsInput(event.target.value)}
           rows={2}
           className="bk-textarea"
-          placeholder="jakarta, remote"
+          placeholder="jakarta, bandung, remote"
         />
         {fieldErrors.locations ? (
           <span className="text-sm text-red-600">{fieldErrors.locations}</span>
@@ -194,7 +194,9 @@ export function PreferencesForm({
       </fieldset>
 
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-slate-700">Salary minimum</span>
+        <span className="font-medium text-slate-700">
+          Salary minimum (optional)
+        </span>
         <input
           type="number"
           min={0}
@@ -288,8 +290,8 @@ function validateNormalizedInput(input: UpdatePreferencesInput): FieldErrors {
     errors.keywords = "Each keyword must be 2-50 characters.";
   }
 
-  if (input.locations.length > 5) {
-    errors.locations = "Locations can contain at most 5 items.";
+  if (input.locations.length < 1 || input.locations.length > 5) {
+    errors.locations = "Locations must contain 1-5 items.";
   } else if (
     input.locations.some(
       (location) => location.length < 2 || location.length > 100,
@@ -298,8 +300,8 @@ function validateNormalizedInput(input: UpdatePreferencesInput): FieldErrors {
     errors.locations = "Each location must be 2-100 characters.";
   }
 
-  if (input.job_types.length > 4) {
-    errors.job_types = "Job types can contain at most 4 items.";
+  if (input.job_types.length < 1 || input.job_types.length > 4) {
+    errors.job_types = "At least 1 job type is required (max 4).";
   } else if (
     input.job_types.some(
       (jobType) => !preferenceJobTypeOptions.includes(jobType),
