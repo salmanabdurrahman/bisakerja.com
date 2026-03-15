@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +33,7 @@ func setupPreferencesHandler(t *testing.T) (*PreferencesHandler, *identityapp.Se
 	if err != nil {
 		t.Fatalf("register user: %v", err)
 	}
-	return NewPreferencesHandler(service), service, user.ID
+	return NewPreferencesHandler(service, slog.New(slog.NewTextHandler(io.Discard, nil))), service, user.ID
 }
 
 func TestPreferencesHandler_GetPreferences_DefaultPayload(t *testing.T) {

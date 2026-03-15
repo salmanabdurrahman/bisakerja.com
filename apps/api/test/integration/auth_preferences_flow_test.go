@@ -29,7 +29,7 @@ func TestAuthAndPreferencesFlow(t *testing.T) {
 		logger.New("test"),
 		router.Dependencies{
 			AuthHandler:        handler.NewAuthHandler(identityService),
-			PreferencesHandler: handler.NewPreferencesHandler(identityService),
+			PreferencesHandler: handler.NewPreferencesHandler(identityService, logger.New("test")),
 			AuthMiddleware:     middleware.NewAuthenticator(tokenManager),
 		},
 	)
@@ -107,7 +107,7 @@ func TestProtectedRoutes_RequireAuthentication(t *testing.T) {
 		logger.New("test"),
 		router.Dependencies{
 			AuthHandler:        handler.NewAuthHandler(identityService),
-			PreferencesHandler: handler.NewPreferencesHandler(identityService),
+			PreferencesHandler: handler.NewPreferencesHandler(identityService, logger.New("test")),
 			AuthMiddleware:     middleware.NewAuthenticator(tokenManager),
 		},
 	)

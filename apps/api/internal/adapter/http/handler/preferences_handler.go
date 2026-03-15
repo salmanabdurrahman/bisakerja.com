@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
@@ -15,6 +16,7 @@ import (
 // PreferencesHandler represents preferences handler.
 type PreferencesHandler struct {
 	service *identityapp.Service
+	logger  *slog.Logger
 }
 
 type updatePreferencesRequest struct {
@@ -30,8 +32,8 @@ type updateNotificationPreferencesRequest struct {
 }
 
 // NewPreferencesHandler creates a new preferences handler instance.
-func NewPreferencesHandler(service *identityapp.Service) *PreferencesHandler {
-	return &PreferencesHandler{service: service}
+func NewPreferencesHandler(service *identityapp.Service, logger *slog.Logger) *PreferencesHandler {
+	return &PreferencesHandler{service: service, logger: logger}
 }
 
 // GetPreferences returns preferences.
@@ -152,6 +154,7 @@ func (h *PreferencesHandler) UpdatePreferences(w http.ResponseWriter, r *http.Re
 				Message: "user not found",
 			}})
 		default:
+			h.logger.Error("update preferences failed", "error", err, "user_id", authUser.UserID, "request_id", requestID)
 			response.WriteError(w, http.StatusInternalServerError, "Internal server error", requestID, []response.ErrorItem{{
 				Code:    errcode.InternalServerError,
 				Message: "failed to update preferences",
@@ -224,6 +227,7 @@ func (h *PreferencesHandler) UpdateNotificationPreferences(w http.ResponseWriter
 				Message: "user not found",
 			}})
 		default:
+			h.logger.Error("update notification preferences failed", "error", err, "user_id", authUser.UserID, "request_id", requestID)
 			response.WriteError(w, http.StatusInternalServerError, "Internal server error", requestID, []response.ErrorItem{{
 				Code:    errcode.InternalServerError,
 				Message: "failed to update notification preferences",

@@ -119,7 +119,7 @@ func TestNew_RegistersAuthRoutesWhenDependencyProvided(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	identityService := identityapp.NewService(identityRepository, tokenManager)
 	authHandler := handler.NewAuthHandler(identityService)
-	preferencesHandler := handler.NewPreferencesHandler(identityService)
+	preferencesHandler := handler.NewPreferencesHandler(identityService, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 
 	appHandler := New(logger, Dependencies{

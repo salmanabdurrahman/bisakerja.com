@@ -27,7 +27,7 @@ func TestGrowthFeaturesFlow(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	identityService := identityapp.NewService(identityRepository, tokenManager)
 	authHandler := handler.NewAuthHandler(identityService)
-	preferencesHandler := handler.NewPreferencesHandler(identityService)
+	preferencesHandler := handler.NewPreferencesHandler(identityService, logger.New("test"))
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 
 	growthRepository := memory.NewGrowthRepository()

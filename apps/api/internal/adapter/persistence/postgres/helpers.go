@@ -87,3 +87,13 @@ func nullableInt64(value *int64) any {
 	}
 	return *value
 }
+
+// nonNilStrings returns a non-nil copy of s.
+// pgx serialises a nil []string as SQL NULL, which violates NOT NULL constraints
+// on array columns. Use this helper before passing string slices to queries.
+func nonNilStrings(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return append([]string(nil), s...)
+}

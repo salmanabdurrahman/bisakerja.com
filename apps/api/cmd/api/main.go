@@ -60,7 +60,7 @@ func main() {
 	identityRepository := postgres.NewIdentityRepository(dbPool)
 	identityService := identityapp.NewService(identityRepository, tokenManager)
 	authHandler := handler.NewAuthHandler(identityService)
-	preferencesHandler := handler.NewPreferencesHandler(identityService)
+	preferencesHandler := handler.NewPreferencesHandler(identityService, appLogger)
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 	growthRepository := postgres.NewGrowthRepository(dbPool)
 	growthService := growthapp.NewService(identityRepository, growthRepository)
