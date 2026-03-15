@@ -132,11 +132,9 @@ export function NotificationDigestControl({
       className="bk-card grid gap-4 p-5"
       aria-label="Notification digest control form"
     >
-      <h3 className="text-lg font-semibold text-slate-900">
-        Notification frequency settings
-      </h3>
+      <h3 className="bk-heading-card">Notification frequency settings</h3>
 
-      <label className="grid gap-1 text-sm">
+      <label className="grid gap-1 bk-label">
         <span className="font-medium text-slate-700">Alert mode</span>
         <select
           value={alertMode}
@@ -152,7 +150,7 @@ export function NotificationDigestControl({
       </label>
 
       {isDigestMode ? (
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 bk-label">
           <span className="font-medium text-slate-700">
             Digest hour (optional, 0-23)
           </span>
@@ -168,7 +166,7 @@ export function NotificationDigestControl({
           {digestHourError ? (
             <span className="text-sm text-red-600">{digestHourError}</span>
           ) : (
-            <span className="text-xs text-gray-500">
+            <span className="bk-body-sm text-gray-500">
               If left empty, uses the default hour `9`.
             </span>
           )}
@@ -184,14 +182,14 @@ export function NotificationDigestControl({
           {isSubmitting ? "Saving..." : "Save notification settings"}
         </Button>
         {lastUpdatedAt ? (
-          <span className="text-sm text-slate-500">
+          <span className="bk-body-sm text-[#777777]">
             Updated at: {new Date(lastUpdatedAt).toLocaleString("en-US")}
           </span>
         ) : null}
       </div>
 
       {formMessage ? (
-        <p className="text-sm text-gray-700" role="status" aria-live="polite">
+        <p className="bk-body text-gray-700" role="status" aria-live="polite">
           {formMessage}
         </p>
       ) : null}

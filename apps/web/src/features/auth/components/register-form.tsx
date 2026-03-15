@@ -57,7 +57,7 @@ export function RegisterForm() {
       className="bk-card grid gap-5 p-6 sm:p-8"
       aria-label="Register form"
     >
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Name</span>
         <input
           type="text"
@@ -73,7 +73,7 @@ export function RegisterForm() {
         ) : null}
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Email</span>
         <input
           type="email"
@@ -89,7 +89,7 @@ export function RegisterForm() {
         ) : null}
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Password</span>
         <input
           type="password"
@@ -116,7 +116,7 @@ export function RegisterForm() {
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
-      <p className="text-[14px] text-[#666666]">
+      <p className="bk-body">
         Already have an account?{" "}
         <Link href="/auth/login" className="bk-link text-black underline">
           Sign in here

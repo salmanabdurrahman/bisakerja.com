@@ -31,7 +31,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | M1 | Fondasi PostgreSQL backend | ✅ Complete | Adapter PostgreSQL backend + wiring runtime + queue persistence sudah aktif |
 | M2 | Comments/docstrings quality pass | ✅ Complete | TSDoc untuk exported service/lib + doc comment backend exported API sudah dipenuhi |
 | M3 | English-only copy migration | ✅ Complete | UI copy, feedback states, dan test assertions frontend sudah dimigrasikan ke English |
-| M4 | SaaS redesign + hardening growth | ✅ Complete | Redesign SaaS pada halaman auth/jobs/account/pricing + web vitals observability + growth e2e coverage + refinement visual pass ala Paper (hero/nav/footer + copy cleanup non-teknis) |
+| M4 | SaaS redesign + hardening growth | ✅ Complete | Redesign SaaS pada halaman auth/jobs/account/pricing + web vitals observability + growth e2e coverage + refinement visual pass ala Paper (hero/nav/footer + copy cleanup non-teknis) + typography scale consistency pass pada shared UI |
 | M5 | Phase 4 backend follow-up | 🟡 In Progress | Coupon-enabled checkout UX + discovery hardening (sanitized job description rendering + salary fallback normalization) |
 | M6 | AI experience layer follow-up | 🟡 In Progress | Backend increment 1-3 aktif dan frontend increment 1 sudah berjalan di `/account/ai-tools` (assistant + job-fit + cover-letter + usage meter); interview prep masih planned |
 

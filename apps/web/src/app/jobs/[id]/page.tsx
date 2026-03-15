@@ -87,28 +87,31 @@ function renderDetailView(viewState: JobDetailViewState, backHref: string) {
 
       <Card>
         <CardHeader className="gap-2">
-          <CardTitle className="text-2xl">{job.title}</CardTitle>
-          <CardDescription className="text-sm text-slate-700">
+          <CardTitle>{job.title}</CardTitle>
+          <CardDescription className="bk-body">
             {job.company} · {job.location}
           </CardDescription>
-          <p className="text-sm font-medium text-slate-700">
-            Salary: {formattedSalary || "Not specified"}
+          <p className="bk-body">
+            Salary:{" "}
+            <span className="font-medium text-black">
+              {formattedSalary || "Not specified"}
+            </span>
           </p>
         </CardHeader>
         <CardContent className="grid gap-4">
           {sanitizedDescription ? (
             richDescription ? (
               <div
-                className="job-description-content text-sm text-slate-700 [&_a]:underline [&_a]:underline-offset-2 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+                className="job-description-content bk-body [&_a]:underline [&_a]:underline-offset-2 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
                 dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
               />
             ) : (
-              <p className="job-description-content whitespace-pre-wrap text-sm text-slate-700">
+              <p className="job-description-content bk-body whitespace-pre-wrap">
                 {sanitizedDescription}
               </p>
             )
           ) : (
-            <p className="job-description-content text-sm text-slate-500">
+            <p className="job-description-content bk-body-sm text-[#888888]">
               Description is not available for this listing.
             </p>
           )}

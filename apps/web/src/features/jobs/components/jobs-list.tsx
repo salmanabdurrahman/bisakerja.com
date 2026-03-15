@@ -21,11 +21,11 @@ export function JobsList({ jobs, detailBaseHref }: JobsListProps) {
               <CardTitle className="text-[20px] sm:text-[24px] mt-2">
                 {job.title}
               </CardTitle>
-              <p className="text-[16px] text-black">{job.company}</p>
-              <p className="text-[14px] text-[#666666]">{job.location}</p>
+              <p className="bk-body text-black">{job.company}</p>
+              <p className="bk-body">{job.location}</p>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-[14px] text-[#666666]">
+              <p className="bk-body">
                 Salary:{" "}
                 <span className="text-black">
                   {formatSalaryDisplay(job.salary_range) || "Not specified"}

@@ -79,10 +79,10 @@ function renderSubscriptionView(viewState: SubscriptionViewState) {
   if (viewState.kind === "error") {
     return (
       <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
-        <h3 className="text-lg font-semibold text-red-900">
+        <h3 className="bk-heading-card text-red-900">
           Subscription data unavailable
         </h3>
-        <p className="text-sm text-red-800">
+        <p className="bk-body text-red-800">
           Subscription status could not be loaded. Please try again shortly.
         </p>
         <ButtonLink href="/account/subscription" variant="danger">

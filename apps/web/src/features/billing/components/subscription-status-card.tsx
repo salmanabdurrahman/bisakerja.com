@@ -50,20 +50,16 @@ export function SubscriptionStatusCard({
 }: SubscriptionStatusCardProps) {
   return (
     <section className="bk-card grid gap-4 p-6 sm:p-8">
-      <h3 className="text-[24px] font-normal text-black">
-        Subscription overview
-      </h3>
-      <p className="text-[14px] text-[#666666]">
+      <h3 className="bk-heading-card">Subscription overview</h3>
+      <p className="bk-body">
         Current plan:{" "}
         <span className="rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3 py-1 font-medium text-black">
           {subscriptionLabels[subscriptionState]}
         </span>
       </p>
-      <p className="text-[14px] text-[#666666]">
-        {subscriptionDescriptions[subscriptionState]}
-      </p>
+      <p className="bk-body">{subscriptionDescriptions[subscriptionState]}</p>
       {lastTransactionStatus ? (
-        <p className="text-[14px] text-[#666666]">
+        <p className="bk-body">
           Last transaction status:{" "}
           <span className="font-medium text-black">
             {lastTransactionStatus}
@@ -71,14 +67,14 @@ export function SubscriptionStatusCard({
         </p>
       ) : null}
       {premiumExpiredAt ? (
-        <p className="text-[14px] text-[#666666]">
+        <p className="bk-body">
           Premium expiry:{" "}
           <span className="text-black">
             {new Date(premiumExpiredAt).toLocaleString("en-US")}
           </span>
         </p>
       ) : null}
-      <p className="text-[12px] font-medium text-[#888888] uppercase tracking-wider mt-2">
+      <p className="bk-body-sm mt-2 font-medium uppercase tracking-wider text-[#888888]">
         Status sync: {sourceLabel[source]}
       </p>
     </section>

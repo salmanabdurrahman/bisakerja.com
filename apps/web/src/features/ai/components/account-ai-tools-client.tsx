@@ -278,14 +278,14 @@ export function AccountAIToolsClient({
   return (
     <section className="grid gap-5">
       {infoMessage ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 bk-body text-amber-800">
           {infoMessage}
         </p>
       ) : null}
 
       {!isPremiumActive ? (
         <section className="bk-card grid gap-3 border-[#E5E5E5] bg-[#F9F9F9] p-5 sm:p-6">
-          <p className="text-sm font-medium text-black">
+          <p className="bk-body font-medium text-black">
             Upgrade to premium to unlock job-fit insights and full cover letter
             drafting.
           </p>
@@ -299,7 +299,7 @@ export function AccountAIToolsClient({
 
       <section className="bk-card grid gap-4 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-[24px] font-normal text-black">AI usage today</h3>
+          <h3 className="bk-heading-card">AI usage today</h3>
           <Button
             type="button"
             variant="outline"
@@ -330,8 +330,8 @@ export function AccountAIToolsClient({
       </section>
 
       <section className="bk-card grid gap-4 p-5 sm:p-6">
-        <h3 className="text-[24px] font-normal text-black">Search assistant</h3>
-        <p className="text-[14px] text-[#666666]">
+        <h3 className="bk-heading-card">Search assistant</h3>
+        <p className="bk-body">
           Turn rough ideas into a better query and filter strategy before
           searching jobs.
         </p>
@@ -340,7 +340,7 @@ export function AccountAIToolsClient({
           className="grid gap-3"
           aria-label="Search assistant form"
         >
-          <label className="grid gap-1 text-sm">
+          <label className="grid gap-1 bk-label">
             <span className="font-medium text-slate-700">Prompt</span>
             <textarea
               value={assistantPrompt}
@@ -351,7 +351,7 @@ export function AccountAIToolsClient({
             />
           </label>
           <div className="grid gap-3 md:grid-cols-3">
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">
                 Location (optional)
               </span>
@@ -362,7 +362,7 @@ export function AccountAIToolsClient({
                 className="bk-input"
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">
                 Job types (optional)
               </span>
@@ -373,7 +373,7 @@ export function AccountAIToolsClient({
                 className="bk-input"
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">
                 Salary minimum (optional)
               </span>
@@ -402,7 +402,7 @@ export function AccountAIToolsClient({
         </form>
 
         {assistantResult ? (
-          <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 text-sm text-[#444444]">
+          <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 bk-body text-[#444444]">
             <p>
               Suggested query:{" "}
               <span className="font-medium text-black">
@@ -410,7 +410,7 @@ export function AccountAIToolsClient({
               </span>
             </p>
             <p>{assistantResult.summary}</p>
-            <p className="text-xs text-[#666666]">
+            <p className="bk-body-sm text-[#666666]">
               Filters: locations{" "}
               {assistantResult.suggested_filters.locations.length > 0
                 ? assistantResult.suggested_filters.locations.join(", ")
@@ -425,8 +425,8 @@ export function AccountAIToolsClient({
       </section>
 
       <section className="bk-card grid gap-4 p-5 sm:p-6">
-        <h3 className="text-[24px] font-normal text-black">Job fit summary</h3>
-        <p className="text-[14px] text-[#666666]">
+        <h3 className="bk-heading-card">Job fit summary</h3>
+        <p className="bk-body">
           Estimate how well your profile aligns with one job and get practical
           next steps.
         </p>
@@ -436,7 +436,7 @@ export function AccountAIToolsClient({
           aria-label="Job fit summary form"
         >
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">Job ID</span>
               <input
                 value={jobFitJobID}
@@ -446,7 +446,7 @@ export function AccountAIToolsClient({
                 required
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">
                 Focus (optional)
               </span>
@@ -473,7 +473,7 @@ export function AccountAIToolsClient({
         </form>
 
         {jobFitResult ? (
-          <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 text-sm text-[#444444]">
+          <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 bk-body text-[#444444]">
             <p>
               Fit score:{" "}
               <span className="font-medium text-black">
@@ -485,13 +485,13 @@ export function AccountAIToolsClient({
               </span>
             </p>
             <p>{jobFitResult.summary}</p>
-            <p className="text-xs text-[#666666]">
+            <p className="bk-body-sm text-[#666666]">
               Strengths: {joinOrFallback(jobFitResult.strengths)}
             </p>
-            <p className="text-xs text-[#666666]">
+            <p className="bk-body-sm text-[#666666]">
               Gaps: {joinOrFallback(jobFitResult.gaps)}
             </p>
-            <p className="text-xs text-[#666666]">
+            <p className="bk-body-sm text-[#666666]">
               Next actions: {joinOrFallback(jobFitResult.next_actions)}
             </p>
           </div>
@@ -499,10 +499,8 @@ export function AccountAIToolsClient({
       </section>
 
       <section className="bk-card grid gap-4 p-5 sm:p-6">
-        <h3 className="text-[24px] font-normal text-black">
-          Cover letter draft
-        </h3>
-        <p className="text-[14px] text-[#666666]">
+        <h3 className="bk-heading-card">Cover letter draft</h3>
+        <p className="bk-body">
           Generate a role-specific draft and key talking points that you can
           edit before sending.
         </p>
@@ -512,7 +510,7 @@ export function AccountAIToolsClient({
           aria-label="Cover letter draft form"
         >
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">Job ID</span>
               <input
                 value={coverLetterJobID}
@@ -522,7 +520,7 @@ export function AccountAIToolsClient({
                 required
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1 bk-label">
               <span className="font-medium text-slate-700">Tone</span>
               <select
                 value={coverLetterTone}
@@ -540,7 +538,7 @@ export function AccountAIToolsClient({
             </label>
           </div>
 
-          <label className="grid gap-1 text-sm">
+          <label className="grid gap-1 bk-label">
             <span className="font-medium text-slate-700">
               Highlights (optional, one per line)
             </span>
@@ -571,8 +569,8 @@ export function AccountAIToolsClient({
         </form>
 
         {coverLetterResult ? (
-          <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 text-sm text-[#444444]">
-            <p className="text-xs text-[#666666]">
+          <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 bk-body text-[#444444]">
+            <p className="bk-body-sm text-[#666666]">
               Tone:{" "}
               <span className="font-medium text-black">
                 {coverLetterResult.tone}
@@ -581,7 +579,7 @@ export function AccountAIToolsClient({
             <p className="whitespace-pre-wrap leading-relaxed">
               {coverLetterResult.draft}
             </p>
-            <p className="text-xs text-[#666666]">
+            <p className="bk-body-sm text-[#666666]">
               Key points: {joinOrFallback(coverLetterResult.key_points)}
             </p>
           </div>
@@ -600,21 +598,21 @@ interface UsageCardProps {
 function UsageCard({ label, usage, isLoading }: UsageCardProps) {
   return (
     <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3">
-      <p className="text-[13px] font-medium text-black">{label}</p>
+      <p className="bk-label">{label}</p>
       {isLoading ? (
-        <p className="text-sm text-[#666666]">Loading...</p>
+        <p className="bk-body">Loading...</p>
       ) : usage ? (
         <>
-          <p className="text-sm text-[#555555]">
+          <p className="bk-body text-[#555555]">
             {usage.remaining} / {usage.daily_quota} remaining
           </p>
-          <p className="text-xs text-[#777777]">Tier: {usage.tier}</p>
-          <p className="text-xs text-[#777777]">
+          <p className="bk-body-sm text-[#777777]">Tier: {usage.tier}</p>
+          <p className="bk-body-sm text-[#777777]">
             Reset: {new Date(usage.reset_at).toLocaleString("en-US")}
           </p>
         </>
       ) : (
-        <p className="text-sm text-[#666666]">No usage data.</p>
+        <p className="bk-body">No usage data.</p>
       )}
     </div>
   );
@@ -623,7 +621,7 @@ function UsageCard({ label, usage, isLoading }: UsageCardProps) {
 function StatusMessage({ text }: { text: string }) {
   return (
     <p
-      className="rounded-xl border border-[#E5E5E5] bg-[#F9F9F9] px-3 py-2 text-sm text-[#555555]"
+      className="rounded-xl border border-[#E5E5E5] bg-[#F9F9F9] px-3 py-2 bk-body text-[#555555]"
       role="status"
       aria-live="polite"
     >

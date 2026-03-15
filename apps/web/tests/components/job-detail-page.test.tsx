@@ -41,7 +41,8 @@ describe("Job detail page", () => {
 
     expect(screen.getByText("Build APIs safely.")).toBeInTheDocument();
     expect(screen.getByText("Write tests")).toBeInTheDocument();
-    expect(screen.getByText("Salary: Rp 10.000.000")).toBeInTheDocument();
+    expect(screen.getByText("Salary:")).toBeInTheDocument();
+    expect(screen.getByText("Rp 10.000.000")).toBeInTheDocument();
     expect(container.querySelector("script")).not.toBeInTheDocument();
     expect(
       container.querySelector(".job-description-content")?.innerHTML,

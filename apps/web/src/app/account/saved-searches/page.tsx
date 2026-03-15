@@ -55,10 +55,10 @@ function renderSavedSearchesView(viewState: SavedSearchesPageViewState) {
   if (viewState.kind === "error") {
     return (
       <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
-        <h3 className="text-lg font-semibold text-red-900">
+        <h3 className="bk-heading-card text-red-900">
           Failed to load saved searches
         </h3>
-        <p className="text-sm text-red-800">
+        <p className="bk-body text-red-800">
           Saved searches are currently unavailable. Please refresh the page.
         </p>
         <ButtonLink href="/account/saved-searches" variant="danger">

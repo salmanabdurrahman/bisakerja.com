@@ -102,10 +102,8 @@ export function AccountNotificationsClient({
   return (
     <section className="bk-card grid gap-4 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-slate-900">
-          Notification center
-        </h3>
-        <label className="inline-flex items-center gap-2 text-sm">
+        <h3 className="bk-heading-card">Notification center</h3>
+        <label className="inline-flex items-center gap-2 bk-label">
           <input
             type="checkbox"
             checked={unreadOnly}
@@ -121,7 +119,7 @@ export function AccountNotificationsClient({
 
       {statusMessage ? (
         <p
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 bk-body text-[#555555]"
           role="status"
           aria-live="polite"
         >
@@ -130,7 +128,7 @@ export function AccountNotificationsClient({
       ) : null}
 
       {notifications.length === 0 ? (
-        <p className="text-sm text-slate-600">
+        <p className="bk-body">
           No notifications found for the current filter.
         </p>
       ) : (
@@ -140,20 +138,20 @@ export function AccountNotificationsClient({
             return (
               <li
                 key={notification.id}
-                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
               >
-                <p className="font-medium text-slate-900">
+                <p className="bk-body font-medium text-black">
                   Job ID: {notification.job_id}
                 </p>
-                <p className="text-slate-700">
+                <p className="bk-body text-[#555555]">
                   Channel: {notification.channel} · Status:{" "}
                   {notification.status}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="bk-body-sm text-[#777777]">
                   Sent at:{" "}
                   {new Date(notification.sent_at).toLocaleString("en-US")}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="bk-body-sm text-[#777777]">
                   {notification.read_at
                     ? `Read at: ${new Date(notification.read_at).toLocaleString(
                         "en-US",
@@ -189,7 +187,7 @@ export function AccountNotificationsClient({
         >
           Prev
         </Button>
-        <p className="text-sm text-slate-600">
+        <p className="bk-body">
           Page {currentPage} / {totalPages}
         </p>
         <Button

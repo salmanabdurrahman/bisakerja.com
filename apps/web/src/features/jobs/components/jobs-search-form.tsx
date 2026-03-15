@@ -52,7 +52,7 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
       className="bk-card grid gap-5 p-6 sm:p-8 md:grid-cols-2"
       aria-label="Jobs search form"
     >
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Keyword</span>
         <input
           type="text"
@@ -63,7 +63,7 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         />
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Location</span>
         <input
           type="text"
@@ -74,7 +74,7 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         />
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Salary minimum</span>
         <input
           type="number"
@@ -86,7 +86,7 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         />
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Source</span>
         <select
           value={source}
@@ -100,7 +100,7 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         </select>
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Sort</span>
         <select
           value={sort}
@@ -114,7 +114,7 @@ export function JobsSearchForm({ state }: JobsSearchFormProps) {
         </select>
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Limit</span>
         <select
           value={limit}

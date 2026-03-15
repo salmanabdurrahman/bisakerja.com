@@ -28,15 +28,7 @@ export function CardTitle({
   className,
   ...props
 }: HTMLAttributes<HTMLHeadingElement>) {
-  return (
-    <h3
-      className={cn(
-        "text-[24px] font-normal tracking-tight text-black",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <h3 className={cn("bk-heading-card", className)} {...props} />;
 }
 
 /**

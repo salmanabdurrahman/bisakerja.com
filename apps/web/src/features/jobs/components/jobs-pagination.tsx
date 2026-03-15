@@ -19,7 +19,7 @@ export function JobsPagination({
 }: JobsPaginationProps) {
   if (totalPages <= 1) {
     return (
-      <p className="text-sm text-slate-600">
+      <p className="bk-body">
         {totalRecords} jobs found. Showing page {state.page}.
       </p>
     );
@@ -28,7 +28,7 @@ export function JobsPagination({
   return (
     <nav
       aria-label="Jobs pagination"
-      className="bk-card flex flex-wrap items-center justify-between gap-3 p-4 text-sm"
+      className="bk-card flex flex-wrap items-center justify-between gap-3 p-4"
     >
       <Link
         href={buildPaginationHref(state, state.page - 1)}
@@ -41,7 +41,7 @@ export function JobsPagination({
       >
         Previous
       </Link>
-      <span className="text-slate-600">
+      <span className="bk-body">
         Page {state.page} of {totalPages} ({totalRecords} jobs)
       </span>
       <Link

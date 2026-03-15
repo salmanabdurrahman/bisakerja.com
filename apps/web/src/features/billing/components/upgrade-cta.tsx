@@ -125,8 +125,8 @@ export function UpgradeCTA({
 
   return (
     <section className="bk-card grid gap-4 p-6 sm:p-8">
-      <h3 className="text-[24px] font-normal text-black">Upgrade premium</h3>
-      <p className="text-[14px] text-[#666666]">
+      <h3 className="bk-heading-card">Upgrade premium</h3>
+      <p className="bk-body">
         Start or continue checkout to unlock premium features and faster
         notifications.
       </p>
@@ -134,7 +134,7 @@ export function UpgradeCTA({
         <div className="grid gap-2">
           <label
             htmlFor="checkout-coupon-code"
-            className="text-[12px] font-medium uppercase tracking-wider text-[#666666]"
+            className="bk-body-sm font-medium uppercase tracking-wider text-[#666666]"
           >
             Coupon code (optional)
           </label>
@@ -148,14 +148,14 @@ export function UpgradeCTA({
             className="h-11 rounded-2xl border border-[#E5E5E5] bg-white px-4 text-[14px] text-black placeholder:text-[#999999] focus:border-black focus:outline-none"
             disabled={isSubmitting || hasPendingContinueLink}
           />
-          <p className="text-[12px] text-[#888888]">
+          <p className="bk-body-sm text-[#888888]">
             Coupon is validated before checkout starts.
           </p>
         </div>
       ) : null}
       {checkoutAmountSummary ? (
-        <div className="grid gap-1 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 text-[13px] text-[#555555]">
-          <p className="text-[12px] font-medium uppercase tracking-wider text-[#777777]">
+        <div className="grid gap-1 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 bk-body-sm text-[#555555]">
+          <p className="bk-body-sm font-medium uppercase tracking-wider text-[#777777]">
             Latest checkout summary
           </p>
           <p>
@@ -184,7 +184,7 @@ export function UpgradeCTA({
       </Button>
       {message ? (
         <p
-          className="rounded-2xl border border-[#E5E5E5] bg-[#F4F4F4] px-4 py-3 text-[14px] text-[#666666]"
+          className="rounded-2xl border border-[#E5E5E5] bg-[#F4F4F4] px-4 py-3 bk-body"
           role="status"
           aria-live="polite"
         >

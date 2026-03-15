@@ -91,12 +91,12 @@ export function LoginForm({
       aria-label="Login form"
     >
       {successMessage ? (
-        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-800">
+        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 bk-body text-emerald-800">
           {successMessage}
         </p>
       ) : null}
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Email</span>
         <input
           type="email"
@@ -112,7 +112,7 @@ export function LoginForm({
         ) : null}
       </label>
 
-      <label className="grid gap-2 text-[14px]">
+      <label className="grid gap-2 bk-label">
         <span className="font-medium text-black">Password</span>
         <input
           type="password"
@@ -139,7 +139,7 @@ export function LoginForm({
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
 
-      <p className="text-[14px] text-[#666666]" aria-live="polite">
+      <p className="bk-body" aria-live="polite">
         Don&apos;t have an account?{" "}
         <Link href="/auth/register" className="bk-link text-black underline">
           Register here

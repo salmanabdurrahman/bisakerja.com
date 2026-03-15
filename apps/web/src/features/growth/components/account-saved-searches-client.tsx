@@ -129,11 +129,9 @@ export function AccountSavedSearchesClient({
         className="bk-card grid gap-3 p-5"
         aria-label="Saved search form"
       >
-        <h3 className="text-lg font-semibold text-slate-900">
-          Add saved search
-        </h3>
+        <h3 className="bk-heading-card">Add saved search</h3>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 bk-label">
           <span className="font-medium text-slate-700">Query</span>
           <input
             type="text"
@@ -146,7 +144,7 @@ export function AccountSavedSearchesClient({
         </label>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="grid gap-1 text-sm">
+          <label className="grid gap-1 bk-label">
             <span className="font-medium text-slate-700">
               Location (optional)
             </span>
@@ -159,7 +157,7 @@ export function AccountSavedSearchesClient({
             />
           </label>
 
-          <label className="grid gap-1 text-sm">
+          <label className="grid gap-1 bk-label">
             <span className="font-medium text-slate-700">
               Source (optional)
             </span>
@@ -179,7 +177,7 @@ export function AccountSavedSearchesClient({
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm">
+          <label className="grid gap-1 bk-label">
             <span className="font-medium text-slate-700">
               Salary minimum (optional)
             </span>
@@ -193,7 +191,7 @@ export function AccountSavedSearchesClient({
             />
           </label>
 
-          <label className="grid gap-1 text-sm">
+          <label className="grid gap-1 bk-label">
             <span className="font-medium text-slate-700">Alert frequency</span>
             <select
               value={frequencyInput}
@@ -217,7 +215,7 @@ export function AccountSavedSearchesClient({
 
         {statusMessage ? (
           <p
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 bk-body text-[#555555]"
             role="status"
             aria-live="polite"
           >
@@ -227,11 +225,9 @@ export function AccountSavedSearchesClient({
       </form>
 
       <section className="bk-card grid gap-3 p-5">
-        <h3 className="text-lg font-semibold text-slate-900">
-          Saved searches list
-        </h3>
+        <h3 className="bk-heading-card">Saved searches list</h3>
         {savedSearches.length === 0 ? (
-          <p className="text-sm text-slate-600">
+          <p className="bk-body">
             No saved searches yet. Add your first query.
           </p>
         ) : (
@@ -239,10 +235,10 @@ export function AccountSavedSearchesClient({
             {savedSearches.map((item) => (
               <li
                 key={item.id}
-                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
               >
-                <p className="font-medium">{item.query}</p>
-                <p className="text-xs text-slate-500">
+                <p className="bk-body font-medium text-black">{item.query}</p>
+                <p className="bk-body-sm text-[#777777]">
                   {item.location
                     ? `Location: ${item.location}`
                     : "Location: all"}
@@ -252,7 +248,7 @@ export function AccountSavedSearchesClient({
                   Frequency: {item.frequency}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs">
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-1 bk-body-sm">
                     {item.is_active ? "active" : "inactive"}
                   </span>
                   <Button

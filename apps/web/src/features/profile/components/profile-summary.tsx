@@ -7,18 +7,18 @@ interface ProfileSummaryProps {
 export function ProfileSummary({ profile }: ProfileSummaryProps) {
   return (
     <section className="bk-card p-6 sm:p-8" aria-label="Profile summary">
-      <h3 className="text-lg font-semibold text-slate-900">Profile</h3>
-      <dl className="mt-3 grid gap-3 text-sm text-slate-700">
+      <h3 className="bk-heading-card">Profile</h3>
+      <dl className="mt-3 grid gap-3 bk-body text-[#555555]">
         <div>
-          <dt className="font-medium text-slate-800">Name</dt>
+          <dt className="font-medium text-black">Name</dt>
           <dd>{profile.name || "-"}</dd>
         </div>
         <div>
-          <dt className="font-medium text-slate-800">Email</dt>
+          <dt className="font-medium text-black">Email</dt>
           <dd>{profile.email}</dd>
         </div>
         <div>
-          <dt className="font-medium text-slate-800">Role</dt>
+          <dt className="font-medium text-black">Role</dt>
           <dd>{profile.role}</dd>
         </div>
       </dl>

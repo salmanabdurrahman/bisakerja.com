@@ -15,8 +15,8 @@ export function JobsStatePanel({
 }: JobsStatePanelProps) {
   return (
     <section className="bk-card-muted p-5" aria-live="polite">
-      <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{description}</p>
+      <h2 className="bk-heading-card">{title}</h2>
+      <p className="mt-2 bk-body">{description}</p>
       {actionHref && actionLabel ? (
         <ButtonLink
           href={actionHref}

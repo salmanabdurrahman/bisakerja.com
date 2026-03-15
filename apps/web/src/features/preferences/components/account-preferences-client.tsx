@@ -53,7 +53,7 @@ export function AccountPreferencesClient({
     <section className="grid gap-4">
       <NotificationEntitlementBanner subscriptionState={subscriptionState} />
       {infoMessage ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 bk-body text-amber-800">
           {infoMessage}
         </p>
       ) : null}

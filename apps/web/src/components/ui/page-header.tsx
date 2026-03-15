@@ -22,21 +22,11 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header className={cn("grid gap-5 mb-12", className)}>
-      {eyebrow ? (
-        <p className="text-[14px] font-medium uppercase tracking-[0.18em] text-[#888888]">
-          {eyebrow}
-        </p>
-      ) : null}
+      {eyebrow ? <p className="bk-eyebrow">{eyebrow}</p> : null}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
         <div className="max-w-3xl grid gap-4">
-          <h2 className="text-[40px] sm:text-[48px] font-normal tracking-tight text-black font-display leading-[1.1]">
-            {title}
-          </h2>
-          {description ? (
-            <p className="text-[16px] sm:text-[18px] font-normal text-[#666666] leading-relaxed">
-              {description}
-            </p>
-          ) : null}
+          <h2 className="bk-heading-page">{title}</h2>
+          {description ? <p className="bk-body-lg">{description}</p> : null}
         </div>
         {actions ? (
           <div className="flex flex-wrap gap-3 mt-4 lg:mt-0">{actions}</div>

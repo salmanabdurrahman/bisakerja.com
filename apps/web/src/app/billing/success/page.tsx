@@ -76,10 +76,10 @@ function renderVerifyState(state: VerifyState) {
   if (state.kind === "verify_error") {
     return (
       <section className="bk-card grid gap-3 border-red-200 bg-red-50 p-5">
-        <h3 className="text-lg font-semibold text-red-900">
+        <h3 className="bk-heading-card text-red-900">
           Verification unavailable
         </h3>
-        <p className="text-sm text-red-800">
+        <p className="bk-body text-red-800">
           We are unable to verify your payment status right now.
         </p>
         <ButtonLink href="/billing/success" variant="danger">
@@ -97,7 +97,7 @@ function renderVerifyState(state: VerifyState) {
           lastTransactionStatus={state.status.last_transaction_status}
           premiumExpiredAt={state.status.premium_expired_at}
         />
-        <p className="text-sm text-emerald-700">
+        <p className="bk-body text-emerald-700">
           Payment verified. Your premium subscription is now active.
         </p>
         <ButtonLink href="/account/subscription" variant="secondary" size="sm">
@@ -115,7 +115,7 @@ function renderVerifyState(state: VerifyState) {
           lastTransactionStatus={state.status.last_transaction_status}
           premiumExpiredAt={state.status.premium_expired_at}
         />
-        <p className="text-sm text-amber-700">
+        <p className="bk-body text-amber-700">
           Payment has not completed yet. You can start a new checkout.
         </p>
         <ButtonLink href="/pricing" variant="outline" size="sm">
@@ -132,7 +132,7 @@ function renderVerifyState(state: VerifyState) {
         lastTransactionStatus={state.status.last_transaction_status}
         premiumExpiredAt={state.status.premium_expired_at}
       />
-      <p className="text-sm text-amber-700">
+      <p className="bk-body text-amber-700">
         Payment is still being processed. Check the status again shortly.
       </p>
       <ButtonLink href="/billing/success" variant="outline" size="sm">

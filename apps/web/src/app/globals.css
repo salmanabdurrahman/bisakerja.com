@@ -69,6 +69,46 @@ h6 {
     @apply text-xl font-normal tracking-tight text-black;
   }
 
+  .bk-eyebrow {
+    @apply text-[13px] sm:text-[14px] font-medium uppercase tracking-[0.16em] text-[#888888];
+  }
+
+  .bk-heading-page {
+    @apply text-[36px] sm:text-[44px] lg:text-[48px] font-normal tracking-tight leading-[1.1] text-black;
+    font-family:
+      var(--font-display), var(--font-primary), Arial, Helvetica, sans-serif;
+  }
+
+  .bk-heading-section {
+    @apply text-[30px] sm:text-[36px] lg:text-[40px] font-normal tracking-tight leading-[1.15] text-black;
+    font-family:
+      var(--font-display), var(--font-primary), Arial, Helvetica, sans-serif;
+  }
+
+  .bk-heading-card {
+    @apply text-[22px] sm:text-[24px] font-normal tracking-tight leading-[1.2] text-black;
+  }
+
+  .bk-heading-subcard {
+    @apply text-[18px] sm:text-[20px] font-normal tracking-tight leading-[1.25] text-black;
+  }
+
+  .bk-body-lg {
+    @apply text-[16px] sm:text-[18px] font-normal leading-relaxed text-[#666666];
+  }
+
+  .bk-body {
+    @apply text-[14px] sm:text-[16px] font-normal leading-relaxed text-[#666666];
+  }
+
+  .bk-body-sm {
+    @apply text-[13px] sm:text-[14px] font-normal leading-relaxed text-[#666666];
+  }
+
+  .bk-label {
+    @apply text-[13px] sm:text-[14px] font-medium text-black;
+  }
+
   .bk-subtle {
     @apply text-sm text-[#666666];
   }

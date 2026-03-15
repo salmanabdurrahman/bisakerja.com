@@ -92,10 +92,8 @@ function renderPricingView(viewState: PricingViewState) {
   if (viewState.kind === "error") {
     return (
       <section className="bk-card grid gap-4 border-red-200 bg-red-50 p-6 sm:p-8">
-        <h3 className="text-[24px] font-normal text-red-900">
-          Pricing unavailable
-        </h3>
-        <p className="text-[14px] text-red-800">
+        <h3 className="bk-heading-card text-red-900">Pricing unavailable</h3>
+        <p className="bk-body text-red-800">
           Pricing data is currently unavailable. Please try again shortly.
         </p>
         <ButtonLink href="/pricing" variant="danger">
@@ -114,7 +112,7 @@ function renderPricingView(viewState: PricingViewState) {
         source={viewState.source}
       />
       {viewState.warningMessage ? (
-        <p className="text-sm text-amber-700">{viewState.warningMessage}</p>
+        <p className="bk-body text-amber-700">{viewState.warningMessage}</p>
       ) : null}
       <UpgradeCTA
         subscriptionState={viewState.subscriptionState}

@@ -34,6 +34,10 @@ Standar ini ditujukan untuk `apps/web` (Next.js App Router).
 - Gunakan semantic HTML.
 - Gambar pakai `next/image` jika sesuai.
 - Loading/error/empty states harus eksplisit.
+- Typography wajib konsisten lintas halaman:
+  - gunakan utility scale yang sama untuk header/body/label (contoh: `bk-heading-*`, `bk-body*`, `bk-label`),
+  - hindari hardcoded size acak per halaman jika sudah ada utility setara,
+  - utamakan komponen shared (`PageHeader`, `CardTitle`, `StateCard`) sebagai source of truth.
 
 ## 6) API Integration
 
