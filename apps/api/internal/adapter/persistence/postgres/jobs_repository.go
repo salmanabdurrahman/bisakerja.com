@@ -140,12 +140,27 @@ func (r *JobsRepository) Search(ctx context.Context, query job.SearchQuery) (job
 	args := make([]any, 0, 6)
 
 	if query.Q != "" {
-		needle := "%" + strings.ToLower(strings.TrimSpace(query.Q)) + "%"
-		conditions = append(
-			conditions,
-			fmt.Sprintf("(LOWER(title) LIKE $%d OR LOWER(company) LIKE $%d OR LOWER(description) LIKE $%d)", len(args)+1, len(args)+1, len(args)+1),
-		)
-		args = append(args, needle)
+		// Split query into words and match each word across title/company/description
+		rawQuery := strings.TrimSpace(query.Q)
+		words := strings.Fields(rawQuery)
+		// Limit to max 10 words to prevent abuse
+		if len(words) > 10 {
+			words = words[:10]
+		}
+
+		if len(words) > 0 {
+			wordConditions := make([]string, 0, len(words))
+			for _, word := range words {
+				wordNeedle := "%" + strings.ToLower(word) + "%"
+				wordConditions = append(
+					wordConditions,
+					fmt.Sprintf("(LOWER(title) LIKE $%d OR LOWER(company) LIKE $%d OR LOWER(description) LIKE $%d)", len(args)+1, len(args)+1, len(args)+1),
+				)
+				args = append(args, wordNeedle)
+			}
+			// All word conditions are ANDed together
+			conditions = append(conditions, "("+strings.Join(wordConditions, " AND ")+")")
+		}
 	}
 
 	if query.Location != "" {
@@ -399,6 +414,48 @@ func scanJob(scanner jobScanner) (job.Job, error) {
 	item.RawData = rawData
 
 	return item, nil
+}
+
+// SearchTitles searches distinct job titles matching a prefix.
+func (r *JobsRepository) SearchTitles(ctx context.Context, query job.TitleSearchQuery) ([]string, error) {
+	q := strings.TrimSpace(query.Q)
+	if q == "" {
+		return []string{}, nil
+	}
+
+	limit := query.Limit
+	if limit <= 0 || limit > 10 {
+		limit = 10
+	}
+
+	needle := strings.ToLower(q) + "%"
+	searchQuery := `
+SELECT DISTINCT title
+FROM jobs
+WHERE LOWER(title) LIKE $1
+ORDER BY title ASC
+LIMIT $2
+`
+
+	rows, err := r.pool.Query(ctx, searchQuery, needle, limit)
+	if err != nil {
+		return nil, fmt.Errorf("search job titles: %w", err)
+	}
+	defer rows.Close()
+
+	titles := make([]string, 0, limit)
+	for rows.Next() {
+		var title string
+		if err := rows.Scan(&title); err != nil {
+			return nil, fmt.Errorf("scan job title: %w", err)
+		}
+		titles = append(titles, title)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("search job titles rows: %w", err)
+	}
+
+	return titles, nil
 }
 
 var _ job.Repository = (*JobsRepository)(nil)

@@ -36,12 +36,12 @@ type ListTransactionsInput struct {
 
 // TransactionRecord represents a persisted record for transaction.
 type TransactionRecord struct {
-	ID                 string
-	Provider           billingdomain.PaymentProvider
-	MayarTransactionID string
-	Amount             int64
-	Status             billingdomain.TransactionStatus
-	CreatedAt          time.Time
+	ID                    string
+	Provider              billingdomain.PaymentProvider
+	ProviderTransactionID string
+	Amount                int64
+	Status                billingdomain.TransactionStatus
+	CreatedAt             time.Time
 }
 
 // ListTransactionsResult contains result values for list transactions.
@@ -178,12 +178,12 @@ func (s *Service) ListBillingTransactions(
 	result := make([]TransactionRecord, 0, end-start)
 	for _, item := range filtered[start:end] {
 		result = append(result, TransactionRecord{
-			ID:                 item.ID,
-			Provider:           item.Provider,
-			MayarTransactionID: item.MayarTransactionID,
-			Amount:             item.Amount,
-			Status:             item.Status,
-			CreatedAt:          item.CreatedAt,
+			ID:                    item.ID,
+			Provider:              item.Provider,
+			ProviderTransactionID: item.ProviderTransactionID,
+			Amount:                item.Amount,
+			Status:                item.Status,
+			CreatedAt:             item.CreatedAt,
 		})
 	}
 

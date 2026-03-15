@@ -47,6 +47,7 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 
 	if deps.JobsHandler != nil {
 		mux.HandleFunc("GET /api/v1/jobs", deps.JobsHandler.ListJobs)
+		mux.HandleFunc("GET /api/v1/jobs/titles", deps.JobsHandler.SearchTitles)
 		mux.HandleFunc("GET /api/v1/jobs/{id}", deps.JobsHandler.GetJobByID)
 	}
 	if deps.PreferencesHandler != nil && deps.AuthMiddleware != nil {
@@ -72,7 +73,7 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 		)
 	}
 	if deps.BillingHandler != nil {
-		mux.HandleFunc("POST /api/v1/webhook/mayar", deps.BillingHandler.HandleMayarWebhook)
+		mux.HandleFunc("POST /api/v1/webhook/midtrans", deps.BillingHandler.HandleMidtransWebhook)
 	}
 	if deps.AIHandler != nil && deps.AuthMiddleware != nil {
 		mux.Handle(

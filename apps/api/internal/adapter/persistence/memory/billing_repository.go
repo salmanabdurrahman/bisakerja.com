@@ -13,20 +13,20 @@ import (
 
 // BillingRepository represents billing repository.
 type BillingRepository struct {
-	mu                   sync.RWMutex
-	transactions         map[string]billing.Transaction
-	idempotencyToTxID    map[string]string
-	mayarTransactionToID map[string]string
-	webhookByIdempotency map[string]billing.WebhookDelivery
+	mu                      sync.RWMutex
+	transactions            map[string]billing.Transaction
+	idempotencyToTxID       map[string]string
+	providerTransactionToID map[string]string
+	webhookByIdempotency    map[string]billing.WebhookDelivery
 }
 
 // NewBillingRepository creates a new billing repository instance.
 func NewBillingRepository() *BillingRepository {
 	return &BillingRepository{
-		transactions:         make(map[string]billing.Transaction),
-		idempotencyToTxID:    make(map[string]string),
-		mayarTransactionToID: make(map[string]string),
-		webhookByIdempotency: make(map[string]billing.WebhookDelivery),
+		transactions:            make(map[string]billing.Transaction),
+		idempotencyToTxID:       make(map[string]string),
+		providerTransactionToID: make(map[string]string),
+		webhookByIdempotency:    make(map[string]billing.WebhookDelivery),
 	}
 }
 
@@ -42,8 +42,8 @@ func (r *BillingRepository) CreatePending(
 	if strings.TrimSpace(input.InvoiceID) == "" {
 		return billing.Transaction{}, fmt.Errorf("create pending transaction: invoice id is required")
 	}
-	if strings.TrimSpace(input.MayarTransactionID) == "" {
-		return billing.Transaction{}, fmt.Errorf("create pending transaction: mayar transaction id is required")
+	if strings.TrimSpace(input.ProviderTransactionID) == "" {
+		return billing.Transaction{}, fmt.Errorf("create pending transaction: provider transaction id is required")
 	}
 	if strings.TrimSpace(input.CheckoutURL) == "" {
 		return billing.Transaction{}, fmt.Errorf("create pending transaction: checkout url is required")
@@ -69,24 +69,24 @@ func (r *BillingRepository) CreatePending(
 
 	transactionID := "txn_" + randomHex(12)
 	transaction := billing.Transaction{
-		ID:                 transactionID,
-		UserID:             userID,
-		Provider:           input.Provider,
-		PlanCode:           input.PlanCode,
-		MayarTransactionID: strings.TrimSpace(input.MayarTransactionID),
-		InvoiceID:          strings.TrimSpace(input.InvoiceID),
-		CheckoutURL:        strings.TrimSpace(input.CheckoutURL),
-		Amount:             input.Amount,
-		Status:             billing.TransactionStatusPending,
-		IdempotencyKey:     idempotencyKey,
-		ExpiresAt:          cloneTime(input.ExpiresAt),
-		Metadata:           cloneMap(input.Metadata),
-		CreatedAt:          now,
-		UpdatedAt:          now,
+		ID:                    transactionID,
+		UserID:                userID,
+		Provider:              input.Provider,
+		PlanCode:              input.PlanCode,
+		ProviderTransactionID: strings.TrimSpace(input.ProviderTransactionID),
+		InvoiceID:             strings.TrimSpace(input.InvoiceID),
+		CheckoutURL:           strings.TrimSpace(input.CheckoutURL),
+		Amount:                input.Amount,
+		Status:                billing.TransactionStatusPending,
+		IdempotencyKey:        idempotencyKey,
+		ExpiresAt:             cloneTime(input.ExpiresAt),
+		Metadata:              cloneMap(input.Metadata),
+		CreatedAt:             now,
+		UpdatedAt:             now,
 	}
 
 	r.transactions[transactionID] = transaction
-	r.mayarTransactionToID[strings.TrimSpace(input.MayarTransactionID)] = transactionID
+	r.providerTransactionToID[strings.TrimSpace(input.ProviderTransactionID)] = transactionID
 	if idempotencyKey != "" {
 		r.idempotencyToTxID[idempotencyCompositeKey(userID, idempotencyKey)] = transactionID
 	}
@@ -133,12 +133,12 @@ func (r *BillingRepository) FindPendingByUserAndIdempotencyKey(
 	return cloneBillingTransaction(item), nil
 }
 
-// GetByMayarTransactionID returns by mayar transaction id.
-func (r *BillingRepository) GetByMayarTransactionID(
+// GetByProviderTransactionID returns by provider transaction id.
+func (r *BillingRepository) GetByProviderTransactionID(
 	_ context.Context,
-	mayarTransactionID string,
+	providerTransactionID string,
 ) (billing.Transaction, error) {
-	normalizedID := strings.TrimSpace(mayarTransactionID)
+	normalizedID := strings.TrimSpace(providerTransactionID)
 	if normalizedID == "" {
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}
@@ -146,7 +146,7 @@ func (r *BillingRepository) GetByMayarTransactionID(
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	txID, exists := r.mayarTransactionToID[normalizedID]
+	txID, exists := r.providerTransactionToID[normalizedID]
 	if !exists {
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}
@@ -210,15 +210,15 @@ func (r *BillingRepository) ListAll(_ context.Context) ([]billing.Transaction, e
 	return result, nil
 }
 
-// UpdateStatusByMayarTransactionID updates status by mayar transaction id.
-func (r *BillingRepository) UpdateStatusByMayarTransactionID(
+// UpdateStatusByProviderTransactionID updates status by provider transaction id.
+func (r *BillingRepository) UpdateStatusByProviderTransactionID(
 	_ context.Context,
-	mayarTransactionID string,
+	providerTransactionID string,
 	status billing.TransactionStatus,
 	metadata map[string]any,
 	updatedAt time.Time,
 ) (billing.Transaction, error) {
-	normalizedID := strings.TrimSpace(mayarTransactionID)
+	normalizedID := strings.TrimSpace(providerTransactionID)
 	if normalizedID == "" {
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}
@@ -226,7 +226,7 @@ func (r *BillingRepository) UpdateStatusByMayarTransactionID(
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	txID, exists := r.mayarTransactionToID[normalizedID]
+	txID, exists := r.providerTransactionToID[normalizedID]
 	if !exists {
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}

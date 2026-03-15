@@ -30,16 +30,16 @@ cp apps/web/.env.example apps/web/.env.local
 |---|---|---|
 | `DATABASE_URL` | `postgres://postgres:postgres@localhost:5432/bisakerja?sslmode=disable` | koneksi PostgreSQL |
 | `AUTH_JWT_SECRET` | `change-this-jwt-secret` | signing access/refresh token |
-| `BILLING_WEBHOOK_TOKEN` | `change-this-webhook-token` | autentikasi inbound webhook Mayar |
+| `BILLING_WEBHOOK_TOKEN` | `change-this-webhook-token` | autentikasi inbound webhook Midtrans |
 | `BILLING_REDIRECT_ALLOWLIST` | `app.bisakerja.com,localhost:3000,127.0.0.1:3000,[::1]:3000` | host redirect checkout yang diizinkan |
 
-### Wajib untuk flow checkout Mayar
+### Wajib untuk flow checkout Midtrans
 
 | Variable | Contoh | Kegunaan |
 |---|---|---|
-| `MAYAR_API_KEY` | `...` | kredensial API Mayar |
-| `MAYAR_BASE_URL` | `https://api.mayar.id/hl/v1` (prod) / `https://api.mayar.club/hl/v1` (sandbox) | endpoint base Mayar |
-
+| `MIDTRANS_SERVER_KEY` | `SB-Mid-server-...` | server key Midtrans (sandbox dimulai `SB-`) |
+| `MIDTRANS_CLIENT_KEY` | `SB-Mid-client-...` | client key Midtrans (untuk frontend `window.snap`) |
+| `MIDTRANS_ENV` | `sandbox` / `production` | environment Midtrans |
 ### Wajib jika fitur AI dipakai
 
 | Variable | Contoh | Kegunaan |
@@ -142,9 +142,29 @@ Jika UI menampilkan error ini, cek response API (`errors[0].code`):
   - Contoh valid local redirect: `http://localhost:3000/billing/success`.
 - `INVALID_PLAN_CODE`
   - Pastikan request memakai `plan_code=pro_monthly`.
-- `MAYAR_RATE_LIMITED` / `SERVICE_UNAVAILABLE`
-  - Retry beberapa saat; cek kredensial/key Mayar dan konektivitas.
+- `INVALID_CUSTOMER_MOBILE`
+  - Pastikan request mengirim `customer_mobile` valid (9-15 digit).
+  - Untuk UI web, isi nomor telepon pada form upgrade sebelum membuat checkout.
+- `TOO_MANY_REQUESTS`
+  - Request checkout dikirim terlalu cepat beruntun.
+  - Tunggu sekitar `10s` (default `BILLING_USER_RATE_LIMIT_WINDOW`) lalu retry.
+  - Jika checkout sebelumnya sudah berhasil dibuat dan masih pending, ulangi request yang sama agar backend me-return sesi checkout yang bisa dilanjutkan.
+- `MIDTRANS_UPSTREAM_ERROR`
+  - Periksa `MIDTRANS_ENV` (`sandbox` vs `production`) dan `MIDTRANS_SERVER_KEY`.
+  - Pastikan server key dimulai dengan `SB-Mid-server-` untuk sandbox.
+  - Cek log backend dengan message `midtrans upstream error` untuk detail lengkap.
+- `MIDTRANS_RATE_LIMITED` / `SERVICE_UNAVAILABLE`
+  - Retry beberapa saat; cek kredensial/key Midtrans dan konektivitas.
+  - Midtrans sandbox kadang lambat; coba beberapa saat kemudian.
 
+### Troubleshooting snap popup tidak muncul
+
+Jika API 201 berhasil (snap token tersimpan di localStorage) tapi snap popup tidak muncul:
+
+- Pastikan `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` terisi di `apps/web/.env.local`.
+- Pastikan `NEXT_PUBLIC_MIDTRANS_ENV` sesuai (`sandbox` untuk development).
+- Script Midtrans Snap dimuat via `<Script>` di root layout (`app/layout.tsx`). Jika popup tidak muncul setelah halaman fresh, tunggu beberapa detik lalu coba klik tombol lagi.
+- Jika muncul error "Payment popup is not ready. Please refresh the page and try again.", refresh halaman dan ulangi checkout.
 ## 9) Quality Gate Lokal
 
 Backend:
@@ -168,7 +188,9 @@ pnpm test
 pnpm build
 ```
 
-## 10) Referensi Integrasi Mayar
+## 10) Referensi Integrasi Midtrans
 
-- Dokumentasi resmi: `https://docs.mayar.id/api-reference`
-- Mapping internal Bisakerja: [`../api/mayar-headless.md`](../api/mayar-headless.md)
+- Dokumentasi resmi: `https://docs.midtrans.com/`
+- Snap API reference: `https://docs.midtrans.com/reference/create-transaction`
+- Arsitektur internal Bisakerja: [`../architecture/midtrans-integration.md`](./midtrans-integration.md)
+- Kontrak API checkout: [`../api/billing.md`](../api/billing.md)

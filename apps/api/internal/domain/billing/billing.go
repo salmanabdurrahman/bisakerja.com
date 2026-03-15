@@ -17,7 +17,8 @@ const (
 type PaymentProvider string
 
 const (
-	PaymentProviderMayar PaymentProvider = "mayar"
+	PaymentProviderMayar    PaymentProvider = "mayar"
+	PaymentProviderMidtrans PaymentProvider = "midtrans"
 )
 
 // TransactionStatus describes status details for transaction.
@@ -42,20 +43,20 @@ var (
 
 // Transaction represents transaction.
 type Transaction struct {
-	ID                 string
-	UserID             string
-	Provider           PaymentProvider
-	PlanCode           PlanCode
-	MayarTransactionID string
-	InvoiceID          string
-	CheckoutURL        string
-	Amount             int64
-	Status             TransactionStatus
-	IdempotencyKey     string
-	ExpiresAt          *time.Time
-	Metadata           map[string]any
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	ID                    string
+	UserID                string
+	Provider              PaymentProvider
+	PlanCode              PlanCode
+	ProviderTransactionID string
+	InvoiceID             string
+	CheckoutURL           string
+	Amount                int64
+	Status                TransactionStatus
+	IdempotencyKey        string
+	ExpiresAt             *time.Time
+	Metadata              map[string]any
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 // WebhookProcessingStatus describes status details for webhook processing.
@@ -83,27 +84,27 @@ type WebhookDelivery struct {
 
 // CreatePendingTransactionInput contains input parameters for create pending transaction.
 type CreatePendingTransactionInput struct {
-	UserID             string
-	Provider           PaymentProvider
-	PlanCode           PlanCode
-	MayarTransactionID string
-	InvoiceID          string
-	CheckoutURL        string
-	Amount             int64
-	IdempotencyKey     string
-	ExpiresAt          *time.Time
-	Metadata           map[string]any
+	UserID                string
+	Provider              PaymentProvider
+	PlanCode              PlanCode
+	ProviderTransactionID string
+	InvoiceID             string
+	CheckoutURL           string
+	Amount                int64
+	IdempotencyKey        string
+	ExpiresAt             *time.Time
+	Metadata              map[string]any
 }
 
 // Repository defines behavior for repository.
 type Repository interface {
 	CreatePending(ctx context.Context, input CreatePendingTransactionInput) (Transaction, error)
-	GetByMayarTransactionID(ctx context.Context, mayarTransactionID string) (Transaction, error)
+	GetByProviderTransactionID(ctx context.Context, providerTransactionID string) (Transaction, error)
 	ListByUser(ctx context.Context, userID string) ([]Transaction, error)
 	ListAll(ctx context.Context) ([]Transaction, error)
-	UpdateStatusByMayarTransactionID(
+	UpdateStatusByProviderTransactionID(
 		ctx context.Context,
-		mayarTransactionID string,
+		providerTransactionID string,
 		status TransactionStatus,
 		metadata map[string]any,
 		updatedAt time.Time,
@@ -121,8 +122,9 @@ type Repository interface {
 
 // EnsureCustomerInput contains input parameters for ensure customer.
 type EnsureCustomerInput struct {
-	Name  string
-	Email string
+	Name   string
+	Email  string
+	Mobile string
 }
 
 // Customer represents customer.
@@ -134,12 +136,16 @@ type Customer struct {
 
 // CreateInvoiceInput contains input parameters for create invoice.
 type CreateInvoiceInput struct {
-	CustomerID  string
-	PlanCode    PlanCode
-	Amount      int64
-	Description string
-	RedirectURL string
-	ExternalID  string
+	CustomerID     string
+	CustomerName   string
+	CustomerEmail  string
+	CustomerMobile string
+	PlanCode       PlanCode
+	Amount         int64
+	Description    string
+	RedirectURL    string
+	ExternalID     string
+	ExpiresAt      *time.Time
 }
 
 // Invoice represents invoice.
@@ -147,6 +153,7 @@ type Invoice struct {
 	ID            string
 	TransactionID string
 	CheckoutURL   string
+	SnapToken     string
 	Amount        int64
 	ExpiresAt     *time.Time
 }

@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/mayar"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/midtrans"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/postgres"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
@@ -46,20 +46,23 @@ func main() {
 
 	identityRepository := postgres.NewIdentityRepository(dbPool)
 	billingRepository := postgres.NewBillingRepository(dbPool)
-	mayarClient := mayar.NewClient(mayar.ClientConfig{
-		BaseURL:    cfg.MayarBaseURL,
-		APIKey:     cfg.MayarAPIKey,
-		Timeout:    cfg.MayarRequestTimeout,
-		MaxRetries: cfg.MayarMaxRetries,
+	midtransEnv := midtrans.SandboxEnv
+	if cfg.MidtransEnv == "production" {
+		midtransEnv = midtrans.ProductionEnv
+	}
+	midtransClient := midtrans.NewClient(midtrans.ClientConfig{
+		ServerKey: cfg.MidtransServerKey,
+		ClientKey: cfg.MidtransClientKey,
+		Env:       midtransEnv,
 	})
-	billingService := billingapp.NewService(identityRepository, billingRepository, mayarClient, billingapp.Config{
+	billingService := billingapp.NewService(identityRepository, billingRepository, midtransClient, billingapp.Config{
 		RedirectAllowlist: cfg.BillingRedirectAllowlist,
 		IdempotencyWindow: cfg.BillingIdempotencyWindow,
 		RateLimitWindow:   cfg.BillingUserRateLimitWindow,
 	})
 
 	if err = worker.RunWithTask(ctx, appLogger, "billing-worker", cfg.WorkerTick, func(taskCtx context.Context) error {
-		summary, reconcileErr := billingService.ReconcileWithMayar(taskCtx)
+		summary, reconcileErr := billingService.ReconcileWithMidtrans(taskCtx)
 		if reconcileErr != nil {
 			return reconcileErr
 		}

@@ -26,6 +26,7 @@ export interface BillingStatus {
 export interface CreateCheckoutSessionInput {
   plan_code: "pro_monthly";
   coupon_code?: string;
+  customer_mobile: string;
   redirect_url: string;
   idempotency_key?: string;
 }
@@ -34,11 +35,12 @@ export interface CreateCheckoutSessionInput {
  * CheckoutSession defines the shape of checkout session.
  */
 export interface CheckoutSession {
-  provider: "mayar";
+  provider: "midtrans";
   plan_code?: "pro_monthly";
   invoice_id: string;
   transaction_id: string;
   checkout_url: string;
+  snap_token?: string;
   original_amount?: number;
   discount_amount?: number;
   final_amount?: number;
@@ -54,7 +56,7 @@ export interface CheckoutSession {
 export interface BillingTransaction {
   id: string;
   provider: string;
-  mayar_transaction_id: string;
+  provider_transaction_id: string;
   amount: number;
   status: TransactionStatus;
   created_at: string;

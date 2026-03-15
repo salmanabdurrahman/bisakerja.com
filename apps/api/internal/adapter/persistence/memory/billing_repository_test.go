@@ -14,15 +14,15 @@ func TestBillingRepository_CreatePendingAndFindByIdempotencyKey(t *testing.T) {
 	now := time.Now().UTC()
 
 	created, err := repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
-		UserID:             "usr_1",
-		Provider:           billing.PaymentProviderMayar,
-		PlanCode:           billing.PlanCodeProMonthly,
-		MayarTransactionID: "trx_1",
-		InvoiceID:          "inv_1",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		IdempotencyKey:     "idem_1",
-		ExpiresAt:          &now,
+		UserID:                "usr_1",
+		Provider:              billing.PaymentProviderMidtrans,
+		PlanCode:              billing.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_1",
+		InvoiceID:             "inv_1",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		IdempotencyKey:        "idem_1",
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
@@ -48,15 +48,15 @@ func TestBillingRepository_FindByIdempotencyKey_WindowExpired(t *testing.T) {
 	now := time.Now().UTC()
 
 	_, err := repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
-		UserID:             "usr_1",
-		Provider:           billing.PaymentProviderMayar,
-		PlanCode:           billing.PlanCodeProMonthly,
-		MayarTransactionID: "trx_2",
-		InvoiceID:          "inv_2",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		IdempotencyKey:     "idem_2",
-		ExpiresAt:          &now,
+		UserID:                "usr_1",
+		Provider:              billing.PaymentProviderMidtrans,
+		PlanCode:              billing.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_2",
+		InvoiceID:             "inv_2",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		IdempotencyKey:        "idem_2",
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
@@ -74,25 +74,25 @@ func TestBillingRepository_FindByIdempotencyKey_WindowExpired(t *testing.T) {
 	}
 }
 
-func TestBillingRepository_UpdateStatusByMayarTransactionID(t *testing.T) {
+func TestBillingRepository_UpdateStatusByProviderTransactionID(t *testing.T) {
 	repository := NewBillingRepository()
 	now := time.Now().UTC()
 
 	_, err := repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
-		UserID:             "usr_1",
-		Provider:           billing.PaymentProviderMayar,
-		PlanCode:           billing.PlanCodeProMonthly,
-		MayarTransactionID: "trx_update",
-		InvoiceID:          "inv_update",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                "usr_1",
+		Provider:              billing.PaymentProviderMidtrans,
+		PlanCode:              billing.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_update",
+		InvoiceID:             "inv_update",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
 	}
 
-	updated, err := repository.UpdateStatusByMayarTransactionID(
+	updated, err := repository.UpdateStatusByProviderTransactionID(
 		context.Background(),
 		"trx_update",
 		billing.TransactionStatusSuccess,
@@ -100,7 +100,7 @@ func TestBillingRepository_UpdateStatusByMayarTransactionID(t *testing.T) {
 		now.Add(2*time.Minute),
 	)
 	if err != nil {
-		t.Fatalf("update status by mayar transaction id: %v", err)
+		t.Fatalf("update status by provider transaction id: %v", err)
 	}
 	if updated.Status != billing.TransactionStatusSuccess {
 		t.Fatalf("expected status success, got %s", updated.Status)
@@ -115,10 +115,10 @@ func TestBillingRepository_RecordWebhookDelivery_Duplicate(t *testing.T) {
 	now := time.Now().UTC()
 
 	_, err := repository.RecordWebhookDelivery(context.Background(), billing.WebhookDelivery{
-		Provider:         billing.PaymentProviderMayar,
+		Provider:         billing.PaymentProviderMidtrans,
 		EventType:        "payment.received",
 		TransactionID:    "trx_1",
-		IdempotencyKey:   "mayar:payment.received:trx_1",
+		IdempotencyKey:   "midtrans:payment.received:trx_1",
 		ProcessingStatus: billing.WebhookProcessingStatusProcessed,
 		Payload:          map[string]any{"event": "payment.received"},
 		ProcessedAt:      &now,
@@ -128,10 +128,10 @@ func TestBillingRepository_RecordWebhookDelivery_Duplicate(t *testing.T) {
 	}
 
 	_, err = repository.RecordWebhookDelivery(context.Background(), billing.WebhookDelivery{
-		Provider:         billing.PaymentProviderMayar,
+		Provider:         billing.PaymentProviderMidtrans,
 		EventType:        "payment.received",
 		TransactionID:    "trx_1",
-		IdempotencyKey:   "mayar:payment.received:trx_1",
+		IdempotencyKey:   "midtrans:payment.received:trx_1",
 		ProcessingStatus: billing.WebhookProcessingStatusProcessed,
 		Payload:          map[string]any{"event": "payment.received"},
 		ProcessedAt:      &now,
@@ -146,27 +146,27 @@ func TestBillingRepository_ListByUserAndListAll(t *testing.T) {
 	now := time.Now().UTC()
 
 	_, err := repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
-		UserID:             "usr_1",
-		Provider:           billing.PaymentProviderMayar,
-		PlanCode:           billing.PlanCodeProMonthly,
-		MayarTransactionID: "trx_list_1",
-		InvoiceID:          "inv_list_1",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                "usr_1",
+		Provider:              billing.PaymentProviderMidtrans,
+		PlanCode:              billing.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_list_1",
+		InvoiceID:             "inv_list_1",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create first transaction: %v", err)
 	}
 	_, err = repository.CreatePending(context.Background(), billing.CreatePendingTransactionInput{
-		UserID:             "usr_2",
-		Provider:           billing.PaymentProviderMayar,
-		PlanCode:           billing.PlanCodeProMonthly,
-		MayarTransactionID: "trx_list_2",
-		InvoiceID:          "inv_list_2",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                "usr_2",
+		Provider:              billing.PaymentProviderMidtrans,
+		PlanCode:              billing.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_list_2",
+		InvoiceID:             "inv_list_2",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create second transaction: %v", err)

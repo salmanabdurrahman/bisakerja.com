@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button, ButtonLink } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/session-provider";
+import { buildSearchSubmitHref } from "@/features/jobs/search-params";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { clearBrowserSession } from "@/lib/auth/session-cookie";
 import { APIRequestError } from "@/lib/utils/fetch-json";
@@ -18,6 +19,8 @@ import type {
   AIUsage,
 } from "@/services/ai";
 import type { SubscriptionState } from "@/services/auth";
+import { listJobs } from "@/services/jobs";
+import type { JobListItem } from "@/services/jobs";
 
 interface AccountAIToolsClientProps {
   subscriptionState: SubscriptionState | "status_unavailable";
@@ -81,17 +84,28 @@ export function AccountAIToolsClient({
   const [assistantResult, setAssistantResult] =
     useState<AISearchAssistantResult | null>(null);
 
+  const [jobFitTitleQuery, setJobFitTitleQuery] = useState("");
+  const [jobFitTitleResults, setJobFitTitleResults] = useState<JobListItem[]>(
+    [],
+  );
+  const [jobFitSelectedTitle, setJobFitSelectedTitle] = useState("");
   const [jobFitJobID, setJobFitJobID] = useState("");
   const [jobFitFocus, setJobFitFocus] = useState("");
   const [jobFitResult, setJobFitResult] =
     useState<AIJobFitSummaryResult | null>(null);
 
+  const [coverLetterTitleQuery, setCoverLetterTitleQuery] = useState("");
+  const [coverLetterTitleResults, setCoverLetterTitleResults] = useState<
+    JobListItem[]
+  >([]);
+  const [coverLetterSelectedTitle, setCoverLetterSelectedTitle] = useState("");
   const [coverLetterJobID, setCoverLetterJobID] = useState("");
   const [coverLetterTone, setCoverLetterTone] =
     useState<AICoverLetterTone>("professional");
   const [coverLetterHighlights, setCoverLetterHighlights] = useState("");
   const [coverLetterResult, setCoverLetterResult] =
     useState<AICoverLetterDraftResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isPremiumActive = subscriptionState === "premium_active";
 
@@ -99,6 +113,57 @@ export function AccountAIToolsClient({
     void loadUsage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    if (jobFitTitleQuery.length < 2) {
+      setJobFitTitleResults([]);
+      if (jobFitTitleQuery === "") {
+        setJobFitJobID("");
+        setJobFitSelectedTitle("");
+      }
+      return;
+    }
+    if (jobFitTitleQuery === jobFitSelectedTitle) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      listJobs({ q: jobFitTitleQuery, limit: 10 })
+        .then((res) => {
+          setJobFitTitleResults(res.data);
+        })
+        .catch(() => {
+          setJobFitTitleResults([]);
+        });
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [jobFitTitleQuery, jobFitSelectedTitle]);
+
+  useEffect(() => {
+    if (coverLetterTitleQuery.length < 2) {
+      setCoverLetterTitleResults([]);
+      if (coverLetterTitleQuery === "") {
+        setCoverLetterJobID("");
+        setCoverLetterSelectedTitle("");
+      }
+      return;
+    }
+    if (coverLetterTitleQuery === coverLetterSelectedTitle) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      listJobs({ q: coverLetterTitleQuery, limit: 10 })
+        .then((res) => {
+          setCoverLetterTitleResults(res.data);
+        })
+        .catch(() => {
+          setCoverLetterTitleResults([]);
+        });
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [coverLetterTitleQuery, coverLetterSelectedTitle]);
 
   function handleUnauthorized() {
     clearBrowserSession();
@@ -214,7 +279,7 @@ export function AccountAIToolsClient({
 
     const jobID = jobFitJobID.trim();
     if (jobID === "") {
-      setJobFitMessage("Job ID is required.");
+      setJobFitMessage("Please select a job from the search results.");
       return;
     }
 
@@ -244,7 +309,7 @@ export function AccountAIToolsClient({
 
     const jobID = coverLetterJobID.trim();
     if (jobID === "") {
-      setCoverLetterMessage("Job ID is required.");
+      setCoverLetterMessage("Please select a job from the search results.");
       return;
     }
 
@@ -262,6 +327,7 @@ export function AccountAIToolsClient({
         highlights: parsedHighlights.length > 0 ? parsedHighlights : undefined,
       });
       setCoverLetterResult(response.data);
+      setCopied(false);
       applyQuotaFromResult("cover_letter_draft", response.data);
       setCoverLetterMessage("Cover letter draft generated.");
     } catch (error) {
@@ -275,26 +341,23 @@ export function AccountAIToolsClient({
     }
   }
 
+  async function handleCopyCoverLetter() {
+    if (!coverLetterResult) return;
+    try {
+      await navigator.clipboard.writeText(coverLetterResult.draft);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // silently ignore clipboard errors
+    }
+  }
+
   return (
     <section className="grid gap-5">
       {infoMessage ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 bk-body text-amber-800">
           {infoMessage}
         </p>
-      ) : null}
-
-      {!isPremiumActive ? (
-        <section className="bk-card grid gap-3 border-[#E5E5E5] bg-[#F9F9F9] p-5 sm:p-6">
-          <p className="bk-body font-medium text-black">
-            Upgrade to premium to unlock job-fit insights and full cover letter
-            drafting.
-          </p>
-          <div>
-            <ButtonLink href="/pricing" variant="secondary" size="sm">
-              View premium plans
-            </ButtonLink>
-          </div>
-        </section>
       ) : null}
 
       <section className="bk-card grid gap-4 p-5 sm:p-6">
@@ -317,8 +380,13 @@ export function AccountAIToolsClient({
           </p>
         ) : null}
 
-        <div className="grid gap-3 md:grid-cols-3">
-          {featureOrder.map((feature) => (
+        <div
+          className={`grid gap-3 ${isPremiumActive ? "md:grid-cols-3" : ""}`}
+        >
+          {(isPremiumActive
+            ? featureOrder
+            : (["search_assistant"] as AIFeature[])
+          ).map((feature) => (
             <UsageCard
               key={feature}
               label={featureLabels[feature]}
@@ -410,6 +478,19 @@ export function AccountAIToolsClient({
               </span>
             </p>
             <p>{assistantResult.summary}</p>
+            <div>
+              <ButtonLink
+                href={buildSearchSubmitHref({
+                  q: assistantResult.suggested_query,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outline"
+                size="sm"
+              >
+                Open in Jobs
+              </ButtonLink>
+            </div>
             <p className="bk-body-sm text-[#666666]">
               Filters: locations{" "}
               {assistantResult.suggested_filters.locations.length > 0
@@ -430,49 +511,85 @@ export function AccountAIToolsClient({
           Estimate how well your profile aligns with one job and get practical
           next steps.
         </p>
-        <form
-          onSubmit={handleJobFitSubmit}
-          className="grid gap-3"
-          aria-label="Job fit summary form"
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="grid gap-1 bk-label">
-              <span className="font-medium text-slate-700">Job ID</span>
-              <input
-                value={jobFitJobID}
-                onChange={(event) => setJobFitJobID(event.target.value)}
-                placeholder="job_123"
-                className="bk-input"
-                required
-              />
-            </label>
-            <label className="grid gap-1 bk-label">
-              <span className="font-medium text-slate-700">
-                Focus (optional)
-              </span>
-              <input
-                value={jobFitFocus}
-                onChange={(event) => setJobFitFocus(event.target.value)}
-                placeholder="Prioritize architecture depth and impact."
-                className="bk-input"
-              />
-            </label>
+        {isPremiumActive ? (
+          <form
+            onSubmit={handleJobFitSubmit}
+            className="grid gap-3"
+            aria-label="Job fit summary form"
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="relative">
+                <label className="grid gap-1 bk-label">
+                  <span className="font-medium text-slate-700">Job title</span>
+                  <input
+                    value={jobFitTitleQuery}
+                    onChange={(event) =>
+                      setJobFitTitleQuery(event.target.value)
+                    }
+                    placeholder="Search job title..."
+                    className="bk-input"
+                    required
+                  />
+                </label>
+                {jobFitTitleResults.length > 0 &&
+                jobFitTitleQuery !== jobFitSelectedTitle ? (
+                  <ul className="absolute z-10 mt-1 max-h-60 overflow-y-auto w-full rounded-xl border border-[#E5E5E5] bg-white shadow-md">
+                    {jobFitTitleResults.map((result) => (
+                      <li
+                        key={result.id}
+                        className="cursor-pointer px-3 py-2 bk-body text-[#444444] hover:bg-[#F9F9F9]"
+                        onClick={() => {
+                          setJobFitJobID(result.id);
+                          setJobFitSelectedTitle(result.title);
+                          setJobFitTitleQuery(result.title);
+                          setJobFitTitleResults([]);
+                        }}
+                      >
+                        {result.title}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+              <label className="grid gap-1 bk-label">
+                <span className="font-medium text-slate-700">
+                  Focus (optional)
+                </span>
+                <input
+                  value={jobFitFocus}
+                  onChange={(event) => setJobFitFocus(event.target.value)}
+                  placeholder="Prioritize architecture depth and impact."
+                  className="bk-input"
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={activeAction === "job_fit_summary"}
+              >
+                {activeAction === "job_fit_summary"
+                  ? "Generating..."
+                  : "Generate job fit"}
+              </Button>
+            </div>
+            {jobFitMessage ? <StatusMessage text={jobFitMessage} /> : null}
+          </form>
+        ) : (
+          <div className="rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 grid gap-3">
+            <p className="bk-body font-medium text-black">
+              Job fit summary is available for premium users only.
+            </p>
+            <div>
+              <ButtonLink href="/pricing" variant="secondary" size="sm">
+                View premium plans
+              </ButtonLink>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="submit"
-              variant="secondary"
-              disabled={activeAction === "job_fit_summary"}
-            >
-              {activeAction === "job_fit_summary"
-                ? "Generating..."
-                : "Generate job fit"}
-            </Button>
-          </div>
-          {jobFitMessage ? <StatusMessage text={jobFitMessage} /> : null}
-        </form>
+        )}
 
-        {jobFitResult ? (
+        {isPremiumActive && jobFitResult ? (
           <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 bk-body text-[#444444]">
             <p>
               Fit score:{" "}
@@ -504,71 +621,120 @@ export function AccountAIToolsClient({
           Generate a role-specific draft and key talking points that you can
           edit before sending.
         </p>
-        <form
-          onSubmit={handleCoverLetterSubmit}
-          className="grid gap-3"
-          aria-label="Cover letter draft form"
-        >
-          <div className="grid gap-3 md:grid-cols-2">
+        {isPremiumActive ? (
+          <form
+            onSubmit={handleCoverLetterSubmit}
+            className="grid gap-3"
+            aria-label="Cover letter draft form"
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="relative">
+                <label className="grid gap-1 bk-label">
+                  <span className="font-medium text-slate-700">Job title</span>
+                  <input
+                    value={coverLetterTitleQuery}
+                    onChange={(event) =>
+                      setCoverLetterTitleQuery(event.target.value)
+                    }
+                    placeholder="Search job title..."
+                    className="bk-input"
+                    required
+                  />
+                </label>
+                {coverLetterTitleResults.length > 0 &&
+                coverLetterTitleQuery !== coverLetterSelectedTitle ? (
+                  <ul className="absolute z-10 mt-1 max-h-60 overflow-y-auto w-full rounded-xl border border-[#E5E5E5] bg-white shadow-md">
+                    {coverLetterTitleResults.map((result) => (
+                      <li
+                        key={result.id}
+                        className="cursor-pointer px-3 py-2 bk-body text-[#444444] hover:bg-[#F9F9F9]"
+                        onClick={() => {
+                          setCoverLetterJobID(result.id);
+                          setCoverLetterSelectedTitle(result.title);
+                          setCoverLetterTitleQuery(result.title);
+                          setCoverLetterTitleResults([]);
+                        }}
+                      >
+                        {result.title}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+              <label className="grid gap-1 bk-label">
+                <span className="font-medium text-slate-700">Tone</span>
+                <select
+                  value={coverLetterTone}
+                  onChange={(event) =>
+                    setCoverLetterTone(event.target.value as AICoverLetterTone)
+                  }
+                  className="bk-select"
+                >
+                  {toneOptions.map((tone) => (
+                    <option key={tone} value={tone}>
+                      {tone}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             <label className="grid gap-1 bk-label">
-              <span className="font-medium text-slate-700">Job ID</span>
-              <input
-                value={coverLetterJobID}
-                onChange={(event) => setCoverLetterJobID(event.target.value)}
-                placeholder="job_123"
-                className="bk-input"
-                required
+              <span className="font-medium text-slate-700">
+                Highlights (optional, one per line)
+              </span>
+              <textarea
+                value={coverLetterHighlights}
+                onChange={(event) =>
+                  setCoverLetterHighlights(event.target.value)
+                }
+                placeholder={
+                  "Led API reliability initiatives\nBuilt Golang services at scale"
+                }
+                className="bk-textarea"
               />
             </label>
-            <label className="grid gap-1 bk-label">
-              <span className="font-medium text-slate-700">Tone</span>
-              <select
-                value={coverLetterTone}
-                onChange={(event) =>
-                  setCoverLetterTone(event.target.value as AICoverLetterTone)
-                }
-                className="bk-select"
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={activeAction === "cover_letter_draft"}
               >
-                {toneOptions.map((tone) => (
-                  <option key={tone} value={tone}>
-                    {tone}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {activeAction === "cover_letter_draft"
+                  ? "Generating..."
+                  : "Generate cover letter"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={
+                  !coverLetterResult || activeAction === "cover_letter_draft"
+                }
+                onClick={() => void handleCopyCoverLetter()}
+              >
+                {copied ? "Copied!" : "Copy"}
+              </Button>
+            </div>
+            {coverLetterMessage ? (
+              <StatusMessage text={coverLetterMessage} />
+            ) : null}
+          </form>
+        ) : (
+          <div className="rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 grid gap-3">
+            <p className="bk-body font-medium text-black">
+              Cover letter draft is available for premium users only.
+            </p>
+            <div>
+              <ButtonLink href="/pricing" variant="secondary" size="sm">
+                View premium plans
+              </ButtonLink>
+            </div>
           </div>
+        )}
 
-          <label className="grid gap-1 bk-label">
-            <span className="font-medium text-slate-700">
-              Highlights (optional, one per line)
-            </span>
-            <textarea
-              value={coverLetterHighlights}
-              onChange={(event) => setCoverLetterHighlights(event.target.value)}
-              placeholder={
-                "Led API reliability initiatives\nBuilt Golang services at scale"
-              }
-              className="bk-textarea"
-            />
-          </label>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="submit"
-              variant="secondary"
-              disabled={activeAction === "cover_letter_draft"}
-            >
-              {activeAction === "cover_letter_draft"
-                ? "Generating..."
-                : "Generate cover letter"}
-            </Button>
-          </div>
-          {coverLetterMessage ? (
-            <StatusMessage text={coverLetterMessage} />
-          ) : null}
-        </form>
-
-        {coverLetterResult ? (
+        {isPremiumActive && coverLetterResult ? (
           <div className="grid gap-2 rounded-2xl border border-[#E5E5E5] bg-[#F9F9F9] px-4 py-3 bk-body text-[#444444]">
             <p className="bk-body-sm text-[#666666]">
               Tone:{" "}

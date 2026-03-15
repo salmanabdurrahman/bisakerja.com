@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/ai/openai"
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/mayar"
+	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/midtrans"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/router"
@@ -69,19 +69,22 @@ func main() {
 	notificationCenterService := notificationapp.NewCenterService(identityRepository, notificationRepository)
 	notificationHandler := handler.NewNotificationHandler(notificationCenterService)
 
-	billingRepository := postgres.NewBillingRepository(dbPool)
-	mayarClient := mayar.NewClient(mayar.ClientConfig{
-		BaseURL:    cfg.MayarBaseURL,
-		APIKey:     cfg.MayarAPIKey,
-		Timeout:    cfg.MayarRequestTimeout,
-		MaxRetries: cfg.MayarMaxRetries,
+	midtransEnv := midtrans.SandboxEnv
+	if cfg.MidtransEnv == "production" {
+		midtransEnv = midtrans.ProductionEnv
+	}
+	midtransClient := midtrans.NewClient(midtrans.ClientConfig{
+		ServerKey: cfg.MidtransServerKey,
+		ClientKey: cfg.MidtransClientKey,
+		Env:       midtransEnv,
 	})
-	billingService := billingapp.NewService(identityRepository, billingRepository, mayarClient, billingapp.Config{
+	billingRepository := postgres.NewBillingRepository(dbPool)
+	billingService := billingapp.NewService(identityRepository, billingRepository, midtransClient, billingapp.Config{
 		RedirectAllowlist: cfg.BillingRedirectAllowlist,
 		IdempotencyWindow: cfg.BillingIdempotencyWindow,
 		RateLimitWindow:   cfg.BillingUserRateLimitWindow,
 	})
-	billingHandler := handler.NewBillingHandler(billingService, cfg.BillingWebhookToken)
+	billingHandler := handler.NewBillingHandler(billingService, cfg.MidtransServerKey)
 
 	aiRepository := postgres.NewAIRepository(dbPool)
 	aiProvider := openai.NewClient(openai.ClientConfig{

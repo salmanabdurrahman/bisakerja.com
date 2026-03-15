@@ -35,12 +35,20 @@ Memberikan pengalaman pencarian lowongan yang cepat, relevan, dan stabil untuk u
 ## Perilaku Query
 
 - Teknologi utama:
-  - PostgreSQL Full Text Search (`tsvector`).
-  - `pg_trgm` untuk fuzzy matching.
+  - Multi-kata: query `q` dipecah per spasi (maksimum 10 kata); setiap kata menjadi kondisi `AND` pada `LOWER(title) LIKE`, `LOWER(company) LIKE`, dan `LOWER(description) LIKE`.
+  - Indeks `idx_jobs_title_lower` dan `idx_jobs_description_lower` (operator `text_pattern_ops`) ditambahkan via migrasi `000006_jobs_search_index` untuk performa LIKE case-insensitive.
 - Strategi cache:
   - Key: `jobs:search:{hash_query}`
   - TTL: 1 jam.
 - Timeout query read disarankan: 1 detik.
+
+## `GET /jobs/titles` — Autocomplete Judul Lowongan
+
+Endpoint publik untuk mendukung UX autocomplete di form AI Tools.
+
+- Prefix match case-insensitive pada `title`.
+- Distinct titles, ascending, maks 10 hasil.
+- Kontrak lengkap: [`../api/jobs.md`](../api/jobs.md) Bagian 3.
 
 ## Kontrak API Terkait
 

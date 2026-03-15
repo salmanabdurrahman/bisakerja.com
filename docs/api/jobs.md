@@ -110,6 +110,57 @@
 
 ## Catatan Implementasi
 
-- Search memanfaatkan PostgreSQL Full Text Search + `pg_trgm`.
+- Search memanfaatkan PostgreSQL LIKE multi-kata pada `title`, `company`, dan `description`.
+- Multi-kata didukung: query `q` dipecah per spasi, setiap kata menjadi kondisi `AND` tersendiri (contoh: "backend intern" → `title LIKE '%backend%' AND title LIKE '%intern%'`).
+- Indeks `idx_jobs_title_lower` dan `idx_jobs_description_lower` (operator `text_pattern_ops`) ditambahkan via migrasi `000006_jobs_search_index` untuk performa pencarian case-insensitive.
 - Endpoint list jobs direkomendasikan memakai Redis caching untuk query populer (`jobs:search:{hash_query}`) dengan TTL 1 jam.
 - Query timeout rekomendasi: 1 detik untuk read path publik.
+
+## 3) Search Job Titles (Autocomplete)
+
+- **Method**: `GET`
+- **Path**: `/jobs/titles`
+- **Auth**: Public
+
+Endpoint publik untuk autocomplete judul lowongan. Dipakai UI AI Tools saat user mengetik title untuk job-fit summary dan cover letter draft.
+
+### Query Parameters
+
+| Name | Type | Required | Default | Validation |
+|---|---|---|---|---|
+| `q` | string | yes | - | min 1 karakter, max 200 karakter. |
+
+### Behavior Notes
+
+- Prefix match case-insensitive pada kolom `title` (`LOWER(title) LIKE $1%`).
+- Distinct titles, diurutkan ascending, maksimum 10 hasil.
+- Jika `q` kosong atau tidak ada, endpoint mengembalikan `400 BAD_REQUEST`.
+
+### Example Request
+
+`GET /api/v1/jobs/titles?q=backend`
+
+### Response `200 OK`
+
+```json
+{
+  "meta": {
+    "code": 200,
+    "status": "success",
+    "message": "Job titles retrieved",
+    "request_id": "req_01J..."
+  },
+  "data": {
+    "titles": [
+      "Backend Engineer",
+      "Backend Engineer (Golang)",
+      "Backend Intern",
+      "Backend Software Engineer"
+    ]
+  }
+}
+```
+
+### Error
+
+- `400 BAD_REQUEST` (`BAD_REQUEST`) jika `q` kosong atau tidak ada.

@@ -62,7 +62,7 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
 
 | Endpoint | Tujuan di Frontend | Field minimum yang dikonsumsi | Referensi |
 |---|---|---|---|
-| `POST /api/v1/billing/checkout-session` | Membuat sesi checkout dan mendapat `checkout_url`. | request: `plan_code`, `redirect_url`, `coupon_code?`; response: `data.checkout_url`, `data.transaction_id`, `data.expired_at`, `data.subscription_state`, `data.transaction_status`, `data.original_amount`, `data.discount_amount`, `data.final_amount`, `data.coupon_code?` | [billing.md](../../api/billing.md) |
+| `POST /api/v1/billing/checkout-session` | Membuat sesi checkout dan mendapat `checkout_url`. | request: `plan_code`, `customer_mobile`, `redirect_url`, `coupon_code?`; response: `data.checkout_url`, `data.transaction_id`, `data.expired_at`, `data.subscription_state`, `data.transaction_status`, `data.original_amount`, `data.discount_amount`, `data.final_amount`, `data.coupon_code?` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/billing/status` | Mendapatkan state subscription canonical. | `data.subscription_state`, `data.last_transaction_status`, `data.premium_expired_at` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/billing/transactions` | Menampilkan ringkasan histori pembayaran (opsional MVP ringan). | `data[].status`, `data[].amount`, `data[].created_at` | [billing.md](../../api/billing.md) |
 | `GET /api/v1/auth/me` | Sinkron badge premium di navbar/profile. | `data.is_premium`, `data.premium_expired_at` | [auth.md](../../api/auth.md) |
@@ -73,10 +73,11 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
   - Saat fetch status billing: tampilkan status skeleton.
   - Saat create checkout: tombol upgrade tampil loading + disabled.
 - **Error**
-  - `400 BAD_REQUEST`: tampilkan pesan validasi spesifik (`INVALID_PLAN_CODE`/`INVALID_COUPON_CODE`/`INVALID_REDIRECT_URL`).
+- `400 BAD_REQUEST`: tampilkan pesan validasi spesifik (`INVALID_PLAN_CODE`/`INVALID_CUSTOMER_MOBILE`/`INVALID_COUPON_CODE`/`INVALID_REDIRECT_URL`).
     - Untuk `INVALID_REDIRECT_URL`, arahkan user mengecek `BILLING_REDIRECT_ALLOWLIST`; local dev boleh `http` hanya untuk `localhost`/`127.0.0.1`/`::1`.
   - `401 UNAUTHORIZED`: minta login ulang.
   - `409 CONFLICT`: refresh status dan tampilkan pesan informatif.
+  - `429 TOO_MANY_REQUESTS`: tampilkan instruksi tunggu singkat (~10 detik) lalu retry/continue pending checkout.
   - `502`/`503`: tampilkan error payment provider sementara + retry.
 - **Empty**
   - Jika tidak ada histori transaksi: tampilkan empty state "Belum ada transaksi".

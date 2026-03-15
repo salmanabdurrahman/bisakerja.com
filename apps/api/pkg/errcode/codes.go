@@ -18,6 +18,7 @@ const (
 	InvalidJobType          = "INVALID_JOB_TYPE"
 	InvalidPlanCode         = "INVALID_PLAN_CODE"
 	InvalidCouponCode       = "INVALID_COUPON_CODE"
+	InvalidCustomerMobile   = "INVALID_CUSTOMER_MOBILE"
 	InvalidRedirectURL      = "INVALID_REDIRECT_URL"
 	InvalidAIPrompt         = "INVALID_AI_PROMPT"
 	InvalidAIFeature        = "INVALID_AI_FEATURE"
@@ -29,8 +30,8 @@ const (
 	InvalidWebhookToken     = "INVALID_WEBHOOK_TOKEN" // #nosec G101 -- API error code, not secret material.
 	WebhookUserNotFound     = "WEBHOOK_USER_NOT_FOUND"
 	AlreadyPremium          = "ALREADY_PREMIUM"
-	MayarRateLimited        = "MAYAR_RATE_LIMITED"
-	MayarUpstreamError      = "MAYAR_UPSTREAM_ERROR"
+	MidtransRateLimited     = "MIDTRANS_RATE_LIMITED"
+	MidtransUpstreamError   = "MIDTRANS_UPSTREAM_ERROR"
 	NotFound                = "NOT_FOUND"
 	ServiceUnavailable      = "SERVICE_UNAVAILABLE"
 	InternalServerError     = "INTERNAL_SERVER_ERROR"

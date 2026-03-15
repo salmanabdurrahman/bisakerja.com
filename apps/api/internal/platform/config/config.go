@@ -25,11 +25,9 @@ type Config struct {
 	AuthJWTSecret              string
 	AuthAccessTokenTTL         time.Duration
 	AuthRefreshTokenTTL        time.Duration
-	MayarBaseURL               string
-	MayarAPIKey                string
-	MayarRequestTimeout        time.Duration
-	MayarMaxRetries            int
-	BillingWebhookToken        string
+	MidtransServerKey          string
+	MidtransClientKey          string
+	MidtransEnv                string
 	BillingRedirectAllowlist   []string
 	BillingIdempotencyWindow   time.Duration
 	BillingUserRateLimitWindow time.Duration
@@ -60,11 +58,9 @@ func Load() Config {
 		AuthJWTSecret:              getenv("AUTH_JWT_SECRET", "bisakerja-dev-secret"),
 		AuthAccessTokenTTL:         parseDuration(getenv("AUTH_ACCESS_TOKEN_TTL", "15m"), 15*time.Minute),
 		AuthRefreshTokenTTL:        parseDuration(getenv("AUTH_REFRESH_TOKEN_TTL", "168h"), 168*time.Hour),
-		MayarBaseURL:               getenv("MAYAR_BASE_URL", "https://api.mayar.id/hl/v1"),
-		MayarAPIKey:                getenv("MAYAR_API_KEY", ""),
-		MayarRequestTimeout:        parseDuration(getenv("MAYAR_REQUEST_TIMEOUT", "5s"), 5*time.Second),
-		MayarMaxRetries:            parseInt(getenv("MAYAR_MAX_RETRIES", "3"), 3),
-		BillingWebhookToken:        getenv("BILLING_WEBHOOK_TOKEN", "bisakerja-dev-webhook-token"),
+		MidtransServerKey:          getenv("MIDTRANS_SERVER_KEY", ""),
+		MidtransClientKey:          getenv("MIDTRANS_CLIENT_KEY", ""),
+		MidtransEnv:                getenv("MIDTRANS_ENV", "sandbox"),
 		BillingRedirectAllowlist:   parseCSVList(getenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,localhost:3000,127.0.0.1:3000,[::1]:3000")),
 		BillingIdempotencyWindow:   parseDuration(getenv("BILLING_IDEMPOTENCY_WINDOW", "15m"), 15*time.Minute),
 		BillingUserRateLimitWindow: parseDuration(getenv("BILLING_USER_RATE_LIMIT_WINDOW", "10s"), 10*time.Second),

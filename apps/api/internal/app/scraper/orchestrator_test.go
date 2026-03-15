@@ -47,6 +47,10 @@ func (r *fakeRepository) RecordScrapeRun(_ context.Context, run job.ScrapeRun) e
 	return nil
 }
 
+func (r *fakeRepository) SearchTitles(_ context.Context, _ job.TitleSearchQuery) ([]string, error) {
+	return []string{}, nil
+}
+
 type fakeAdapter struct {
 	source       job.Source
 	requiresAuth bool

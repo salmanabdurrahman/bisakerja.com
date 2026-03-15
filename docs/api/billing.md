@@ -1,6 +1,6 @@
 # Billing API (Internal Bisakerja)
 
-Dokumen ini menjelaskan endpoint billing internal Bisakerja yang mengorkestrasi integrasi ke Mayar.
+Dokumen ini menjelaskan endpoint billing internal Bisakerja yang mengorkestrasi integrasi ke Midtrans.
 
 ## 1) Create Checkout Session
 
@@ -10,24 +10,26 @@ Dokumen ini menjelaskan endpoint billing internal Bisakerja yang mengorkestrasi 
 - **Ownership**: user hanya dapat membuat checkout untuk dirinya sendiri (`JWT.sub`).
 - **Rate limit**:
   - inbound user: maksimal 1 request / 10 detik per user.
+  - outbound ke Midtrans: dikelola oleh Midtrans SDK.
+  - inbound user: maksimal 1 request / 10 detik per user.
   - outbound ke Mayar: target aman <= 18 request/menit/IP.
 
 Endpoint ini:
-1. memastikan customer tersedia di Mayar,
-2. membuat invoice via Mayar,
-3. menyimpan transaksi `pending` di Bisakerja.
+1. membuat Snap transaction via Midtrans,
+2. menyimpan transaksi `pending` di Bisakerja.
 
 ### Idempotency
 
 - Client direkomendasikan mengirim header `Idempotency-Key`.
 - Jika key sama dipakai ulang oleh user yang sama (payload sama, window 15 menit), API mengembalikan checkout pending yang sudah ada tanpa membuat invoice baru.
+- Untuk retry cepat tanpa mengganti payload, API juga dapat me-return checkout `pending` terbaru (`200 Checkout session reused`) selama masih valid, agar user tidak terblokir oleh rate limit saat melanjutkan pembayaran yang sama.
 
 ### Request Body
 
 ```json
 {
   "plan_code": "pro_monthly",
-  "coupon_code": "SAVE10",
+  "customer_mobile": "08123456789",
   "redirect_url": "https://app.bisakerja.com/billing/success"
 }
 ```
@@ -37,14 +39,9 @@ Endpoint ini:
 | Field | Rules |
 |---|---|
 | `plan_code` | wajib, enum MVP: `pro_monthly`. |
-| `coupon_code` | opsional, jika diisi harus alfanumerik (`A-Z`, `0-9`, `-`, `_`) panjang `3..64`, dan valid di Mayar. |
+| `customer_mobile` | wajib, nomor telepon customer untuk detail Midtrans; karakter yang diizinkan angka dengan panjang `9..15` digit (spasi, `+`, `-`, `(`, `)` pada input akan dinormalisasi). |
 | `redirect_url` | wajib, host harus ada di allowlist backend; skema `https` wajib untuk host non-local, sementara `http` hanya diizinkan untuk local development (`localhost`, `127.0.0.1`, `::1`). |
 
-Jika `coupon_code` dikirim:
-
-1. backend memvalidasi kode ke Mayar (`GET /hl/v1/coupon/validate`),
-2. nominal invoice checkout memakai `final_amount` setelah diskon,
-3. response tetap canonical dengan tambahan metadata amount.
 
 ### Response `201 Created`
 
@@ -57,15 +54,14 @@ Jika `coupon_code` dikirim:
     "request_id": "req_01J..."
   },
   "data": {
-    "provider": "mayar",
+    "provider": "midtrans",
     "plan_code": "pro_monthly",
-    "invoice_id": "f774034d-d9cc-43a0-97d8-a2520c127f03",
-    "transaction_id": "23fa41c5-c6ed-45d4-8302-5fac4a165dfa",
-    "checkout_url": "https://andiak.myr.id/invoices/ibzfrf4880",
+    "invoice_id": "snap-token-xyz",
+    "transaction_id": "checkout:user-uuid:random-key",
+    "checkout_url": "https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-xyz",
+    "snap_token": "snap-token-xyz",
     "original_amount": 49000,
-    "discount_amount": 10000,
-    "final_amount": 39000,
-    "coupon_code": "SAVE10",
+    "final_amount": 49000,
     "expired_at": "2026-03-20T10:00:00Z",
     "subscription_state": "pending_payment",
     "transaction_status": "pending"
@@ -86,15 +82,14 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
     "request_id": "req_01J..."
   },
   "data": {
-    "provider": "mayar",
+    "provider": "midtrans",
     "plan_code": "pro_monthly",
-    "invoice_id": "f774034d-d9cc-43a0-97d8-a2520c127f03",
-    "transaction_id": "23fa41c5-c6ed-45d4-8302-5fac4a165dfa",
-    "checkout_url": "https://andiak.myr.id/invoices/ibzfrf4880",
+    "invoice_id": "snap-token-xyz",
+    "transaction_id": "checkout:user-uuid:random-key",
+    "checkout_url": "https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-xyz",
+    "snap_token": "snap-token-xyz",
     "original_amount": 49000,
-    "discount_amount": 10000,
-    "final_amount": 39000,
-    "coupon_code": "SAVE10",
+    "final_amount": 49000,
     "expired_at": "2026-03-20T10:00:00Z",
     "subscription_state": "pending_payment",
     "transaction_status": "pending"
@@ -104,19 +99,17 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
 
 ### Error
 
-- `400 BAD_REQUEST` (`INVALID_PLAN_CODE`, `INVALID_COUPON_CODE`, `INVALID_REDIRECT_URL`).
+- `400 BAD_REQUEST` (`INVALID_PLAN_CODE`, `INVALID_CUSTOMER_MOBILE`, `INVALID_REDIRECT_URL`).
 - `401 UNAUTHORIZED` token user invalid.
 - `409 CONFLICT` (`ALREADY_PREMIUM`) user masih premium aktif.
-- `429 TOO_MANY_REQUESTS` (`TOO_MANY_REQUESTS`) rate limit user terlampaui.
-- `502 BAD_GATEWAY` (`MAYAR_UPSTREAM_ERROR`) upstream Mayar gagal merespons valid.
-- `503 SERVICE_UNAVAILABLE` (`MAYAR_RATE_LIMITED`/`SERVICE_UNAVAILABLE`) retry exhausted atau dependency down.
+- `429 TOO_MANY_REQUESTS` (`TOO_MANY_REQUESTS`) rate limit user terlampaui **dan** tidak ada checkout pending valid yang bisa direuse.
+- `502 BAD_GATEWAY` (`MIDTRANS_UPSTREAM_ERROR`) upstream Midtrans mengembalikan respons non-kompatibel (verifikasi `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, dan `MIDTRANS_ENV`).
+- `503 SERVICE_UNAVAILABLE` (`MIDTRANS_RATE_LIMITED`/`SERVICE_UNAVAILABLE`) retry exhausted atau dependency down.
 
-### Retry Contract ke Mayar
+### Retry Contract ke Midtrans
 
 - Retry hanya untuk `429/5xx`.
 - Max retry: 3 kali dengan exponential backoff + jitter (200ms, 400ms, 800ms).
-- Timeout outbound per request: 5 detik.
-
 ## 2) Get My Billing Status
 
 - **Method**: `GET`
@@ -190,8 +183,8 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
   "data": [
     {
       "id": "0f8fad5b-d9cb-469f-a165-70867728950e",
-      "provider": "mayar",
-      "mayar_transaction_id": "23fa41c5-c6ed-45d4-8302-5fac4a165dfa",
+      "provider": "midtrans",
+      "provider_transaction_id": "checkout:user-uuid:random-key",
       "amount": 49000,
       "status": "success",
       "created_at": "2026-03-13T18:20:00Z"
@@ -208,21 +201,20 @@ Jika request mengirim `Idempotency-Key` yang sama (masih dalam window 15 menit),
 
 ## 4) Reconciliation & Recovery (Internal Worker)
 
-Reconciliation dijalankan periodik oleh `billing-worker` untuk memastikan status transaksi lokal tetap sinkron dengan status invoice di Mayar.
+Reconciliation dijalankan periodik oleh `billing-worker` untuk memastikan status transaksi lokal tetap sinkron dengan status invoice di Midtrans.
 
 ### Input Reconciliation
 
 - Sumber transaksi: semua transaksi internal status `pending`/`reminder`.
-- Sumber status upstream: `GET /hl/v1/invoice/{id}` ke Mayar.
+- Sumber status upstream: `CheckTransaction(orderID)` via Midtrans Core API SDK.
 
 ### Status Normalization
 
-| Status invoice Mayar | Status internal Bisakerja |
+| Status Midtrans | Status internal Bisakerja |
 |---|---|
-| `paid`, `success`, `completed` | `success` |
-| `reminder` | `reminder` |
-| `pending`, `unpaid`, `open`, `waiting` | `pending` |
-| `failed`, `expired`, `cancelled`, `canceled`, `void` | `failed` |
+| `capture` + fraud `accept` / `settlement` | `success` |
+| `pending` | `pending` |
+| `cancel` / `expire` / `deny` | `failed` |
 
 Jika rekonsiliasi menemukan status berubah menjadi `success`, sistem akan mengaktifkan premium user terkait sesuai kontrak `subscription_state`.
 
@@ -243,7 +235,7 @@ Jika rekonsiliasi menemukan status berubah menjadi `success`, sistem akan mengak
   - `retryable_failures`,
   - `anomaly_count`.
 
-## 5) Kontrak Integrasi ke Mayar
+## 5) Kontrak Integrasi ke Midtrans
 
-- Referensi endpoint resmi: [`mayar-headless.md`](./mayar-headless.md).
+- Referensi integrasi Snap: [`midtrans-snap.md`](./midtrans-snap.md).
 - Webhook inbound: [`webhooks.md`](./webhooks.md).

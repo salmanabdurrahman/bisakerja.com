@@ -1,76 +1,57 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
-	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/billing/mayar"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/handler"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/middleware"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/http/router"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/adapter/persistence/memory"
 	billingapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/billing"
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
+	billingdomain "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/billing"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/logger"
 )
 
+// integrationBillingProvider is an in-memory stub implementing billingdomain.Provider.
+type integrationBillingProvider struct{}
+
+func (p *integrationBillingProvider) EnsureCustomer(
+	_ context.Context,
+	_ billingdomain.EnsureCustomerInput,
+) (billingdomain.Customer, error) {
+	return billingdomain.Customer{ID: "cust_integration"}, nil
+}
+
+func (p *integrationBillingProvider) CreateInvoice(
+	_ context.Context,
+	input billingdomain.CreateInvoiceInput,
+) (billingdomain.Invoice, error) {
+	expiresAt := time.Now().UTC().Add(24 * time.Hour)
+	return billingdomain.Invoice{
+		ID:            "inv_integration",
+		TransactionID: "trx_integration",
+		CheckoutURL:   "https://pay.example.com/inv_integration",
+		SnapToken:     "snap_token_integration",
+		Amount:        input.Amount,
+		ExpiresAt:     &expiresAt,
+	}, nil
+}
+
+func (p *integrationBillingProvider) ValidateCoupon(
+	_ context.Context,
+	_ billingdomain.ValidateCouponInput,
+) (billingdomain.Coupon, error) {
+	// Return no coupon — coupons are no longer part of Midtrans flow
+	return billingdomain.Coupon{}, billingdomain.ErrCouponInvalid
+}
+
 func TestBillingCheckoutFlow(t *testing.T) {
-	var customerCreateCalls int64
-	var invoiceCreateCalls int64
-	var couponValidateCalls int64
-	var invoiceCreateAmount int64
-
-	mayarServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/hl/v1/customer/create":
-			atomic.AddInt64(&customerCreateCalls, 1)
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string]any{
-					"id": "cust_123",
-				},
-			})
-		case "/hl/v1/invoice/create":
-			atomic.AddInt64(&invoiceCreateCalls, 1)
-			requestBody := map[string]any{}
-			if err := json.NewDecoder(r.Body).Decode(&requestBody); err == nil {
-				if amount, ok := requestBody["amount"].(float64); ok {
-					atomic.StoreInt64(&invoiceCreateAmount, int64(amount))
-				}
-			}
-			amount := atomic.LoadInt64(&invoiceCreateAmount)
-			if amount <= 0 {
-				amount = 49_000
-			}
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string]any{
-					"id":            "inv_123",
-					"transactionId": "trx_123",
-					"invoiceUrl":    "https://pay.example.com/inv_123",
-					"expiredAt":     "2026-03-20T10:00:00Z",
-					"amount":        amount,
-				},
-			})
-		case "/hl/v1/coupon/validate":
-			atomic.AddInt64(&couponValidateCalls, 1)
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string]any{
-					"valid":           true,
-					"coupon_code":     "SAVE10",
-					"discount_amount": 10000,
-					"final_amount":    39000,
-				},
-			})
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer mayarServer.Close()
-
 	tokenManager, err := auth.NewManager("integration-secret", 15*time.Minute, 24*time.Hour)
 	if err != nil {
 		t.Fatalf("create token manager: %v", err)
@@ -81,27 +62,27 @@ func TestBillingCheckoutFlow(t *testing.T) {
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 
 	transactionRepository := memory.NewBillingRepository()
-	mayarClient := mayar.NewClient(mayar.ClientConfig{
-		BaseURL:  mayarServer.URL + "/hl/v1",
-		APIKey:   "test-key",
-		Sleep:    func(time.Duration) {},
-		RandIntn: func(int) int { return 0 },
-	})
-	billingService := billingapp.NewService(identityRepository, transactionRepository, mayarClient, billingapp.Config{
-		RedirectAllowlist: []string{"app.bisakerja.com"},
-		IdempotencyWindow: 15 * time.Minute,
-		RateLimitWindow:   10 * time.Second,
-	})
+	billingService := billingapp.NewService(
+		identityRepository,
+		transactionRepository,
+		&integrationBillingProvider{},
+		billingapp.Config{
+			RedirectAllowlist: []string{"app.bisakerja.com"},
+			IdempotencyWindow: 15 * time.Minute,
+			RateLimitWindow:   10 * time.Second,
+		},
+	)
 
 	appHandler := router.New(
 		logger.New("test"),
 		router.Dependencies{
 			AuthHandler:    authHandler,
-			BillingHandler: handler.NewBillingHandler(billingService),
+			BillingHandler: handler.NewBillingHandler(billingService, ""),
 			AuthMiddleware: authMiddleware,
 		},
 	)
 
+	// 1. Register
 	registerPayload := map[string]any{
 		"email":    "billing-flow@example.com",
 		"password": "StrongPass1",
@@ -112,6 +93,7 @@ func TestBillingCheckoutFlow(t *testing.T) {
 		t.Fatalf("expected register status 201, got %d (%s)", registerResponse.Code, registerResponse.Body.String())
 	}
 
+	// 2. Login
 	loginPayload := map[string]any{
 		"email":    "billing-flow@example.com",
 		"password": "StrongPass1",
@@ -130,10 +112,11 @@ func TestBillingCheckoutFlow(t *testing.T) {
 		t.Fatalf("decode login response: %v", err)
 	}
 
+	// 3. Checkout
 	checkoutPayload := map[string]any{
-		"plan_code":    "pro_monthly",
-		"coupon_code":  "save10",
-		"redirect_url": "https://app.bisakerja.com/billing/success",
+		"plan_code":       "pro_monthly",
+		"redirect_url":    "https://app.bisakerja.com/billing/success",
+		"customer_mobile": "08123456789",
 	}
 	checkoutResponse := performJSONRequest(t, appHandler, http.MethodPost, "/api/v1/billing/checkout-session", checkoutPayload, loginResult.Data.AccessToken)
 	if checkoutResponse.Code != http.StatusCreated {
@@ -147,18 +130,18 @@ func TestBillingCheckoutFlow(t *testing.T) {
 			InvoiceID         string `json:"invoice_id"`
 			TransactionID     string `json:"transaction_id"`
 			OriginalAmount    int64  `json:"original_amount"`
-			DiscountAmount    int64  `json:"discount_amount"`
 			FinalAmount       int64  `json:"final_amount"`
-			CouponCode        string `json:"coupon_code"`
 			SubscriptionState string `json:"subscription_state"`
 			TransactionStatus string `json:"transaction_status"`
+			SnapToken         string `json:"snap_token"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(checkoutResponse.Body.Bytes(), &checkoutResult); err != nil {
 		t.Fatalf("decode checkout response: %v", err)
 	}
-	if checkoutResult.Data.Provider != "mayar" {
-		t.Fatalf("expected provider mayar, got %q", checkoutResult.Data.Provider)
+
+	if checkoutResult.Data.Provider != "midtrans" {
+		t.Fatalf("expected provider midtrans, got %q", checkoutResult.Data.Provider)
 	}
 	if checkoutResult.Data.InvoiceID == "" || checkoutResult.Data.TransactionID == "" {
 		t.Fatalf("expected invoice and transaction id, got %+v", checkoutResult.Data)
@@ -166,31 +149,13 @@ func TestBillingCheckoutFlow(t *testing.T) {
 	if checkoutResult.Data.PlanCode != "pro_monthly" {
 		t.Fatalf("expected plan code pro_monthly, got %q", checkoutResult.Data.PlanCode)
 	}
-	if checkoutResult.Data.OriginalAmount != 49_000 ||
-		checkoutResult.Data.DiscountAmount != 10_000 ||
-		checkoutResult.Data.FinalAmount != 39_000 {
+	if checkoutResult.Data.OriginalAmount != 49_000 || checkoutResult.Data.FinalAmount != 49_000 {
 		t.Fatalf("unexpected amount details: %+v", checkoutResult.Data)
-	}
-	if checkoutResult.Data.CouponCode != "SAVE10" {
-		t.Fatalf("expected coupon code SAVE10, got %q", checkoutResult.Data.CouponCode)
 	}
 	if checkoutResult.Data.SubscriptionState != "pending_payment" {
 		t.Fatalf("expected pending_payment state, got %q", checkoutResult.Data.SubscriptionState)
 	}
 	if checkoutResult.Data.TransactionStatus != "pending" {
 		t.Fatalf("expected pending transaction status, got %q", checkoutResult.Data.TransactionStatus)
-	}
-
-	if atomic.LoadInt64(&customerCreateCalls) != 1 {
-		t.Fatalf("expected customer/create called once, got %d", atomic.LoadInt64(&customerCreateCalls))
-	}
-	if atomic.LoadInt64(&invoiceCreateCalls) != 1 {
-		t.Fatalf("expected invoice/create called once, got %d", atomic.LoadInt64(&invoiceCreateCalls))
-	}
-	if atomic.LoadInt64(&couponValidateCalls) != 1 {
-		t.Fatalf("expected coupon/validate called once, got %d", atomic.LoadInt64(&couponValidateCalls))
-	}
-	if atomic.LoadInt64(&invoiceCreateAmount) != 39_000 {
-		t.Fatalf("expected invoice/create amount 39000, got %d", atomic.LoadInt64(&invoiceCreateAmount))
 	}
 }

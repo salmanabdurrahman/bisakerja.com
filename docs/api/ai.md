@@ -16,6 +16,10 @@ Semua endpoint:
 
 Endpoint ini membantu user menyusun query dan filter pencarian lowongan yang lebih relevan.
 
+> **UI Note**: Frontend menggunakan `suggested_query` dari respons untuk dua aksi:
+> 1. Menampilkan query yang disarankan beserta ringkasan filter.
+> 2. Tombol "Open in Jobs" membuka halaman `/jobs?q={suggested_query}` di tab baru sehingga user dapat langsung melihat hasil pencarian tanpa meninggalkan halaman AI Tools.
+
 ### Request Body
 
 ```json
@@ -92,6 +96,8 @@ Endpoint ini membantu user menyusun query dan filter pencarian lowongan yang leb
 - **Auth**: Bearer Token (user)
 
 Endpoint ini menghasilkan ringkasan kecocokan profil user terhadap lowongan tertentu.
+
+> **UI Note**: Frontend tidak meminta user memasukkan `job_id` secara langsung. Input user berupa teks judul lowongan yang di-autocomplete via `GET /api/v1/jobs/titles?q={query}`. Setelah user memilih salah satu judul dari dropdown, `job_id` yang sesuai diambil dari respons `GET /api/v1/jobs?q={selected_title}&limit=1` (atau dari data hasil pencarian yang sudah ada) dan dikirim ke endpoint ini.
 
 ### Request Body
 
@@ -170,6 +176,9 @@ Endpoint ini menghasilkan ringkasan kecocokan profil user terhadap lowongan tert
 - **Auth**: Bearer Token (user)
 
 Endpoint ini menghasilkan draft cover letter berdasarkan lowongan, preferensi user, dan tone yang dipilih.
+
+> **UI Note (Job Selection)**: Sama seperti job-fit summary, frontend menggunakan autocomplete title via `GET /api/v1/jobs/titles?q={query}` — bukan input `job_id` manual.
+> **UI Note (Copy to Clipboard)**: Setelah draft berhasil di-generate, tombol "Copy" tersedia di samping tombol "Generate cover letter" untuk menyalin isi `data.draft` ke clipboard. Tidak ada round-trip API tambahan untuk aksi copy ini.
 
 ### Request Body
 

@@ -18,8 +18,8 @@ type ReconciliationSummary struct {
 	AnomalyCount        int
 }
 
-// ReconcileWithMayar handles reconcile with mayar.
-func (s *Service) ReconcileWithMayar(ctx context.Context) (ReconciliationSummary, error) {
+// ReconcileWithMidtrans handles reconcile with midtrans.
+func (s *Service) ReconcileWithMidtrans(ctx context.Context) (ReconciliationSummary, error) {
 	if s.identityRepository == nil || s.repository == nil {
 		return ReconciliationSummary{}, errors.New("billing service dependency is not fully configured")
 	}
@@ -58,7 +58,7 @@ func (s *Service) ReconcileWithMayar(ctx context.Context) (ReconciliationSummary
 				summary.RetryableFailures++
 				continue
 			}
-			return summary, fmt.Errorf("lookup mayar invoice %s: %w", item.InvoiceID, invoiceErr)
+			return summary, fmt.Errorf("lookup midtrans invoice %s: %w", item.InvoiceID, invoiceErr)
 		}
 
 		nextStatus, shouldUpdate := normalizeInvoiceStatus(invoice.TransactionStatus)
@@ -66,9 +66,9 @@ func (s *Service) ReconcileWithMayar(ctx context.Context) (ReconciliationSummary
 			continue
 		}
 
-		_, updateErr := s.repository.UpdateStatusByMayarTransactionID(
+		_, updateErr := s.repository.UpdateStatusByProviderTransactionID(
 			ctx,
-			item.MayarTransactionID,
+			item.ProviderTransactionID,
 			nextStatus,
 			map[string]any{
 				"reconciliation_invoice_id":     invoice.InvoiceID,

@@ -3,7 +3,8 @@ import type { CheckoutSession } from "@/services/billing";
 const checkoutSessionStorageKey = "bisakerja:checkout-session";
 
 export interface CachedCheckoutSession {
-  checkout_url: string;
+  snap_token?: string;
+  checkout_url?: string;
   expired_at: string;
   transaction_id: string;
   plan_code?: "pro_monthly";
@@ -18,6 +19,7 @@ export function saveCheckoutSession(session: CheckoutSession): void {
     return;
   }
   const payload: CachedCheckoutSession = {
+    snap_token: session.snap_token,
     checkout_url: session.checkout_url,
     expired_at: session.expired_at,
     transaction_id: session.transaction_id,
@@ -45,7 +47,6 @@ export function loadCheckoutSession(): CachedCheckoutSession | null {
     const parsed = JSON.parse(raw) as CachedCheckoutSession;
     if (
       !parsed ||
-      typeof parsed.checkout_url !== "string" ||
       typeof parsed.expired_at !== "string" ||
       typeof parsed.transaction_id !== "string"
     ) {
@@ -69,8 +70,14 @@ export function loadCheckoutSession(): CachedCheckoutSession | null {
       return null;
     }
     if (
-      parsed.coupon_code !== undefined &&
-      typeof parsed.coupon_code !== "string"
+      parsed.snap_token !== undefined &&
+      typeof parsed.snap_token !== "string"
+    ) {
+      return null;
+    }
+    if (
+      parsed.checkout_url !== undefined &&
+      typeof parsed.checkout_url !== "string"
     ) {
       return null;
     }

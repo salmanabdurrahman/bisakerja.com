@@ -273,3 +273,9 @@ func randomHex(bytesLen int) string {
 	}
 	return hex.EncodeToString(b)
 }
+
+// SearchTitles searches distinct job titles matching a prefix.
+func (r *JobsRepository) SearchTitles(_ context.Context, query job.TitleSearchQuery) ([]string, error) {
+	// Memory adapter stub: return empty slice
+	return []string{}, nil
+}

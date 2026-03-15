@@ -109,3 +109,86 @@ Beberapa halaman contoh request memiliki inkonsistensi kecil (contoh path di cur
 1. Jadikan blok **Endpoint (Production/Sandbox)** sebagai sumber kebenaran.
 2. Jadikan contoh response sebagai referensi bentuk payload.
 3. Simpan fallback parser agar toleran terhadap variasi field (misal `transaction_id` vs `transactionId`).
+
+## 8) Variasi Payload yang Harus Ditoleransi
+
+Agar flow checkout tetap stabil lintas versi payload Mayar, parser Bisakerja wajib toleran pada variasi berikut:
+
+### 8.1 Struktur root `data`
+
+- format object: `data: { ... }`
+- format array: `data: [{ ... }]`
+
+### 8.2 Customer ID (hasil `POST /customer/create`)
+
+Parser menerima beberapa field:
+
+- `data.id`
+- `data.customer_id` / `data.customerId`
+- `data.response` (varian docs lama)
+- fallback root: `id` / `response`
+
+### 8.3 Invoice fields (hasil `POST /invoice/create`)
+
+Parser menerima beberapa field:
+
+- invoice ID: `data.id`, `data.invoice_id`, `data.invoice.id`
+- transaction ID: `data.transactionId`, `data.transaction_id`, `data.transaction.id`
+- checkout link: `data.invoiceUrl`, `data.checkoutUrl`, `data.link`, `data.paymentLink`
+- expiry:
+  - RFC3339 string (`2026-03-20T10:00:00Z`), atau
+  - unix epoch timestamp (millisecond/second)
+
+### 8.4 Invoice reconciliation fields (hasil `GET /invoice/{id}`)
+
+Parser reconciliation menerima beberapa variasi field:
+
+- transaction ID: `data.transactionId`, `data.transaction_id`, `data.transactions[0].id`
+- customer email: `data.customerEmail`, `data.customer_email`, `data.customer.email`
+- updated time:
+  - RFC3339 string (`updatedAt` / `updated_at`), atau
+  - unix epoch timestamp (millisecond/second)
+
+### 8.5 Outbound request compatibility (Bisakerja -> Mayar)
+
+Agar kompatibel dengan variasi dokumentasi/sandbox, payload outbound checkout dikirim dengan field modern **dan** alias legacy:
+
+- `POST /customer/create`
+  - modern: `name`, `email`, `mobile` (sandbox saat ini mewajibkan `mobile`)
+- `POST /invoice/create`
+  - modern:
+    - customer: `name`, `email`, `mobile`
+    - redirect: `redirectUrl`
+    - amount/items: `items[].quantity`, `items[].rate`, `items[].description`
+    - expiry: `expiredAt` (RFC3339)
+    - metadata: `extraData`
+  - alias legacy (tetap dikirim untuk kompatibilitas):
+    - `customer_id`, `description`, `item`, `success_redirect_url`, `external_id`, `extra_data`
+- `GET /coupon/validate`
+  - query tetap mengirim alias umum (`coupon_code` + `code`, `amount`)
+  - parser response menerima varian:
+    - `discount_amount`/`final_amount`, atau
+    - `coupon.discountType` + `coupon.discountValue` (percentage/fixed amount)
+
+## 9) Troubleshooting `MAYAR_UPSTREAM_ERROR` (502)
+
+Jika API internal mengembalikan:
+
+- `code`: `MAYAR_UPSTREAM_ERROR`
+- `message`: `mayar upstream returned invalid response ...`
+
+lakukan checklist berikut:
+
+1. Verifikasi env backend:
+   - `MAYAR_BASE_URL` sesuai environment (`.id` prod / `.club` sandbox),
+   - `MAYAR_API_KEY` valid untuk environment tersebut.
+2. Pastikan endpoint checkout memakai payload kompatibel (lihat bagian 8).
+3. Validasi respons Mayar yang diterima:
+   - status code non-2xx (selain 429/5xx) akan dipetakan sebagai upstream error,
+   - payload JSON tanpa field minimal (`invoice_id`, `transaction_id`, `checkout link`) juga dipetakan upstream error.
+4. Jika `GET /invoice/{id}` tidak punya `transactionId` root, pastikan respons tetap memiliki `transactions[0].id`.
+5. Cek log backend:
+   - `mayar upstream non-success response` untuk status non-2xx (`status_code`, `request_id`, `response_body`),
+   - `mayar upstream invalid json response` untuk body yang tidak valid JSON.
+6. Jika `response_body` berisi `Duplicate request detected`, gunakan checkout pending yang sudah ada (reuse) atau tunggu sekitar 1 menit sebelum create invoice baru.
+7. Gunakan `request_id` response Bisakerja untuk korelasi log API saat investigasi.

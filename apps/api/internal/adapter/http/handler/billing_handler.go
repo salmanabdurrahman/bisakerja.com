@@ -21,10 +21,10 @@ type BillingCheckoutService interface {
 		ctx context.Context,
 		input billingapp.CreateCheckoutSessionInput,
 	) (billingapp.CheckoutSession, error)
-	ProcessMayarWebhook(
+	ProcessMidtransWebhook(
 		ctx context.Context,
-		input billingapp.ProcessMayarWebhookInput,
-	) (billingapp.ProcessMayarWebhookResult, error)
+		input billingapp.ProcessMidtransWebhookInput,
+	) (billingapp.ProcessMidtransWebhookResult, error)
 	GetBillingStatus(ctx context.Context, userID string) (billingapp.BillingStatus, error)
 	ListBillingTransactions(
 		ctx context.Context,
@@ -34,14 +34,15 @@ type BillingCheckoutService interface {
 
 // BillingHandler represents billing handler.
 type BillingHandler struct {
-	service      BillingCheckoutService
-	webhookToken string
+	service           BillingCheckoutService
+	midtransServerKey string
 }
 
 type createCheckoutSessionRequest struct {
-	PlanCode    string `json:"plan_code"`
-	CouponCode  string `json:"coupon_code"`
-	RedirectURL string `json:"redirect_url"`
+	PlanCode       string `json:"plan_code"`
+	CouponCode     string `json:"coupon_code"`
+	CustomerMobile string `json:"customer_mobile"`
+	RedirectURL    string `json:"redirect_url"`
 }
 
 type billingTransactionsQuery struct {
@@ -51,14 +52,14 @@ type billingTransactionsQuery struct {
 }
 
 // NewBillingHandler creates a new billing handler instance.
-func NewBillingHandler(service BillingCheckoutService, webhookToken ...string) *BillingHandler {
-	token := ""
-	if len(webhookToken) > 0 {
-		token = strings.TrimSpace(webhookToken[0])
+func NewBillingHandler(service BillingCheckoutService, midtransServerKey ...string) *BillingHandler {
+	key := ""
+	if len(midtransServerKey) > 0 {
+		key = strings.TrimSpace(midtransServerKey[0])
 	}
 	return &BillingHandler{
-		service:      service,
-		webhookToken: token,
+		service:           service,
+		midtransServerKey: key,
 	}
 }
 
@@ -87,6 +88,7 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 		UserID:         authUser.UserID,
 		PlanCode:       request.PlanCode,
 		CouponCode:     request.CouponCode,
+		CustomerMobile: request.CustomerMobile,
 		RedirectURL:    request.RedirectURL,
 		IdempotencyKey: strings.TrimSpace(r.Header.Get("Idempotency-Key")),
 	})
@@ -110,6 +112,12 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 				Code:    errcode.InvalidCouponCode,
 				Message: "coupon_code is invalid or not applicable",
 			}})
+		case errors.Is(err, billingapp.ErrInvalidCustomerMobile):
+			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
+				Field:   "customer_mobile",
+				Code:    errcode.InvalidCustomerMobile,
+				Message: "customer_mobile is required and must be a valid phone number (9-15 digits)",
+			}})
 		case errors.Is(err, billingapp.ErrAlreadyPremium):
 			response.WriteError(w, http.StatusConflict, "Conflict", requestID, []response.ErrorItem{{
 				Code:    errcode.AlreadyPremium,
@@ -120,15 +128,15 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 				Code:    errcode.TooManyRequests,
 				Message: "checkout request rate limit exceeded",
 			}})
-		case errors.Is(err, billingapp.ErrMayarUpstream):
+		case errors.Is(err, billingapp.ErrMidtransUpstream):
 			response.WriteError(w, http.StatusBadGateway, "Bad gateway", requestID, []response.ErrorItem{{
-				Code:    errcode.MayarUpstreamError,
-				Message: "mayar upstream returned invalid response",
+				Code:    errcode.MidtransUpstreamError,
+				Message: "midtrans upstream returned invalid response; verify MIDTRANS_SERVER_KEY and environment settings",
 			}})
-		case errors.Is(err, billingapp.ErrMayarRateLimited):
+		case errors.Is(err, billingapp.ErrMidtransRateLimited):
 			response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
-				Code:    errcode.MayarRateLimited,
-				Message: "mayar rate limit exceeded",
+				Code:    errcode.MidtransRateLimited,
+				Message: "midtrans rate limit exceeded",
 			}})
 		case errors.Is(err, billingapp.ErrServiceUnavailable):
 			response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
@@ -168,6 +176,7 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 		"expired_at":         checkout.ExpiredAt,
 		"subscription_state": checkout.SubscriptionState,
 		"transaction_status": checkout.TransactionStatus,
+		"snap_token":         checkout.SnapToken,
 	}
 	if checkout.CouponCode != "" {
 		payload["coupon_code"] = checkout.CouponCode
@@ -176,25 +185,9 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 	response.WriteSuccess(w, statusCode, message, requestID, payload)
 }
 
-// HandleMayarWebhook handles handle mayar webhook.
-func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Request) {
+// HandleMidtransWebhook handles midtrans webhook.
+func (h *BillingHandler) HandleMidtransWebhook(w http.ResponseWriter, r *http.Request) {
 	requestID := observability.RequestIDFromContext(r.Context())
-	if strings.TrimSpace(h.webhookToken) == "" {
-		response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
-			Code:    errcode.ServiceUnavailable,
-			Message: "webhook token is not configured",
-		}})
-		return
-	}
-
-	token := strings.TrimSpace(r.Header.Get("X-Bisakerja-Webhook-Token"))
-	if token == "" || token != h.webhookToken {
-		response.WriteError(w, http.StatusUnauthorized, "Unauthorized", requestID, []response.ErrorItem{{
-			Code:    errcode.InvalidWebhookToken,
-			Message: "invalid webhook token",
-		}})
-		return
-	}
 
 	payload := map[string]any{}
 	if err := decodeJSONBody(r, &payload); err != nil {
@@ -205,8 +198,9 @@ func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	result, err := h.service.ProcessMayarWebhook(r.Context(), billingapp.ProcessMayarWebhookInput{
-		Payload: payload,
+	result, err := h.service.ProcessMidtransWebhook(r.Context(), billingapp.ProcessMidtransWebhookInput{
+		Payload:   payload,
+		ServerKey: h.midtransServerKey,
 	})
 	if err != nil {
 		switch {
@@ -219,6 +213,16 @@ func (h *BillingHandler) HandleMayarWebhook(w http.ResponseWriter, r *http.Reque
 			response.WriteError(w, http.StatusUnprocessableEntity, "Unprocessable entity", requestID, []response.ErrorItem{{
 				Code:    errcode.WebhookUserNotFound,
 				Message: "webhook user not found",
+			}})
+		case errors.Is(err, billingapp.ErrMidtransUpstream):
+			response.WriteError(w, http.StatusBadGateway, "Bad gateway", requestID, []response.ErrorItem{{
+				Code:    errcode.MidtransUpstreamError,
+				Message: "midtrans upstream returned invalid response",
+			}})
+		case errors.Is(err, billingapp.ErrMidtransRateLimited):
+			response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
+				Code:    errcode.MidtransRateLimited,
+				Message: "midtrans rate limit exceeded",
 			}})
 		case errors.Is(err, billingapp.ErrServiceUnavailable):
 			response.WriteError(w, http.StatusServiceUnavailable, "Service unavailable", requestID, []response.ErrorItem{{
@@ -343,12 +347,12 @@ func (h *BillingHandler) GetBillingTransactions(w http.ResponseWriter, r *http.R
 	transactions := make([]map[string]any, 0, len(result.Data))
 	for _, item := range result.Data {
 		transactions = append(transactions, map[string]any{
-			"id":                   item.ID,
-			"provider":             item.Provider,
-			"mayar_transaction_id": item.MayarTransactionID,
-			"amount":               item.Amount,
-			"status":               item.Status,
-			"created_at":           item.CreatedAt,
+			"id":                      item.ID,
+			"provider":                item.Provider,
+			"provider_transaction_id": item.ProviderTransactionID,
+			"amount":                  item.Amount,
+			"status":                  item.Status,
+			"created_at":              item.CreatedAt,
 		})
 	}
 

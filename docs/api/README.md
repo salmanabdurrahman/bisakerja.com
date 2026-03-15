@@ -71,7 +71,7 @@ Dokumen ini adalah pintu masuk untuk seluruh kontrak endpoint Bisakerja API.
 | Domain | Field | Allowed Values | Notes |
 |---|---|---|---|
 | Subscription state | `subscription_state` | `free`, `pending_payment`, `premium_active`, `premium_expired` | Canonical source: `GET /billing/status`. |
-| Transaction status | `transactions.status` | `pending`, `reminder`, `success`, `failed` | Status internal Bisakerja (bukan raw status Mayar). |
+| Transaction status | `transactions.status` | `pending`, `reminder`, `success`, `failed` | Status internal Bisakerja (normalized dari Midtrans). |
 | Webhook processing | `webhook_deliveries.processing_status` | `processed`, `ignored_duplicate`, `rejected` | Untuk audit idempotency inbound webhook. |
 
 ### Pagination
@@ -103,9 +103,9 @@ Contoh:
 ### Idempotency & Retry Contract
 
 - `POST /billing/checkout-session` menerima header `Idempotency-Key` (direkomendasikan, unik per aksi checkout user).
-- `POST /webhook/mayar` wajib idempotent berdasarkan `mayar:{event}:{transactionId}`.
+- `POST /webhook/midtrans` wajib idempotent berdasarkan `midtrans:{order_id}`.
 - Duplicate webhook yang sudah diproses harus mengembalikan `200 OK` tanpa side effect ulang.
-- Outbound call ke Mayar untuk `429/5xx`: retry max 3 kali (exponential backoff + jitter), lalu fail dengan `503 SERVICE_UNAVAILABLE`.
+- Outbound call ke Midtrans untuk `429/5xx`: retry max 3 kali (exponential backoff + jitter), lalu fail dengan `503 SERVICE_UNAVAILABLE`.
 
 ## Dokumen Endpoint
 
@@ -121,4 +121,4 @@ Contoh:
 
 ## Integrasi Payment Gateway
 
-- [Mayar Headless API Mapping](./mayar-headless.md)
+- [Midtrans Snap Integration](./midtrans-snap.md)

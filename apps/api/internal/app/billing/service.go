@@ -2,6 +2,8 @@ package billing
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
@@ -15,14 +17,15 @@ import (
 )
 
 var (
-	ErrInvalidPlanCode    = errors.New("invalid plan code")
-	ErrInvalidCouponCode  = errors.New("invalid coupon code")
-	ErrInvalidRedirectURL = errors.New("invalid redirect url")
-	ErrAlreadyPremium     = errors.New("already premium")
-	ErrTooManyRequests    = errors.New("too many requests")
-	ErrMayarRateLimited   = errors.New("mayar rate limited")
-	ErrMayarUpstream      = errors.New("mayar upstream error")
-	ErrServiceUnavailable = errors.New("service unavailable")
+	ErrInvalidPlanCode       = errors.New("invalid plan code")
+	ErrInvalidCouponCode     = errors.New("invalid coupon code")
+	ErrInvalidCustomerMobile = errors.New("invalid customer mobile")
+	ErrInvalidRedirectURL    = errors.New("invalid redirect url")
+	ErrAlreadyPremium        = errors.New("already premium")
+	ErrTooManyRequests       = errors.New("too many requests")
+	ErrMidtransRateLimited   = errors.New("midtrans rate limited")
+	ErrMidtransUpstream      = errors.New("midtrans upstream error")
+	ErrServiceUnavailable    = errors.New("service unavailable")
 )
 
 // Config stores configuration values for config.
@@ -51,6 +54,7 @@ type CreateCheckoutSessionInput struct {
 	UserID         string
 	PlanCode       string
 	CouponCode     string
+	CustomerMobile string
 	RedirectURL    string
 	IdempotencyKey string
 }
@@ -62,6 +66,7 @@ type CheckoutSession struct {
 	InvoiceID         string
 	TransactionID     string
 	CheckoutURL       string
+	SnapToken         string
 	OriginalAmount    int64
 	DiscountAmount    int64
 	FinalAmount       int64
@@ -140,6 +145,10 @@ func (s *Service) CreateCheckoutSession(
 	if couponCode != "" && !isCouponCodeValid(couponCode) {
 		return CheckoutSession{}, ErrInvalidCouponCode
 	}
+	customerMobile, mobileValid := normalizeCustomerMobile(input.CustomerMobile)
+	if !mobileValid {
+		return CheckoutSession{}, ErrInvalidCustomerMobile
+	}
 
 	redirectURL := strings.TrimSpace(input.RedirectURL)
 	if !isRedirectURLAllowed(redirectURL, s.redirectHosts) {
@@ -172,6 +181,22 @@ func (s *Service) CreateCheckoutSession(
 		return CheckoutSession{}, ErrAlreadyPremium
 	}
 
+	reusedCheckout, reused, reuseErr := s.findLatestReusablePendingCheckout(
+		ctx,
+		userID,
+		redirectURL,
+		plan.Code,
+		couponCode,
+		now,
+		s.idempotencyWindow,
+	)
+	if reuseErr != nil {
+		return CheckoutSession{}, reuseErr
+	}
+	if reused {
+		return reusedCheckout, nil
+	}
+
 	if !s.allowCheckout(userID, now) {
 		return CheckoutSession{}, ErrTooManyRequests
 	}
@@ -182,7 +207,7 @@ func (s *Service) CreateCheckoutSession(
 	if couponCode != "" {
 		couponValidator, ok := s.provider.(billingdomain.CouponValidator)
 		if !ok {
-			return CheckoutSession{}, ErrServiceUnavailable
+			return CheckoutSession{}, ErrInvalidCouponCode
 		}
 		coupon, couponErr := couponValidator.ValidateCoupon(ctx, billingdomain.ValidateCouponInput{
 			Code:   couponCode,
@@ -208,20 +233,24 @@ func (s *Service) CreateCheckoutSession(
 	}
 
 	customer, err := s.provider.EnsureCustomer(ctx, billingdomain.EnsureCustomerInput{
-		Name:  user.Name,
-		Email: user.Email,
+		Name:   user.Name,
+		Email:  user.Email,
+		Mobile: customerMobile,
 	})
 	if err != nil {
 		return CheckoutSession{}, mapProviderError("ensure customer", err)
 	}
 
 	invoice, err := s.provider.CreateInvoice(ctx, billingdomain.CreateInvoiceInput{
-		CustomerID:  customer.ID,
-		PlanCode:    plan.Code,
-		Amount:      finalAmount,
-		Description: plan.Description,
-		RedirectURL: redirectURL,
-		ExternalID:  buildExternalID(userID, idempotencyKey, now),
+		CustomerID:     customer.ID,
+		CustomerName:   user.Name,
+		CustomerEmail:  user.Email,
+		CustomerMobile: customerMobile,
+		PlanCode:       plan.Code,
+		Amount:         finalAmount,
+		Description:    plan.Description,
+		RedirectURL:    redirectURL,
+		ExternalID:     buildExternalID(userID, idempotencyKey, now),
 	})
 	if err != nil {
 		return CheckoutSession{}, mapProviderError("create invoice", err)
@@ -244,6 +273,7 @@ func (s *Service) CreateCheckoutSession(
 	metadata := map[string]any{
 		"redirect_url":    redirectURL,
 		"customer_id":     customer.ID,
+		"customer_mobile": customerMobile,
 		"original_amount": plan.Amount,
 		"discount_amount": discountAmount,
 		"final_amount":    effectiveFinalAmount,
@@ -251,18 +281,21 @@ func (s *Service) CreateCheckoutSession(
 	if appliedCouponCode != "" {
 		metadata["coupon_code"] = appliedCouponCode
 	}
+	if invoice.SnapToken != "" {
+		metadata["snap_token"] = invoice.SnapToken
+	}
 
 	created, err := s.repository.CreatePending(ctx, billingdomain.CreatePendingTransactionInput{
-		UserID:             userID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           plan.Code,
-		MayarTransactionID: invoice.TransactionID,
-		InvoiceID:          invoice.ID,
-		CheckoutURL:        invoice.CheckoutURL,
-		Amount:             effectiveFinalAmount,
-		IdempotencyKey:     idempotencyKey,
-		ExpiresAt:          expiredAt,
-		Metadata:           metadata,
+		UserID:                userID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              plan.Code,
+		ProviderTransactionID: invoice.TransactionID,
+		InvoiceID:             invoice.ID,
+		CheckoutURL:           invoice.CheckoutURL,
+		Amount:                effectiveFinalAmount,
+		IdempotencyKey:        idempotencyKey,
+		ExpiresAt:             expiredAt,
+		Metadata:              metadata,
 	})
 	if err != nil {
 		return CheckoutSession{}, fmt.Errorf("create pending transaction: %w", err)
@@ -338,24 +371,77 @@ func (s *Service) allowCheckout(userID string, now time.Time) bool {
 	return true
 }
 
+func (s *Service) findLatestReusablePendingCheckout(
+	ctx context.Context,
+	userID string,
+	redirectURL string,
+	planCode billingdomain.PlanCode,
+	couponCode string,
+	now time.Time,
+	maxAge time.Duration,
+) (CheckoutSession, bool, error) {
+	transactions, err := s.repository.ListByUser(ctx, userID)
+	if err != nil {
+		return CheckoutSession{}, false, fmt.Errorf("list transactions by user: %w", err)
+	}
+
+	for _, transaction := range transactions {
+		if transaction.Status != billingdomain.TransactionStatusPending &&
+			transaction.Status != billingdomain.TransactionStatusReminder {
+			continue
+		}
+		if strings.TrimSpace(transaction.CheckoutURL) == "" {
+			continue
+		}
+		if transaction.PlanCode != planCode {
+			continue
+		}
+		if transaction.ExpiresAt != nil && !transaction.ExpiresAt.UTC().After(now) {
+			continue
+		}
+		if maxAge > 0 && now.After(transaction.CreatedAt.Add(maxAge)) {
+			break
+		}
+
+		storedRedirectURL := metadataString(transaction.Metadata, "redirect_url")
+		if storedRedirectURL != "" && !strings.EqualFold(storedRedirectURL, redirectURL) {
+			continue
+		}
+		storedCouponCode := normalizeCouponCode(metadataString(transaction.Metadata, "coupon_code"))
+		if storedCouponCode != couponCode {
+			continue
+		}
+
+		return mapTransactionToCheckout(transaction, now, true), true, nil
+	}
+
+	return CheckoutSession{}, false, nil
+}
+
 func mapProviderError(operation string, err error) error {
 	switch {
 	case errors.Is(err, billingdomain.ErrProviderRateLimited):
-		return fmt.Errorf("%s: %w", operation, ErrMayarRateLimited)
+		return fmt.Errorf("%s: %w", operation, ErrMidtransRateLimited)
 	case errors.Is(err, billingdomain.ErrProviderUnavailable):
 		return fmt.Errorf("%s: %w", operation, ErrServiceUnavailable)
 	case errors.Is(err, billingdomain.ErrProviderUpstream):
-		return fmt.Errorf("%s: %w", operation, ErrMayarUpstream)
+		return fmt.Errorf("%s: %w", operation, ErrMidtransUpstream)
 	default:
 		return fmt.Errorf("%s: %w", operation, err)
 	}
 }
 
-func buildExternalID(userID, idempotencyKey string, now time.Time) string {
-	if idempotencyKey != "" {
-		return "checkout:" + userID + ":" + idempotencyKey
+// buildExternalID generates a Midtrans-compatible order_id (≤ 50 chars).
+// Format: pay-{16hex}-{8hex} = 29 chars total.
+// The userID is NOT embedded in the order_id; the webhook handler looks up the
+// transaction by order_id to resolve the owner.
+func buildExternalID(_, _ string, _ time.Time) string {
+	b := make([]byte, 12)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback: use a fixed-prefix with hex-encoded time (still ≤ 50 chars)
+		return fmt.Sprintf("pay-%016x-%08x", time.Now().UnixNano(), time.Now().UnixNano()>>32)
 	}
-	return fmt.Sprintf("checkout:%s:%d", userID, now.UnixNano())
+	return "pay-" + hex.EncodeToString(b[:8]) + "-" + hex.EncodeToString(b[8:])
 }
 
 func mapTransactionToCheckout(
@@ -392,8 +478,9 @@ func mapTransactionToCheckout(
 		Provider:          transaction.Provider,
 		PlanCode:          transaction.PlanCode,
 		InvoiceID:         transaction.InvoiceID,
-		TransactionID:     transaction.MayarTransactionID,
+		TransactionID:     transaction.ProviderTransactionID,
 		CheckoutURL:       transaction.CheckoutURL,
+		SnapToken:         metadataString(transaction.Metadata, "snap_token"),
 		OriginalAmount:    originalAmount,
 		DiscountAmount:    discountAmount,
 		FinalAmount:       finalAmount,
@@ -407,6 +494,32 @@ func mapTransactionToCheckout(
 
 func normalizeCouponCode(raw string) string {
 	return strings.ToUpper(strings.TrimSpace(raw))
+}
+
+func normalizeCustomerMobile(raw string) (string, bool) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "", false
+	}
+
+	digits := strings.Builder{}
+	digits.Grow(len(trimmed))
+	for index, character := range trimmed {
+		switch {
+		case character >= '0' && character <= '9':
+			digits.WriteRune(character)
+		case character == '+' && index == 0:
+		case character == ' ' || character == '-' || character == '(' || character == ')' || character == '.':
+		default:
+			return "", false
+		}
+	}
+
+	normalized := digits.String()
+	if len(normalized) < 9 || len(normalized) > 15 {
+		return "", false
+	}
+	return normalized, true
 }
 
 func isCouponCodeValid(code string) bool {

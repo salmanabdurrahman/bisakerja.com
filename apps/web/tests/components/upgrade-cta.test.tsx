@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { UpgradeCTA } from "@/features/billing/components/upgrade-cta";
-import { redirectToExternalURL } from "@/lib/utils/browser-navigation";
+
 import { createSessionAPIClient } from "@/services/session-api-client";
 
 const replaceMock = vi.fn();
@@ -33,17 +33,22 @@ vi.mock("@/services/session-api-client", async () => {
   };
 });
 
-vi.mock("@/lib/utils/browser-navigation", () => ({
-  redirectToExternalURL: vi.fn(),
-}));
-
 describe("UpgradeCTA", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
   });
 
-  it("creates checkout and redirects to provider URL", async () => {
+  function fillRequiredPhoneNumber(): void {
+    fireEvent.change(screen.getByLabelText("Phone number (required)"), {
+      target: { value: "08123456789" },
+    });
+  }
+
+  it("creates checkout and opens snap payment popup", async () => {
+    const snapPayMock = vi.fn();
+    window.snap = { pay: snapPayMock };
+
     const createCheckoutSessionMock = vi.fn().mockResolvedValue({
       meta: {
         code: 201,
@@ -51,15 +56,16 @@ describe("UpgradeCTA", () => {
         message: "Checkout session created",
       },
       data: {
-        provider: "mayar",
+        provider: "midtrans",
         plan_code: "pro_monthly",
         invoice_id: "inv_1",
-        transaction_id: "trx_1",
-        checkout_url: "https://checkout.example.com/inv_1",
+        transaction_id: "pay-abc123",
+        checkout_url:
+          "https://app.sandbox.midtrans.com/snap/v4/redirection/tok_1",
+        snap_token: "tok_1",
         original_amount: 49000,
-        discount_amount: 10000,
-        final_amount: 39000,
-        coupon_code: "SAVE10",
+        discount_amount: 0,
+        final_amount: 49000,
         expired_at: "2030-01-01T00:00:00Z",
         subscription_state: "pending_payment",
         transaction_status: "pending",
@@ -86,9 +92,7 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
-    fireEvent.change(screen.getByLabelText("Coupon code (optional)"), {
-      target: { value: "save10" },
-    });
+    fillRequiredPhoneNumber();
     fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
@@ -96,12 +100,21 @@ describe("UpgradeCTA", () => {
     });
     expect(createCheckoutSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        coupon_code: "SAVE10",
+        customer_mobile: "08123456789",
+        plan_code: "pro_monthly",
       }),
     );
-    expect(redirectToExternalURL).toHaveBeenCalledWith(
-      "https://checkout.example.com/inv_1",
-    );
+    await waitFor(() => {
+      expect(snapPayMock).toHaveBeenCalledWith(
+        "tok_1",
+        expect.objectContaining({
+          onSuccess: expect.any(Function),
+          onPending: expect.any(Function),
+          onError: expect.any(Function),
+          onClose: expect.any(Function),
+        }),
+      );
+    });
   });
 
   it("renders retry message for provider errors", async () => {
@@ -133,6 +146,7 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
+    fillRequiredPhoneNumber();
     fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
@@ -144,14 +158,14 @@ describe("UpgradeCTA", () => {
     });
   });
 
-  it("renders invalid coupon message for coupon validation errors", async () => {
+  it("renders retry guidance for checkout rate limit errors", async () => {
     vi.mocked(createSessionAPIClient).mockReturnValue({
       getMe: vi.fn(),
       getBillingStatus: vi.fn(),
       createCheckoutSession: vi
         .fn()
         .mockRejectedValue(
-          new APIRequestError("Validation error", 400, "INVALID_COUPON_CODE"),
+          new APIRequestError("Too many requests", 429, "TOO_MANY_REQUESTS"),
         ),
       getBillingTransactions: vi.fn(),
       getPreferences: vi.fn(),
@@ -169,15 +183,54 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
-    fireEvent.change(screen.getByLabelText("Coupon code (optional)"), {
-      target: { value: "BADCODE" },
-    });
+    fillRequiredPhoneNumber();
     fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          "Coupon code is invalid or unavailable. Please try another code.",
+          "Too many checkout requests. Please wait around 10 seconds, then retry or continue your latest pending checkout.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("renders generic validation error for unrecognized validation errors", async () => {
+    vi.mocked(createSessionAPIClient).mockReturnValue({
+      getMe: vi.fn(),
+      getBillingStatus: vi.fn(),
+      createCheckoutSession: vi
+        .fn()
+        .mockRejectedValue(
+          new APIRequestError(
+            "Validation error",
+            400,
+            "UNKNOWN_VALIDATION_CODE",
+          ),
+        ),
+      getBillingTransactions: vi.fn(),
+      getPreferences: vi.fn(),
+      updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
+    });
+
+    render(<UpgradeCTA subscriptionState="free" />);
+    fillRequiredPhoneNumber();
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Invalid checkout request. Please ensure the plan and redirect URL are correct.",
         ),
       ).toBeInTheDocument();
     });
@@ -208,6 +261,7 @@ describe("UpgradeCTA", () => {
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
+    fillRequiredPhoneNumber();
     fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     await waitFor(() => {
@@ -217,5 +271,80 @@ describe("UpgradeCTA", () => {
         ),
       ).toBeInTheDocument();
     });
+  });
+
+  it("renders customer-mobile validation message from API", async () => {
+    vi.mocked(createSessionAPIClient).mockReturnValue({
+      getMe: vi.fn(),
+      getBillingStatus: vi.fn(),
+      createCheckoutSession: vi
+        .fn()
+        .mockRejectedValue(
+          new APIRequestError(
+            "Validation error",
+            400,
+            "INVALID_CUSTOMER_MOBILE",
+          ),
+        ),
+      getBillingTransactions: vi.fn(),
+      getPreferences: vi.fn(),
+      updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
+    });
+
+    render(<UpgradeCTA subscriptionState="free" />);
+    fillRequiredPhoneNumber();
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Phone number is invalid. Use 9-15 digits and try again.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("blocks checkout when phone number is missing", async () => {
+    const createCheckoutSessionMock = vi.fn();
+    vi.mocked(createSessionAPIClient).mockReturnValue({
+      getMe: vi.fn(),
+      getBillingStatus: vi.fn(),
+      createCheckoutSession: createCheckoutSessionMock,
+      getBillingTransactions: vi.fn(),
+      getPreferences: vi.fn(),
+      updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
+    });
+
+    render(<UpgradeCTA subscriptionState="free" />);
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Phone number is required and must contain 9-15 digits (numbers only).",
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(createCheckoutSessionMock).not.toHaveBeenCalled();
   });
 });

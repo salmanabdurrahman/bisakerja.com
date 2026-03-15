@@ -11,7 +11,12 @@ import (
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/domain/identity"
 )
 
-func TestService_ProcessMayarWebhook_PaymentReceivedAndDuplicate(t *testing.T) {
+// orderID builds a test order_id string used as ProviderTransactionID.
+func orderID(_, key string) string {
+	return "pay-test-" + key
+}
+
+func TestService_ProcessMidtransWebhook_PaymentSettledAndDuplicate(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
 		Email:        "webhook-success@example.com",
@@ -25,15 +30,16 @@ func TestService_ProcessMayarWebhook_PaymentReceivedAndDuplicate(t *testing.T) {
 
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
+	oid := orderID(user.ID, "trx_webhook_success")
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_webhook_success",
-		InvoiceID:          "inv_webhook_success",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: oid,
+		InvoiceID:             "inv_webhook_success",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
@@ -43,15 +49,16 @@ func TestService_ProcessMayarWebhook_PaymentReceivedAndDuplicate(t *testing.T) {
 	fixedNow := time.Date(2026, time.March, 14, 0, 0, 0, 0, time.UTC)
 	service.now = func() time.Time { return fixedNow }
 
-	result, err := service.ProcessMayarWebhook(context.Background(), ProcessMayarWebhookInput{
+	result, err := service.ProcessMidtransWebhook(context.Background(), ProcessMidtransWebhookInput{
 		Payload: map[string]any{
-			"event": "payment.received",
-			"data": map[string]any{
-				"transactionId":     "trx_webhook_success",
-				"transactionStatus": "paid",
-				"customerEmail":     "webhook-success@example.com",
-			},
+			"order_id":           oid,
+			"transaction_status": "settlement",
+			"fraud_status":       "accept",
+			"gross_amount":       "49000.00",
+			"status_code":        "200",
+			"signature_key":      "",
 		},
+		ServerKey: "",
 	})
 	if err != nil {
 		t.Fatalf("process webhook: %v", err)
@@ -60,9 +67,9 @@ func TestService_ProcessMayarWebhook_PaymentReceivedAndDuplicate(t *testing.T) {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 
-	updatedTransaction, err := transactionRepository.GetByMayarTransactionID(context.Background(), "trx_webhook_success")
+	updatedTransaction, err := transactionRepository.GetByProviderTransactionID(context.Background(), oid)
 	if err != nil {
-		t.Fatalf("get transaction by mayar id: %v", err)
+		t.Fatalf("get transaction by provider id: %v", err)
 	}
 	if updatedTransaction.Status != billingdomain.TransactionStatusSuccess {
 		t.Fatalf("expected transaction status success, got %s", updatedTransaction.Status)
@@ -80,15 +87,17 @@ func TestService_ProcessMayarWebhook_PaymentReceivedAndDuplicate(t *testing.T) {
 		t.Fatalf("expected premium_expired_at %v, got %v", expectedExpiry, updatedUser.PremiumExpiredAt)
 	}
 
-	duplicate, err := service.ProcessMayarWebhook(context.Background(), ProcessMayarWebhookInput{
+	// Duplicate — should be idempotent.
+	duplicate, err := service.ProcessMidtransWebhook(context.Background(), ProcessMidtransWebhookInput{
 		Payload: map[string]any{
-			"event": "payment.received",
-			"data": map[string]any{
-				"transactionId":     "trx_webhook_success",
-				"transactionStatus": "paid",
-				"customerEmail":     "webhook-success@example.com",
-			},
+			"order_id":           oid,
+			"transaction_status": "settlement",
+			"fraud_status":       "accept",
+			"gross_amount":       "49000.00",
+			"status_code":        "200",
+			"signature_key":      "",
 		},
+		ServerKey: "",
 	})
 	if err != nil {
 		t.Fatalf("process duplicate webhook: %v", err)
@@ -98,7 +107,7 @@ func TestService_ProcessMayarWebhook_PaymentReceivedAndDuplicate(t *testing.T) {
 	}
 }
 
-func TestService_ProcessMayarWebhook_PaymentReminder(t *testing.T) {
+func TestService_ProcessMidtransWebhook_PendingReminder(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
 		Email:        "webhook-reminder@example.com",
@@ -112,40 +121,42 @@ func TestService_ProcessMayarWebhook_PaymentReminder(t *testing.T) {
 
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
+	oid := orderID(user.ID, "trx_webhook_reminder")
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_webhook_reminder",
-		InvoiceID:          "inv_webhook_reminder",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: oid,
+		InvoiceID:             "inv_webhook_reminder",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
 	}
 
 	service := NewService(identityRepository, transactionRepository, nil, Config{})
-	_, err = service.ProcessMayarWebhook(context.Background(), ProcessMayarWebhookInput{
+	_, err = service.ProcessMidtransWebhook(context.Background(), ProcessMidtransWebhookInput{
 		Payload: map[string]any{
-			"event": "payment.reminder",
-			"data": map[string]any{
-				"transactionId": "trx_webhook_reminder",
-				"customerEmail": "webhook-reminder@example.com",
-			},
+			"order_id":           oid,
+			"transaction_status": "pending",
+			"gross_amount":       "49000.00",
+			"status_code":        "201",
+			"signature_key":      "",
 		},
+		ServerKey: "",
 	})
 	if err != nil {
 		t.Fatalf("process webhook reminder: %v", err)
 	}
 
-	updatedTransaction, err := transactionRepository.GetByMayarTransactionID(context.Background(), "trx_webhook_reminder")
+	updatedTransaction, err := transactionRepository.GetByProviderTransactionID(context.Background(), oid)
 	if err != nil {
-		t.Fatalf("get transaction by mayar id: %v", err)
+		t.Fatalf("get transaction by provider id: %v", err)
 	}
-	if updatedTransaction.Status != billingdomain.TransactionStatusReminder {
-		t.Fatalf("expected transaction status reminder, got %s", updatedTransaction.Status)
+	if updatedTransaction.Status != billingdomain.TransactionStatusPending {
+		t.Fatalf("expected transaction status pending, got %s", updatedTransaction.Status)
 	}
 
 	updatedUser, err := identityRepository.GetUserByID(context.Background(), user.ID)
@@ -157,44 +168,48 @@ func TestService_ProcessMayarWebhook_PaymentReminder(t *testing.T) {
 	}
 }
 
-func TestService_ProcessMayarWebhook_ErrorCases(t *testing.T) {
+func TestService_ProcessMidtransWebhook_ErrorCases(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	transactionRepository := memory.NewBillingRepository()
 	service := NewService(identityRepository, transactionRepository, nil, Config{})
 
-	_, err := service.ProcessMayarWebhook(context.Background(), ProcessMayarWebhookInput{
+	// Missing order_id → ErrInvalidWebhookPayload
+	_, err := service.ProcessMidtransWebhook(context.Background(), ProcessMidtransWebhookInput{
 		Payload: map[string]any{
-			"event": "payment.received",
+			"transaction_status": "settlement",
 		},
+		ServerKey: "",
 	})
 	if !errors.Is(err, ErrInvalidWebhookPayload) {
 		t.Fatalf("expected ErrInvalidWebhookPayload, got %v", err)
 	}
 
+	// Transaction exists but user doesn't → ErrWebhookUserNotFound
 	now := time.Now().UTC()
+	oid := orderID("usr_missing", "trx_user_missing")
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             "usr_missing",
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_user_missing",
-		InvoiceID:          "inv_user_missing",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                "usr_missing",
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: oid,
+		InvoiceID:             "inv_user_missing",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
 	}
 
-	_, err = service.ProcessMayarWebhook(context.Background(), ProcessMayarWebhookInput{
+	_, err = service.ProcessMidtransWebhook(context.Background(), ProcessMidtransWebhookInput{
 		Payload: map[string]any{
-			"event": "payment.received",
-			"data": map[string]any{
-				"transactionId":     "trx_user_missing",
-				"transactionStatus": "paid",
-				"customerEmail":     "missing-user@example.com",
-			},
+			"order_id":           oid,
+			"transaction_status": "settlement",
+			"gross_amount":       "49000.00",
+			"status_code":        "200",
+			"signature_key":      "",
 		},
+		ServerKey: "",
 	})
 	if !errors.Is(err, ErrWebhookUserNotFound) {
 		t.Fatalf("expected ErrWebhookUserNotFound, got %v", err)
@@ -202,7 +217,7 @@ func TestService_ProcessMayarWebhook_ErrorCases(t *testing.T) {
 
 	delivery, err := transactionRepository.GetWebhookDeliveryByIdempotencyKey(
 		context.Background(),
-		"mayar:payment.received:trx_user_missing",
+		"midtrans:"+oid+":settlement",
 	)
 	if err != nil {
 		t.Fatalf("get webhook delivery by idempotency key: %v", err)
@@ -212,7 +227,7 @@ func TestService_ProcessMayarWebhook_ErrorCases(t *testing.T) {
 	}
 }
 
-func TestService_ProcessMayarWebhook_UnsupportedEventRecorded(t *testing.T) {
+func TestService_ProcessMidtransWebhook_UnsupportedStatusRecorded(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
 		Email:        "webhook-ignored@example.com",
@@ -225,29 +240,31 @@ func TestService_ProcessMayarWebhook_UnsupportedEventRecorded(t *testing.T) {
 	}
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
+	oid := orderID(user.ID, "trx_ignored")
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_ignored",
-		InvoiceID:          "inv_ignored",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: oid,
+		InvoiceID:             "inv_ignored",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
 	}
 
 	service := NewService(identityRepository, transactionRepository, nil, Config{})
-	result, err := service.ProcessMayarWebhook(context.Background(), ProcessMayarWebhookInput{
+	result, err := service.ProcessMidtransWebhook(context.Background(), ProcessMidtransWebhookInput{
 		Payload: map[string]any{
-			"event": "membership.memberExpired",
-			"data": map[string]any{
-				"transactionId": "trx_ignored",
-				"customerEmail": "webhook-ignored@example.com",
-			},
+			"order_id":           oid,
+			"transaction_status": "refund",
+			"gross_amount":       "49000.00",
+			"status_code":        "206",
+			"signature_key":      "",
 		},
+		ServerKey: "",
 	})
 	if err != nil {
 		t.Fatalf("process unsupported event: %v", err)
@@ -258,7 +275,7 @@ func TestService_ProcessMayarWebhook_UnsupportedEventRecorded(t *testing.T) {
 
 	delivery, err := transactionRepository.GetWebhookDeliveryByIdempotencyKey(
 		context.Background(),
-		"mayar:membership.memberexpired:trx_ignored",
+		"midtrans:"+oid+":refund",
 	)
 	if err != nil {
 		t.Fatalf("get webhook delivery by idempotency key: %v", err)

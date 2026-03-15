@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,10 +31,11 @@ func TestBillingWebhookFlow_DuplicateAndPremiumActivation(t *testing.T) {
 	authMiddleware := middleware.NewAuthenticator(tokenManager)
 
 	billingRepository := memory.NewBillingRepository()
+	// Pass empty server key so Midtrans signature validation is skipped in tests.
 	billingService := billingapp.NewService(identityRepository, billingRepository, nil, billingapp.Config{
 		RedirectAllowlist: []string{"app.bisakerja.com"},
 	})
-	billingHandler := handler.NewBillingHandler(billingService, "integration-webhook-token")
+	billingHandler := handler.NewBillingHandler(billingService)
 
 	appHandler := router.New(
 		logger.New("test"),
@@ -83,41 +85,41 @@ func TestBillingWebhookFlow_DuplicateAndPremiumActivation(t *testing.T) {
 		t.Fatalf("decode login response: %v", err)
 	}
 
+	// order_id is an arbitrary unique string stored as ProviderTransactionID.
+	userID := registerResult.Data.ID
+	orderID := fmt.Sprintf("pay-inttest-%s", userID[:8])
+
 	now := time.Now().UTC()
 	_, err = billingRepository.CreatePending(httptest.NewRequest(http.MethodGet, "/", nil).Context(), billingdomain.CreatePendingTransactionInput{
-		UserID:             registerResult.Data.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_integration_webhook",
-		InvoiceID:          "inv_integration_webhook",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                userID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: orderID,
+		InvoiceID:             "inv_integration_webhook",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("seed pending transaction: %v", err)
 	}
 
-	firstWebhook := performWebhookJSONRequest(t, appHandler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId":     "trx_integration_webhook",
-			"transactionStatus": "paid",
-			"customerEmail":     "billing-webhook-flow@example.com",
-		},
-	}, "integration-webhook-token")
+	// Midtrans settlement webhook payload (no signature — server key is empty).
+	webhookPayload := map[string]any{
+		"order_id":           orderID,
+		"transaction_status": "settlement",
+		"fraud_status":       "accept",
+		"gross_amount":       "49000.00",
+		"status_code":        "200",
+		"signature_key":      "",
+	}
+
+	firstWebhook := performMidtransWebhookRequest(t, appHandler, webhookPayload)
 	if firstWebhook.Code != http.StatusOK {
 		t.Fatalf("expected first webhook status 200, got %d (%s)", firstWebhook.Code, firstWebhook.Body.String())
 	}
 
-	secondWebhook := performWebhookJSONRequest(t, appHandler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId":     "trx_integration_webhook",
-			"transactionStatus": "paid",
-			"customerEmail":     "billing-webhook-flow@example.com",
-		},
-	}, "integration-webhook-token")
+	secondWebhook := performMidtransWebhookRequest(t, appHandler, webhookPayload)
 	if secondWebhook.Code != http.StatusOK {
 		t.Fatalf("expected duplicate webhook status 200, got %d (%s)", secondWebhook.Code, secondWebhook.Body.String())
 	}
@@ -152,11 +154,10 @@ func TestBillingWebhookFlow_DuplicateAndPremiumActivation(t *testing.T) {
 	}
 }
 
-func performWebhookJSONRequest(
+func performMidtransWebhookRequest(
 	t *testing.T,
 	appHandler http.Handler,
 	payload map[string]any,
-	webhookToken string,
 ) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -165,9 +166,8 @@ func performWebhookJSONRequest(
 		t.Fatalf("encode webhook payload: %v", err)
 	}
 
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/webhook/mayar", &body)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/webhook/midtrans", &body)
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("X-Bisakerja-Webhook-Token", webhookToken)
 
 	response := httptest.NewRecorder()
 	appHandler.ServeHTTP(response, request)

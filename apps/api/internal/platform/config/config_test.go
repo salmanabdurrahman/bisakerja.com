@@ -22,11 +22,9 @@ func TestLoad_DefaultValues(t *testing.T) {
 	t.Setenv("AUTH_JWT_SECRET", "")
 	t.Setenv("AUTH_ACCESS_TOKEN_TTL", "")
 	t.Setenv("AUTH_REFRESH_TOKEN_TTL", "")
-	t.Setenv("MAYAR_BASE_URL", "")
-	t.Setenv("MAYAR_API_KEY", "")
-	t.Setenv("MAYAR_REQUEST_TIMEOUT", "")
-	t.Setenv("MAYAR_MAX_RETRIES", "")
-	t.Setenv("BILLING_WEBHOOK_TOKEN", "")
+	t.Setenv("MIDTRANS_SERVER_KEY", "")
+	t.Setenv("MIDTRANS_CLIENT_KEY", "")
+	t.Setenv("MIDTRANS_ENV", "")
 	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "")
 	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "")
 	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "")
@@ -103,24 +101,16 @@ func TestLoad_DefaultValues(t *testing.T) {
 		t.Fatalf("expected default refresh ttl 168h, got %s", cfg.AuthRefreshTokenTTL)
 	}
 
-	if cfg.MayarBaseURL != "https://api.mayar.id/hl/v1" {
-		t.Fatalf("expected default mayar base url, got %q", cfg.MayarBaseURL)
+	if cfg.MidtransServerKey != "" {
+		t.Fatalf("expected default midtrans server key empty, got %q", cfg.MidtransServerKey)
 	}
 
-	if cfg.MayarAPIKey != "" {
-		t.Fatalf("expected default mayar api key empty, got %q", cfg.MayarAPIKey)
+	if cfg.MidtransClientKey != "" {
+		t.Fatalf("expected default midtrans client key empty, got %q", cfg.MidtransClientKey)
 	}
 
-	if cfg.MayarRequestTimeout != 5*time.Second {
-		t.Fatalf("expected default mayar timeout 5s, got %s", cfg.MayarRequestTimeout)
-	}
-
-	if cfg.MayarMaxRetries != 3 {
-		t.Fatalf("expected default mayar max retries 3, got %d", cfg.MayarMaxRetries)
-	}
-
-	if cfg.BillingWebhookToken != "bisakerja-dev-webhook-token" {
-		t.Fatalf("expected default billing webhook token, got %q", cfg.BillingWebhookToken)
+	if cfg.MidtransEnv != "sandbox" {
+		t.Fatalf("expected default midtrans env sandbox, got %q", cfg.MidtransEnv)
 	}
 
 	if len(cfg.BillingRedirectAllowlist) != 4 ||
@@ -181,11 +171,9 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("AUTH_JWT_SECRET", "super-secret")
 	t.Setenv("AUTH_ACCESS_TOKEN_TTL", "25m")
 	t.Setenv("AUTH_REFRESH_TOKEN_TTL", "336h")
-	t.Setenv("MAYAR_BASE_URL", "https://api.mayar.club/hl/v1")
-	t.Setenv("MAYAR_API_KEY", "test-api-key")
-	t.Setenv("MAYAR_REQUEST_TIMEOUT", "8s")
-	t.Setenv("MAYAR_MAX_RETRIES", "5")
-	t.Setenv("BILLING_WEBHOOK_TOKEN", "super-webhook-token")
+	t.Setenv("MIDTRANS_SERVER_KEY", "test-server-key")
+	t.Setenv("MIDTRANS_CLIENT_KEY", "test-client-key")
+	t.Setenv("MIDTRANS_ENV", "production")
 	t.Setenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,staging.bisakerja.com")
 	t.Setenv("BILLING_IDEMPOTENCY_WINDOW", "20m")
 	t.Setenv("BILLING_USER_RATE_LIMIT_WINDOW", "12s")
@@ -262,24 +250,16 @@ func TestLoad_EnvOverrides(t *testing.T) {
 		t.Fatalf("expected refresh ttl 336h, got %s", cfg.AuthRefreshTokenTTL)
 	}
 
-	if cfg.MayarBaseURL != "https://api.mayar.club/hl/v1" {
-		t.Fatalf("expected mayar base url override, got %q", cfg.MayarBaseURL)
+	if cfg.MidtransServerKey != "test-server-key" {
+		t.Fatalf("expected midtrans server key override, got %q", cfg.MidtransServerKey)
 	}
 
-	if cfg.MayarAPIKey != "test-api-key" {
-		t.Fatalf("expected mayar api key override, got %q", cfg.MayarAPIKey)
+	if cfg.MidtransClientKey != "test-client-key" {
+		t.Fatalf("expected midtrans client key override, got %q", cfg.MidtransClientKey)
 	}
 
-	if cfg.MayarRequestTimeout != 8*time.Second {
-		t.Fatalf("expected mayar timeout 8s, got %s", cfg.MayarRequestTimeout)
-	}
-
-	if cfg.MayarMaxRetries != 5 {
-		t.Fatalf("expected mayar max retries 5, got %d", cfg.MayarMaxRetries)
-	}
-
-	if cfg.BillingWebhookToken != "super-webhook-token" {
-		t.Fatalf("expected billing webhook token override, got %q", cfg.BillingWebhookToken)
+	if cfg.MidtransEnv != "production" {
+		t.Fatalf("expected midtrans env override, got %q", cfg.MidtransEnv)
 	}
 
 	if len(cfg.BillingRedirectAllowlist) != 2 ||

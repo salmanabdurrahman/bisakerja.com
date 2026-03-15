@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Montserrat, Roboto } from "next/font/google";
 
 import { WebVitalsObserver } from "@/features/observability/components/web-vitals-observer";
@@ -34,6 +35,15 @@ export default function RootLayout({
         <AuthSessionProvider>
           <WebVitalsObserver />
           {children}
+          <Script
+            src={
+              process.env.NEXT_PUBLIC_MIDTRANS_ENV === "production"
+                ? "https://app.midtrans.com/snap/snap.js"
+                : "https://app.sandbox.midtrans.com/snap/snap.js"
+            }
+            data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+            strategy="afterInteractive"
+          />
         </AuthSessionProvider>
       </body>
     </html>

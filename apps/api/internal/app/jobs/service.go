@@ -56,3 +56,13 @@ func (s *Service) RecordScrapeRun(ctx context.Context, run job.ScrapeRun) error 
 
 	return nil
 }
+
+// SearchTitles searches distinct job titles matching a prefix.
+func (s *Service) SearchTitles(ctx context.Context, query job.TitleSearchQuery) ([]string, error) {
+	titles, err := s.repository.SearchTitles(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("search job titles: %w", err)
+	}
+
+	return titles, nil
+}

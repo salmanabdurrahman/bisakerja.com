@@ -36,8 +36,8 @@ func (r *BillingRepository) CreatePending(
 	if strings.TrimSpace(input.InvoiceID) == "" {
 		return billing.Transaction{}, fmt.Errorf("create pending transaction: invoice id is required")
 	}
-	if strings.TrimSpace(input.MayarTransactionID) == "" {
-		return billing.Transaction{}, fmt.Errorf("create pending transaction: mayar transaction id is required")
+	if strings.TrimSpace(input.ProviderTransactionID) == "" {
+		return billing.Transaction{}, fmt.Errorf("create pending transaction: provider transaction id is required")
 	}
 	if strings.TrimSpace(input.CheckoutURL) == "" {
 		return billing.Transaction{}, fmt.Errorf("create pending transaction: checkout url is required")
@@ -96,7 +96,7 @@ SELECT
   now(),
   now()
 FROM selected_user
-ON CONFLICT (provider, mayar_transaction_id) DO NOTHING
+ON CONFLICT (provider, mayar_transaction_id) WHERE mayar_transaction_id IS NOT NULL DO NOTHING
 RETURNING id::text, user_id::text, provider, plan_code, mayar_transaction_id, invoice_id, checkout_url, amount, status,
           idempotency_key, expires_at, metadata, created_at, updated_at
 `
@@ -108,7 +108,7 @@ RETURNING id::text, user_id::text, provider, plan_code, mayar_transaction_id, in
 			userID,
 			string(input.Provider),
 			string(input.PlanCode),
-			strings.TrimSpace(input.MayarTransactionID),
+			strings.TrimSpace(input.ProviderTransactionID),
 			strings.TrimSpace(input.InvoiceID),
 			strings.TrimSpace(input.CheckoutURL),
 			input.Amount,
@@ -126,7 +126,7 @@ RETURNING id::text, user_id::text, provider, plan_code, mayar_transaction_id, in
 	}
 
 	// Conflict path (same provider + transaction ID): return existing row.
-	existing, err := r.GetByMayarTransactionID(ctx, input.MayarTransactionID)
+	existing, err := r.GetByProviderTransactionID(ctx, input.ProviderTransactionID)
 	if err == nil {
 		return existing, nil
 	}
@@ -183,12 +183,12 @@ LIMIT 1
 	return transaction, nil
 }
 
-// GetByMayarTransactionID returns by mayar transaction id.
-func (r *BillingRepository) GetByMayarTransactionID(
+// GetByProviderTransactionID returns by provider transaction id.
+func (r *BillingRepository) GetByProviderTransactionID(
 	ctx context.Context,
-	mayarTransactionID string,
+	providerTransactionID string,
 ) (billing.Transaction, error) {
-	normalizedID := strings.TrimSpace(mayarTransactionID)
+	normalizedID := strings.TrimSpace(providerTransactionID)
 	if normalizedID == "" {
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}
@@ -205,7 +205,7 @@ WHERE mayar_transaction_id = $1
 		if errors.Is(err, pgx.ErrNoRows) {
 			return billing.Transaction{}, billing.ErrTransactionNotFound
 		}
-		return billing.Transaction{}, fmt.Errorf("get transaction by mayar transaction id: %w", err)
+		return billing.Transaction{}, fmt.Errorf("get transaction by provider transaction id: %w", err)
 	}
 	return item, nil
 }
@@ -275,15 +275,15 @@ ORDER BY created_at DESC, id DESC
 	return result, nil
 }
 
-// UpdateStatusByMayarTransactionID updates status by mayar transaction id.
-func (r *BillingRepository) UpdateStatusByMayarTransactionID(
+// UpdateStatusByProviderTransactionID updates status by provider transaction id.
+func (r *BillingRepository) UpdateStatusByProviderTransactionID(
 	ctx context.Context,
-	mayarTransactionID string,
+	providerTransactionID string,
 	status billing.TransactionStatus,
 	metadata map[string]any,
 	updatedAt time.Time,
 ) (billing.Transaction, error) {
-	normalizedID := strings.TrimSpace(mayarTransactionID)
+	normalizedID := strings.TrimSpace(providerTransactionID)
 	if normalizedID == "" {
 		return billing.Transaction{}, billing.ErrTransactionNotFound
 	}
@@ -451,7 +451,7 @@ func scanTransaction(scanner transactionScanner) (billing.Transaction, error) {
 		item.PlanCode = billing.PlanCode(planCode.String)
 	}
 	if mayarTxID.Valid {
-		item.MayarTransactionID = mayarTxID.String
+		item.ProviderTransactionID = mayarTxID.String
 	}
 	if invoiceID.Valid {
 		item.InvoiceID = invoiceID.String

@@ -26,14 +26,14 @@ func TestService_GetBillingStatus(t *testing.T) {
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_status_pending",
-		InvoiceID:          "inv_status_pending",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_status_pending",
+		InvoiceID:             "inv_status_pending",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
@@ -67,19 +67,19 @@ func TestService_ListBillingTransactions(t *testing.T) {
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_list_pending",
-		InvoiceID:          "inv_list_pending",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_list_pending",
+		InvoiceID:             "inv_list_pending",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create pending transaction: %v", err)
 	}
-	_, err = transactionRepository.UpdateStatusByMayarTransactionID(
+	_, err = transactionRepository.UpdateStatusByProviderTransactionID(
 		context.Background(),
 		"trx_list_pending",
 		billingdomain.TransactionStatusSuccess,
@@ -90,14 +90,14 @@ func TestService_ListBillingTransactions(t *testing.T) {
 		t.Fatalf("update transaction status: %v", err)
 	}
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_list_pending_2",
-		InvoiceID:          "inv_list_pending_2",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_list_pending_2",
+		InvoiceID:             "inv_list_pending_2",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("create second pending transaction: %v", err)

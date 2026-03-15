@@ -82,6 +82,12 @@ type SearchResult struct {
 	TotalRecords int
 }
 
+// TitleSearchQuery represents title search query.
+type TitleSearchQuery struct {
+	Q     string
+	Limit int
+}
+
 // ScrapeRunStatus describes status details for scrape run.
 type ScrapeRunStatus string
 
@@ -112,6 +118,7 @@ type Repository interface {
 	Search(ctx context.Context, query SearchQuery) (SearchResult, error)
 	GetByID(ctx context.Context, id string) (Job, error)
 	RecordScrapeRun(ctx context.Context, run ScrapeRun) error
+	SearchTitles(ctx context.Context, query TitleSearchQuery) ([]string, error)
 }
 
 // ParseSource parses source.

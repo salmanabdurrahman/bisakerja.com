@@ -83,13 +83,14 @@ func TestService_CreateCheckoutSession_Success(t *testing.T) {
 		PlanCode:       "pro_monthly",
 		RedirectURL:    "https://app.bisakerja.com/billing/success",
 		IdempotencyKey: "idem-1",
+		CustomerMobile: "08123456789",
 	})
 	if err != nil {
 		t.Fatalf("create checkout session: %v", err)
 	}
 
-	if checkout.Provider != billingdomain.PaymentProviderMayar {
-		t.Fatalf("expected provider mayar, got %s", checkout.Provider)
+	if checkout.Provider != billingdomain.PaymentProviderMidtrans {
+		t.Fatalf("expected provider midtrans, got %s", checkout.Provider)
 	}
 	if checkout.PlanCode != billingdomain.PlanCodeProMonthly {
 		t.Fatalf("expected plan code pro_monthly, got %s", checkout.PlanCode)
@@ -140,6 +141,7 @@ func TestService_CreateCheckoutSession_WithCoupon(t *testing.T) {
 		CouponCode:     "save10",
 		RedirectURL:    "https://app.bisakerja.com/billing/success",
 		IdempotencyKey: "idem-coupon",
+		CustomerMobile: "08123456789",
 	})
 	if err != nil {
 		t.Fatalf("create checkout session with coupon: %v", err)
@@ -172,10 +174,11 @@ func TestService_CreateCheckoutSession_InvalidCoupon(t *testing.T) {
 	})
 
 	_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      user.ID,
-		PlanCode:    "pro_monthly",
-		CouponCode:  "bad-code",
-		RedirectURL: "https://app.bisakerja.com/billing/success",
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		CouponCode:     "bad-code",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if !errors.Is(err, ErrInvalidCouponCode) {
 		t.Fatalf("expected ErrInvalidCouponCode, got %v", err)
@@ -199,6 +202,7 @@ func TestService_CreateCheckoutSession_IdempotencyReuse(t *testing.T) {
 		PlanCode:       "pro_monthly",
 		RedirectURL:    "https://app.bisakerja.com/billing/success",
 		IdempotencyKey: "idem-reuse",
+		CustomerMobile: "08123456789",
 	})
 	if err != nil {
 		t.Fatalf("first create checkout: %v", err)
@@ -208,6 +212,7 @@ func TestService_CreateCheckoutSession_IdempotencyReuse(t *testing.T) {
 		PlanCode:       "pro_monthly",
 		RedirectURL:    "https://app.bisakerja.com/billing/success",
 		IdempotencyKey: "idem-reuse",
+		CustomerMobile: "08123456789",
 	})
 	if err != nil {
 		t.Fatalf("second create checkout: %v", err)
@@ -224,7 +229,7 @@ func TestService_CreateCheckoutSession_IdempotencyReuse(t *testing.T) {
 	}
 }
 
-func TestService_CreateCheckoutSession_RateLimited(t *testing.T) {
+func TestService_CreateCheckoutSession_ReusesPendingCheckoutWithinRateLimitWindow(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	user := seedUser(t, identityRepository, false, nil)
 	transactionRepository := memory.NewBillingRepository()
@@ -235,19 +240,165 @@ func TestService_CreateCheckoutSession_RateLimited(t *testing.T) {
 		RateLimitWindow:   10 * time.Second,
 	})
 
-	_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      user.ID,
-		PlanCode:    "pro_monthly",
-		RedirectURL: "https://app.bisakerja.com/billing/success",
+	first, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if err != nil {
 		t.Fatalf("first create checkout: %v", err)
 	}
 
+	second, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
+	})
+	if err != nil {
+		t.Fatalf("expected checkout reuse during window, got %v", err)
+	}
+	if !second.Reused {
+		t.Fatal("expected second checkout request to be reused")
+	}
+	if first.TransactionID != second.TransactionID {
+		t.Fatalf("expected reused transaction id %q, got %q", first.TransactionID, second.TransactionID)
+	}
+	if provider.ensureCalls != 1 || provider.invoiceCalls != 1 {
+		t.Fatalf("expected provider called once when reusing checkout, got ensure=%d invoice=%d", provider.ensureCalls, provider.invoiceCalls)
+	}
+}
+
+func TestService_CreateCheckoutSession_ReusesPendingCheckoutBeyondRateLimitWindow(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user := seedUser(t, identityRepository, false, nil)
+	transactionRepository := memory.NewBillingRepository()
+	provider := &fakeProvider{}
+
+	fakeNow := time.Now().UTC()
+	service := NewService(identityRepository, transactionRepository, provider, Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+		IdempotencyWindow: 15 * time.Minute,
+		RateLimitWindow:   10 * time.Second,
+	})
+	service.now = func() time.Time { return fakeNow }
+
+	first, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
+	})
+	if err != nil {
+		t.Fatalf("first create checkout: %v", err)
+	}
+
+	fakeNow = fakeNow.Add(20 * time.Second)
+	second, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
+	})
+	if err != nil {
+		t.Fatalf("expected checkout reuse beyond rate limit window, got %v", err)
+	}
+	if !second.Reused {
+		t.Fatal("expected second checkout request to be reused")
+	}
+	if first.TransactionID != second.TransactionID {
+		t.Fatalf("expected reused transaction id %q, got %q", first.TransactionID, second.TransactionID)
+	}
+	if provider.ensureCalls != 1 || provider.invoiceCalls != 1 {
+		t.Fatalf("expected provider called once when reusing checkout, got ensure=%d invoice=%d", provider.ensureCalls, provider.invoiceCalls)
+	}
+}
+
+func TestService_CreateCheckoutSession_DoesNotReuseWhenCouponChanges(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user := seedUser(t, identityRepository, false, nil)
+	transactionRepository := memory.NewBillingRepository()
+	provider := &fakeProvider{
+		validateCouponFn: func(context.Context, billingdomain.ValidateCouponInput) (billingdomain.Coupon, error) {
+			return billingdomain.Coupon{
+				Code:           "SAVE10",
+				DiscountAmount: 10_000,
+				FinalAmount:    39_000,
+			}, nil
+		},
+	}
+
+	fakeNow := time.Now().UTC()
+	service := NewService(identityRepository, transactionRepository, provider, Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+		IdempotencyWindow: 15 * time.Minute,
+		RateLimitWindow:   10 * time.Second,
+	})
+	service.now = func() time.Time { return fakeNow }
+
+	first, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		CouponCode:     "save10",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
+	})
+	if err != nil {
+		t.Fatalf("first create checkout with coupon: %v", err)
+	}
+	if first.CouponCode != "SAVE10" {
+		t.Fatalf("expected coupon SAVE10 on first checkout, got %q", first.CouponCode)
+	}
+
+	fakeNow = fakeNow.Add(20 * time.Second)
+	second, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
+	})
+	if err != nil {
+		t.Fatalf("second create checkout without coupon: %v", err)
+	}
+	if second.Reused {
+		t.Fatal("expected checkout not reused when coupon intent changes")
+	}
+	if provider.ensureCalls != 2 || provider.invoiceCalls != 2 {
+		t.Fatalf("expected provider called twice for different checkout intent, got ensure=%d invoice=%d", provider.ensureCalls, provider.invoiceCalls)
+	}
+}
+
+func TestService_CreateCheckoutSession_RateLimitedWithoutReusablePending(t *testing.T) {
+	identityRepository := memory.NewIdentityRepository()
+	user := seedUser(t, identityRepository, false, nil)
+	transactionRepository := memory.NewBillingRepository()
+	provider := &fakeProvider{
+		ensureCustomerFn: func(context.Context, billingdomain.EnsureCustomerInput) (billingdomain.Customer, error) {
+			return billingdomain.Customer{}, billingdomain.ErrProviderUnavailable
+		},
+	}
+
+	service := NewService(identityRepository, transactionRepository, provider, Config{
+		RedirectAllowlist: []string{"app.bisakerja.com"},
+		RateLimitWindow:   10 * time.Second,
+	})
+
+	_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
+	})
+	if !errors.Is(err, ErrServiceUnavailable) {
+		t.Fatalf("expected ErrServiceUnavailable, got %v", err)
+	}
+
 	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      user.ID,
-		PlanCode:    "pro_monthly",
-		RedirectURL: "https://app.bisakerja.com/billing/success",
+		UserID:         user.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if !errors.Is(err, ErrTooManyRequests) {
 		t.Fatalf("expected ErrTooManyRequests, got %v", err)
@@ -267,36 +418,50 @@ func TestService_CreateCheckoutSession_ValidationAndState(t *testing.T) {
 	})
 
 	_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      normalUser.ID,
-		PlanCode:    "invalid_plan",
-		RedirectURL: "https://app.bisakerja.com/billing/success",
+		UserID:         normalUser.ID,
+		PlanCode:       "invalid_plan",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if !errors.Is(err, ErrInvalidPlanCode) {
 		t.Fatalf("expected ErrInvalidPlanCode, got %v", err)
 	}
 
 	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      normalUser.ID,
-		PlanCode:    "pro_monthly",
-		RedirectURL: "http://app.bisakerja.com/billing/success",
+		UserID:         normalUser.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "invalid-mobile",
+	})
+	if !errors.Is(err, ErrInvalidCustomerMobile) {
+		t.Fatalf("expected ErrInvalidCustomerMobile, got %v", err)
+	}
+
+	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:         normalUser.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "http://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if !errors.Is(err, ErrInvalidRedirectURL) {
 		t.Fatalf("expected ErrInvalidRedirectURL, got %v", err)
 	}
 
 	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      normalUser.ID,
-		PlanCode:    "pro_monthly",
-		RedirectURL: "http://localhost:3000/billing/success",
+		UserID:         normalUser.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "http://localhost:3000/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if err != nil {
 		t.Fatalf("expected localhost redirect to be allowed, got %v", err)
 	}
 
 	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-		UserID:      premiumUser.ID,
-		PlanCode:    "pro_monthly",
-		RedirectURL: "https://app.bisakerja.com/billing/success",
+		UserID:         premiumUser.ID,
+		PlanCode:       "pro_monthly",
+		RedirectURL:    "https://app.bisakerja.com/billing/success",
+		CustomerMobile: "08123456789",
 	})
 	if !errors.Is(err, ErrAlreadyPremium) {
 		t.Fatalf("expected ErrAlreadyPremium, got %v", err)
@@ -374,12 +539,12 @@ func TestService_CreateCheckoutSession_ProviderErrorMapping(t *testing.T) {
 		{
 			name:        "rate limited",
 			providerErr: billingdomain.ErrProviderRateLimited,
-			expectedErr: ErrMayarRateLimited,
+			expectedErr: ErrMidtransRateLimited,
 		},
 		{
 			name:        "upstream invalid",
 			providerErr: billingdomain.ErrProviderUpstream,
-			expectedErr: ErrMayarUpstream,
+			expectedErr: ErrMidtransUpstream,
 		},
 		{
 			name:        "unavailable",
@@ -404,9 +569,10 @@ func TestService_CreateCheckoutSession_ProviderErrorMapping(t *testing.T) {
 			})
 
 			_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
-				UserID:      user.ID,
-				PlanCode:    "pro_monthly",
-				RedirectURL: "https://app.bisakerja.com/billing/success",
+				UserID:         user.ID,
+				PlanCode:       "pro_monthly",
+				RedirectURL:    "https://app.bisakerja.com/billing/success",
+				CustomerMobile: "08123456789",
 			})
 			if !errors.Is(err, testCase.expectedErr) {
 				t.Fatalf("expected %v, got %v", testCase.expectedErr, err)

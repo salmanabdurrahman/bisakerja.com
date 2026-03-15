@@ -204,15 +204,15 @@ func TestNew_RegistersWebhookRouteWhenBillingDependencyProvided(t *testing.T) {
 
 	request := httptest.NewRequest(
 		http.MethodPost,
-		"/api/v1/webhook/mayar",
-		strings.NewReader(`{"event":"payment.received","data":{"transactionId":"trx_router","customerEmail":"user@example.com"}}`),
+		"/api/v1/webhook/midtrans",
+		strings.NewReader(`{"order_id":"checkout:usr_router:key","transaction_status":"settlement","gross_amount":"49000.00","status_code":"200","signature_key":"badsig"}`),
 	)
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 	appHandler.ServeHTTP(response, request)
 
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("expected webhook route to return 401 (registered + token protected), got %d", response.Code)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected webhook route to return 400 (registered + signature rejected), got %d", response.Code)
 	}
 }
 

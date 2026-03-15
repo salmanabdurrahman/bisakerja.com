@@ -53,11 +53,13 @@ Dokumen ini menetapkan standar error lintas endpoint.
 | jobs | `INVALID_LIMIT` | 400 | `limit <= 0` atau bukan integer valid. |
 | preferences | `INVALID_JOB_TYPE` | 400 | Nilai `job_types` tidak masuk enum. |
 | billing | `INVALID_PLAN_CODE` | 400 | `plan_code` tidak didukung. |
+| billing | `INVALID_CUSTOMER_MOBILE` | 400 | `customer_mobile` kosong/tidak valid (harus 9-15 digit). |
 | billing | `INVALID_COUPON_CODE` | 400 | `coupon_code` tidak valid/tidak berlaku di Mayar. |
 | billing | `INVALID_REDIRECT_URL` | 400 | Host redirect tidak ada di allowlist, atau skema URL tidak valid (`https` wajib untuk non-local; `http` hanya untuk localhost/loopback). |
 | billing | `ALREADY_PREMIUM` | 409 | User masih premium aktif. |
+| billing | `TOO_MANY_REQUESTS` | 429 | Retry checkout terlalu cepat dan tidak ada checkout pending valid yang bisa direuse. |
 | billing | `MAYAR_RATE_LIMITED` | 503 | Mayar `429` setelah retry exhausted. |
-| billing | `MAYAR_UPSTREAM_ERROR` | 502 | Mayar memberi error non-rate-limit. |
+| billing | `MAYAR_UPSTREAM_ERROR` | 502 | Mayar memberi respons non-kompatibel/non-2xx non-retryable; cek `MAYAR_BASE_URL`, API key, dan schema payload/response. |
 | ai | `INVALID_AI_PROMPT` | 400 | Prompt AI kosong/terlalu pendek/terlalu panjang. |
 | ai | `INVALID_AI_FEATURE` | 400 | Feature AI tidak didukung endpoint usage. |
 | ai | `FORBIDDEN` | 403 | Endpoint AI premium-only dipanggil oleh user non-premium aktif. |

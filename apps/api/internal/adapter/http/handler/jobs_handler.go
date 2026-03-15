@@ -251,3 +251,32 @@ func salaryRangeFallback(item job.Job) string {
 	}
 	return "<= " + strconv.FormatInt(*item.SalaryMax, 10)
 }
+
+// SearchTitles returns distinct job titles matching a prefix.
+func (h *JobsHandler) SearchTitles(w http.ResponseWriter, r *http.Request) {
+	requestID := observability.RequestIDFromContext(r.Context())
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+
+	// Limit q to 100 characters
+	if len(q) > 100 {
+		q = q[:100]
+	}
+
+	query := job.TitleSearchQuery{
+		Q:     q,
+		Limit: 10,
+	}
+
+	titles, err := h.service.SearchTitles(r.Context(), query)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, "Internal server error", requestID, []response.ErrorItem{{
+			Code:    errcode.InternalServerError,
+			Message: "failed to search job titles",
+		}})
+		return
+	}
+
+	response.WriteSuccess(w, http.StatusOK, "Job titles retrieved", requestID, map[string]any{
+		"titles": titles,
+	})
+}

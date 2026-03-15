@@ -19,10 +19,10 @@ Implementasi backend saat ini:
 - **Iteration 2.2 backend** sudah diimplementasikan (webhook receiver + token validation + idempotency delivery key + transaction status update + premium activation + duplicate handling tests).
 - **Iteration 2.3 backend** sudah diimplementasikan (`GET /billing/status` + `GET /billing/transactions`, reconciliation ke Mayar `GET /invoice/{id}`, retry-aware recovery path, dan anomaly warning pada billing worker).
 - **Phase 3 backend** sudah diimplementasikan (saved searches, company watchlist, notification center, dan preference digest control).
-- **Phase 4 backend increment 1** sudah mulai diimplementasikan (coupon-enabled checkout: validasi `coupon_code` ke Mayar + invoice amount diskon + metadata amount response), diikuti hardening `salary normalization` untuk mapping scraper (`min-only`/`max-only`/`exact`/`range`) termasuk comparator (`<= ...`) dan shorthand bulanan (`Rp 8 – Rp 12 per month`), serta hardening validasi `redirect_url` checkout untuk local development (HTTP localhost/loopback only).
+- **Phase 4 backend increment 1** sudah mulai diimplementasikan (coupon-enabled checkout: validasi `coupon_code` ke Mayar + invoice amount diskon + metadata amount response), diikuti hardening `salary normalization` untuk mapping scraper (`min-only`/`max-only`/`exact`/`range`) termasuk comparator (`<= ...`) dan shorthand bulanan (`Rp 8 – Rp 12 per month`), hardening validasi `redirect_url` checkout untuk local development (HTTP localhost/loopback only), retry guard yang mereuse checkout pending agar tidak mudah terkena `429`, serta parser kompatibilitas payload Mayar (object/array + link/expiry variants).
 - **Phase 5 (AI Career Intelligence & Value Layer)** sudah berjalan pada increment 1-3 backend (`POST /ai/search-assistant`, `POST /ai/job-fit-summary`, `POST /ai/cover-letter-draft`, `GET /ai/usage`) dan increment 1 frontend (`/account/ai-tools` + AI usage meter + assistant/job-fit/cover-letter UI).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1 + salary normalization + checkout redirect local-dev hardening) + Phase 5 in progress (increment 1-3 backend + frontend increment 1)**.
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1 + salary normalization + checkout redirect/rate-limit hardening) + Phase 5 in progress (increment 1-3 backend + frontend increment 1)**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -35,7 +35,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | M2 | Pass komentar/docstrings sesuai standar | ✅ Complete | Doc comments Go untuk simbol exported + TSDoc pada service/lib frontend sudah ditambahkan |
 | M3 | Migrasi copy UI + API user-facing ke English | ✅ Complete | Seluruh copy user-facing frontend + pesan notifier backend sudah di-English-kan tanpa mengubah kontrak |
 | M4 | Redesign frontend ala SaaS + hardening growth | ✅ Complete | UI frontend sudah direfresh berbasis design tokens + observability web vitals + e2e growth coverage + refinement visual pass ala Paper sudah ditutup |
-| M5 | Eksekusi Phase 4 backend | 🟡 In Progress | Increment 1 aktif: coupon-enabled checkout pada billing + hardening salary normalization mapping scraper (comparator + shorthand monthly range) + redirect URL validation hardening untuk local dev |
+| M5 | Eksekusi Phase 4 backend | 🟡 In Progress | Increment 1 aktif: coupon-enabled checkout pada billing + hardening salary normalization mapping scraper (comparator + shorthand monthly range) + redirect URL/rate-limit hardening + kompatibilitas parser payload Mayar |
 | M6 | Phase 5 AI value layer (backend + frontend) | 🟡 In Progress | Increment 1-3 backend aktif + frontend increment 1 aktif di `/account/ai-tools`; interview prep masih planned |
 
 Aturan eksekusi:

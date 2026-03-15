@@ -65,7 +65,7 @@ describe("Account subscription page", () => {
         {
           id: "trx_1",
           provider: "mayar",
-          mayar_transaction_id: "mayar_trx_1",
+          provider_transaction_id: "mayar_trx_1",
           amount: 49000,
           status: "success",
           created_at: "2026-03-14T00:00:00Z",

@@ -13,11 +13,26 @@ import {
 } from "@/features/billing/checkout-session-cache";
 import { buildLoginHref } from "@/lib/auth/redirect-path";
 import { clearBrowserSession } from "@/lib/auth/session-cookie";
-import { redirectToExternalURL } from "@/lib/utils/browser-navigation";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { createSessionAPIClient } from "@/services/session-api-client";
 import type { SubscriptionState } from "@/services/auth";
-import type { CheckoutSession, TransactionStatus } from "@/services/billing";
+import type { TransactionStatus } from "@/services/billing";
+
+declare global {
+  interface Window {
+    snap: {
+      pay: (
+        token: string,
+        options: {
+          onSuccess?: () => void;
+          onPending?: () => void;
+          onError?: () => void;
+          onClose?: () => void;
+        },
+      ) => void;
+    };
+  }
+}
 
 interface UpgradeCTAProps {
   subscriptionState: SubscriptionState | "status_unavailable";
@@ -34,14 +49,14 @@ export function UpgradeCTA({
   const [cachedCheckout, setCachedCheckout] = useState(() =>
     loadCheckoutSession(),
   );
-  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [customerMobileInput, setCustomerMobileInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const isPremiumActive = subscriptionState === "premium_active";
   const hasPendingContinueLink =
     subscriptionState === "pending_payment" &&
-    Boolean(cachedCheckout?.checkout_url);
+    Boolean(cachedCheckout?.snap_token);
   const checkoutAmountSummary = cachedCheckout
     ? getCheckoutAmountSummary(cachedCheckout)
     : null;
@@ -52,29 +67,65 @@ export function UpgradeCTA({
     lastTransactionStatus,
   );
 
+  function openSnapPay(snapToken: string) {
+    if (!window.snap) {
+      setMessage(
+        "Payment popup is not ready. Please refresh the page and try again.",
+      );
+      return;
+    }
+    window.snap.pay(snapToken, {
+      onSuccess: () => {
+        clearCheckoutSession();
+        router.push("/billing/success");
+      },
+      onPending: () => {
+        setCachedCheckout(loadCheckoutSession());
+        setMessage("Payment pending. You can continue payment later.");
+      },
+      onError: () => {
+        setMessage("Payment failed. Please try again.");
+      },
+      onClose: () => {
+        setMessage("Payment popup closed. You can continue payment later.");
+      },
+    });
+  }
+
   async function handleUpgrade() {
     setMessage(null);
 
-    if (hasPendingContinueLink && cachedCheckout) {
-      redirectToExternalURL(cachedCheckout.checkout_url);
+    if (hasPendingContinueLink && cachedCheckout?.snap_token) {
+      openSnapPay(cachedCheckout.snap_token);
+      return;
+    }
+
+    const normalizedCustomerMobile =
+      normalizeCustomerMobile(customerMobileInput);
+    if (!isCustomerMobileValid(normalizedCustomerMobile)) {
+      setMessage(
+        "Phone number is required and must contain 9-15 digits (numbers only).",
+      );
       return;
     }
 
     setIsSubmitting(true);
     try {
       const redirectURL = `${window.location.origin}/billing/success`;
-      const normalizedCouponCode = normalizeCouponCode(couponCodeInput);
       const response = await sessionClient.createCheckoutSession({
         plan_code: "pro_monthly",
-        ...(normalizedCouponCode ? { coupon_code: normalizedCouponCode } : {}),
+        customer_mobile: normalizedCustomerMobile,
         redirect_url: redirectURL,
         idempotency_key: createIdempotencyKey(),
       });
 
       saveCheckoutSession(response.data);
       setCachedCheckout(loadCheckoutSession());
-      setMessage(buildCheckoutSuccessMessage(response.data));
-      redirectToExternalURL(response.data.checkout_url);
+      setMessage("Checkout created. Opening payment popup...");
+
+      if (response.data.snap_token) {
+        openSnapPay(response.data.snap_token);
+      }
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
@@ -92,7 +143,9 @@ export function UpgradeCTA({
           return;
         }
         if (error.status === 429) {
-          setMessage("Too many checkout requests. Please try again shortly.");
+          setMessage(
+            "Too many checkout requests. Please wait around 10 seconds, then retry or continue your latest pending checkout.",
+          );
           return;
         }
         if (error.status === 400) {
@@ -125,23 +178,23 @@ export function UpgradeCTA({
       {!isPremiumActive ? (
         <div className="grid gap-2">
           <label
-            htmlFor="checkout-coupon-code"
+            htmlFor="checkout-customer-mobile"
             className="bk-body-sm font-medium uppercase tracking-wider text-[#666666]"
           >
-            Coupon code (optional)
+            Phone number (required)
           </label>
           <input
-            id="checkout-coupon-code"
-            name="coupon_code"
-            value={couponCodeInput}
-            onChange={(event) => setCouponCodeInput(event.target.value)}
-            placeholder="e.g. SAVE10"
-            autoComplete="off"
+            id="checkout-customer-mobile"
+            name="customer_mobile"
+            value={customerMobileInput}
+            onChange={(event) => setCustomerMobileInput(event.target.value)}
+            placeholder="e.g. 08123456789"
+            autoComplete="tel-national"
             className="h-11 rounded-2xl border border-[#E5E5E5] bg-white px-4 text-[14px] text-black placeholder:text-[#999999] focus:border-black focus:outline-none"
             disabled={isSubmitting || hasPendingContinueLink}
           />
           <p className="bk-body-sm text-[#888888]">
-            Coupon is validated before checkout starts.
+            Used for Midtrans customer detail during checkout.
           </p>
         </div>
       ) : null}
@@ -156,9 +209,6 @@ export function UpgradeCTA({
           {checkoutAmountSummary.discount > 0 ? (
             <p>
               Discount: -{formatIDRCurrency(checkoutAmountSummary.discount)}
-              {checkoutAmountSummary.couponCode
-                ? ` (${checkoutAmountSummary.couponCode})`
-                : ""}
             </p>
           ) : null}
           <p className="font-medium text-black">
@@ -219,24 +269,18 @@ function createIdempotencyKey(): string {
   return `checkout-${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
 }
 
-function normalizeCouponCode(raw: string): string {
-  return raw.trim().toUpperCase();
+function normalizeCustomerMobile(raw: string): string {
+  return raw.replace(/[^\d]/g, "");
 }
 
-function buildCheckoutSuccessMessage(checkout: CheckoutSession): string {
-  const discountAmount = checkout.discount_amount ?? 0;
-  const couponCode = normalizeCouponCode(checkout.coupon_code ?? "");
-  if (discountAmount > 0 && couponCode !== "") {
-    return `Checkout created with coupon ${couponCode}. Redirecting to the payment page...`;
-  }
-  return "Checkout created. Redirecting to the payment page...";
+function isCustomerMobileValid(raw: string): boolean {
+  return /^\d{9,15}$/.test(raw);
 }
 
 interface CheckoutAmountSummary {
   original: number;
   discount: number;
   final: number;
-  couponCode: string;
 }
 
 function getCheckoutAmountSummary(
@@ -256,7 +300,6 @@ function getCheckoutAmountSummary(
     original: originalAmount,
     discount: Math.max(0, discountAmount),
     final: finalAmount,
-    couponCode: normalizeCouponCode(checkout.coupon_code ?? ""),
   };
 }
 
@@ -275,12 +318,12 @@ function getCheckoutValidationErrorMessage(
   code: string | null | undefined,
 ): string {
   switch (code) {
-    case "INVALID_COUPON_CODE":
-      return "Coupon code is invalid or unavailable. Please try another code.";
     case "INVALID_REDIRECT_URL":
       return "Redirect URL is invalid. Use an allowlisted host and https (http is only allowed for localhost in local development).";
     case "INVALID_PLAN_CODE":
       return "Selected plan is unavailable. Please refresh and try again.";
+    case "INVALID_CUSTOMER_MOBILE":
+      return "Phone number is invalid. Use 9-15 digits and try again.";
     default:
       return "Invalid checkout request. Please ensure the plan and redirect URL are correct.";
   }

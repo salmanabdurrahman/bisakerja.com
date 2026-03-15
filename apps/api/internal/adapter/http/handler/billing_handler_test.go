@@ -75,7 +75,8 @@ func (s *handlerProviderStub) ValidateCoupon(
 }
 
 func TestBillingHandler_CreateCheckoutSession_Success(t *testing.T) {
-	handler, userID := setupBillingHandler(t, false, &handlerProviderStub{})
+	provider := &handlerProviderStub{}
+	handler, userID := setupBillingHandler(t, false, provider)
 
 	requestBody := map[string]any{
 		"plan_code":    "pro_monthly",
@@ -101,8 +102,8 @@ func TestBillingHandler_CreateCheckoutSession_Success(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if payload.Data.Provider != "mayar" {
-		t.Fatalf("expected provider mayar, got %q", payload.Data.Provider)
+	if payload.Data.Provider != "midtrans" {
+		t.Fatalf("expected provider midtrans, got %q", payload.Data.Provider)
 	}
 	if payload.Data.PlanCode != "pro_monthly" {
 		t.Fatalf("expected plan code pro_monthly, got %q", payload.Data.PlanCode)
@@ -115,6 +116,9 @@ func TestBillingHandler_CreateCheckoutSession_Success(t *testing.T) {
 	}
 	if payload.Data.SubscriptionState != "pending_payment" {
 		t.Fatalf("expected pending_payment state, got %q", payload.Data.SubscriptionState)
+	}
+	if provider.lastInvoiceInput.CustomerMobile != "08123456789" {
+		t.Fatalf("expected provider customer mobile 08123456789, got %q", provider.lastInvoiceInput.CustomerMobile)
 	}
 }
 
@@ -170,6 +174,12 @@ func TestBillingHandler_CreateCheckoutSession_ErrorMatrix(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
+			name:         "invalid customer mobile",
+			payload:      map[string]any{"plan_code": "pro_monthly", "customer_mobile": "abc", "redirect_url": "https://app.bisakerja.com/billing/success"},
+			provider:     &handlerProviderStub{},
+			expectedCode: http.StatusBadRequest,
+		},
+		{
 			name:          "already premium",
 			isPremiumUser: true,
 			payload:       map[string]any{"plan_code": "pro_monthly", "redirect_url": "https://app.bisakerja.com/billing/success"},
@@ -177,11 +187,11 @@ func TestBillingHandler_CreateCheckoutSession_ErrorMatrix(t *testing.T) {
 			expectedCode:  http.StatusConflict,
 		},
 		{
-			name:          "rate limited",
+			name:          "reuse pending checkout during rate window",
 			repeatRequest: true,
 			payload:       map[string]any{"plan_code": "pro_monthly", "redirect_url": "https://app.bisakerja.com/billing/success"},
 			provider:      &handlerProviderStub{},
-			expectedCode:  http.StatusTooManyRequests,
+			expectedCode:  http.StatusOK,
 		},
 		{
 			name:         "mayar upstream",
@@ -218,6 +228,26 @@ func TestBillingHandler_CreateCheckoutSession_ErrorMatrix(t *testing.T) {
 				t.Fatalf("expected status %d, got %d (%s)", testCase.expectedCode, recorder.Code, recorder.Body.String())
 			}
 		})
+	}
+}
+
+func TestBillingHandler_CreateCheckoutSession_RateLimitedAfterFailedAttempt(t *testing.T) {
+	handler, userID := setupBillingHandler(t, false, &handlerProviderStub{
+		ensureCustomerErr: billingdomain.ErrProviderUnavailable,
+	})
+	requestBody := map[string]any{
+		"plan_code":    "pro_monthly",
+		"redirect_url": "https://app.bisakerja.com/billing/success",
+	}
+
+	first := performCheckoutRequest(t, handler, requestBody, userID, "")
+	if first.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected first request status 503, got %d (%s)", first.Code, first.Body.String())
+	}
+
+	second := performCheckoutRequest(t, handler, requestBody, userID, "")
+	if second.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected second request status 429, got %d (%s)", second.Code, second.Body.String())
 	}
 }
 
@@ -262,7 +292,7 @@ func TestBillingHandler_CreateCheckoutSession_WithCoupon(t *testing.T) {
 	}
 }
 
-func TestBillingHandler_HandleMayarWebhook(t *testing.T) {
+func TestBillingHandler_HandleMidtransWebhook(t *testing.T) {
 	identityRepository := memory.NewIdentityRepository()
 	user, err := identityRepository.CreateUser(context.Background(), identity.CreateUserInput{
 		Email:        "webhook-handler@example.com",
@@ -277,87 +307,90 @@ func TestBillingHandler_HandleMayarWebhook(t *testing.T) {
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_handler_webhook",
-		InvoiceID:          "inv_handler_webhook",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: "checkout:" + user.ID + ":trx_handler_webhook",
+		InvoiceID:             "inv_handler_webhook",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("seed transaction: %v", err)
 	}
 
+	// Handler without server key — signature check is skipped
 	service := billingapp.NewService(identityRepository, transactionRepository, &handlerProviderStub{}, billingapp.Config{
 		RedirectAllowlist: []string{"app.bisakerja.com"},
 	})
-	handler := NewBillingHandler(service, "webhook-secret")
+	handlerNoKey := NewBillingHandler(service)
 
-	unauthorized := performWebhookRequest(t, handler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId": "trx_handler_webhook",
-			"customerEmail": "webhook-handler@example.com",
-		},
+	// Handler with server key — signature check is enforced
+	handlerWithKey := NewBillingHandler(service, "webhook-secret")
+
+	// Bad signature: handler enforces serverKey, payload has wrong signature_key → 400
+	badSig := performWebhookRequest(t, handlerWithKey, map[string]any{
+		"order_id":           "checkout:" + user.ID + ":trx_handler_webhook",
+		"transaction_status": "settlement",
+		"gross_amount":       "49000.00",
+		"status_code":        "200",
+		"signature_key":      "badsig",
 	}, "")
-	if unauthorized.Code != http.StatusUnauthorized {
-		t.Fatalf("expected webhook unauthorized 401, got %d", unauthorized.Code)
+	if badSig.Code != http.StatusBadRequest {
+		t.Fatalf("expected webhook bad signature 400, got %d", badSig.Code)
 	}
 
-	invalidPayload := performWebhookRequest(t, handler, map[string]any{
-		"event": "payment.received",
-	}, "webhook-secret")
+	// Missing required fields (no order_id) → 400
+	invalidPayload := performWebhookRequest(t, handlerNoKey, map[string]any{
+		"transaction_status": "settlement",
+	}, "")
 	if invalidPayload.Code != http.StatusBadRequest {
 		t.Fatalf("expected invalid payload 400, got %d", invalidPayload.Code)
 	}
 
-	userNotFound := performWebhookRequest(t, handler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId": "trx_user_missing",
-			"customerEmail": "missing-user@example.com",
-		},
-	}, "webhook-secret")
+	// order_id with empty userID segment → 422
+	userNotFound := performWebhookRequest(t, handlerNoKey, map[string]any{
+		"order_id":           "checkout::badkey",
+		"transaction_status": "settlement",
+		"gross_amount":       "49000.00",
+		"status_code":        "200",
+	}, "")
 	if userNotFound.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected user not found 422, got %d", userNotFound.Code)
 	}
 
-	success := performWebhookRequest(t, handler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId":     "trx_handler_webhook",
-			"transactionStatus": "paid",
-			"customerEmail":     "webhook-handler@example.com",
-		},
-	}, "webhook-secret")
+	// Valid settlement for seeded transaction → 200
+	success := performWebhookRequest(t, handlerNoKey, map[string]any{
+		"order_id":           "checkout:" + user.ID + ":trx_handler_webhook",
+		"transaction_status": "settlement",
+		"gross_amount":       "49000.00",
+		"status_code":        "200",
+	}, "")
 	if success.Code != http.StatusOK {
 		t.Fatalf("expected webhook success 200, got %d (%s)", success.Code, success.Body.String())
 	}
 
-	duplicate := performWebhookRequest(t, handler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId":     "trx_handler_webhook",
-			"transactionStatus": "paid",
-			"customerEmail":     "webhook-handler@example.com",
-		},
-	}, "webhook-secret")
+	// Duplicate event → 200 (idempotent)
+	duplicate := performWebhookRequest(t, handlerNoKey, map[string]any{
+		"order_id":           "checkout:" + user.ID + ":trx_handler_webhook",
+		"transaction_status": "settlement",
+		"gross_amount":       "49000.00",
+		"status_code":        "200",
+	}, "")
 	if duplicate.Code != http.StatusOK {
 		t.Fatalf("expected webhook duplicate 200, got %d (%s)", duplicate.Code, duplicate.Body.String())
 	}
 
-	serviceUnavailable := performWebhookRequest(t, handler, map[string]any{
-		"event": "payment.received",
-		"data": map[string]any{
-			"transactionId":     "trx_missing_transaction",
-			"transactionStatus": "paid",
-			"customerEmail":     "webhook-handler@example.com",
-		},
-	}, "webhook-secret")
-	if serviceUnavailable.Code != http.StatusServiceUnavailable {
-		t.Fatalf("expected webhook service unavailable 503, got %d", serviceUnavailable.Code)
+	// Transaction not found in DB → 422 (order_id not recognized)
+	serviceUnavailable := performWebhookRequest(t, handlerNoKey, map[string]any{
+		"order_id":           "pay-unknown-order",
+		"transaction_status": "settlement",
+		"gross_amount":       "49000.00",
+		"status_code":        "200",
+	}, "")
+	if serviceUnavailable.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected webhook user not found 422, got %d", serviceUnavailable.Code)
 	}
 }
 
@@ -376,14 +409,14 @@ func TestBillingHandler_GetBillingStatusAndTransactions(t *testing.T) {
 	transactionRepository := memory.NewBillingRepository()
 	now := time.Now().UTC()
 	_, err = transactionRepository.CreatePending(context.Background(), billingdomain.CreatePendingTransactionInput{
-		UserID:             user.ID,
-		Provider:           billingdomain.PaymentProviderMayar,
-		PlanCode:           billingdomain.PlanCodeProMonthly,
-		MayarTransactionID: "trx_read_1",
-		InvoiceID:          "inv_read_1",
-		CheckoutURL:        "https://pay.example.com/checkout",
-		Amount:             49_000,
-		ExpiresAt:          &now,
+		UserID:                user.ID,
+		Provider:              billingdomain.PaymentProviderMidtrans,
+		PlanCode:              billingdomain.PlanCodeProMonthly,
+		ProviderTransactionID: "trx_read_1",
+		InvoiceID:             "inv_read_1",
+		CheckoutURL:           "https://pay.example.com/checkout",
+		Amount:                49_000,
+		ExpiresAt:             &now,
 	})
 	if err != nil {
 		t.Fatalf("seed transaction: %v", err)
@@ -475,6 +508,9 @@ func performCheckoutRequest(
 	idempotencyKey string,
 ) *httptest.ResponseRecorder {
 	t.Helper()
+	if _, exists := payload["customer_mobile"]; !exists {
+		payload["customer_mobile"] = "08123456789"
+	}
 
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(payload); err != nil {
@@ -508,14 +544,12 @@ func performWebhookRequest(
 	if err := json.NewEncoder(&body).Encode(payload); err != nil {
 		t.Fatalf("encode request: %v", err)
 	}
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/webhook/mayar", &body)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/webhook/midtrans", &body)
 	request = request.WithContext(observability.WithRequestID(request.Context(), "req_webhook"))
 	request.Header.Set("Content-Type", "application/json")
-	if webhookToken != "" {
-		request.Header.Set("X-Bisakerja-Webhook-Token", webhookToken)
-	}
+	_ = webhookToken // Midtrans auth is signature-based in payload, not header
 
 	recorder := httptest.NewRecorder()
-	handler.HandleMayarWebhook(recorder, request)
+	handler.HandleMidtransWebhook(recorder, request)
 	return recorder
 }

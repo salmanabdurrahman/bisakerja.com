@@ -30,7 +30,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 - [`api/admin.md`](./api/admin.md)
 - [`api/webhooks.md`](./api/webhooks.md)
 - [`api/errors.md`](./api/errors.md)
-- [`api/mayar-headless.md`](./api/mayar-headless.md)
+- [`api/midtrans-snap.md`](./api/midtrans-snap.md)
 
 ## 4) Architecture Specs
 
@@ -39,7 +39,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 - [`architecture/scraper-source-adapters.md`](./architecture/scraper-source-adapters.md)
 - [`architecture/database.md`](./architecture/database.md)
 - [`architecture/redis_queue_cache.md`](./architecture/redis_queue_cache.md)
-- [`architecture/mayar-integration.md`](./architecture/mayar-integration.md)
+- [`architecture/midtrans-integration.md`](./architecture/midtrans-integration.md)
 - [`architecture/local-development-runbook.md`](./architecture/local-development-runbook.md)
 - [`architecture/monorepo-project-layout.md`](./architecture/monorepo-project-layout.md)
 
