@@ -17,6 +17,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 - [`features/subscription-billing.md`](./features/subscription-billing.md)
 - [`features/admin-operations.md`](./features/admin-operations.md)
 - [`features/optional-features.md`](./features/optional-features.md)
+- [`features/application-tracker.md`](./features/application-tracker.md)
 
 ## 3) API Specs
 
@@ -31,6 +32,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 - [`api/webhooks.md`](./api/webhooks.md)
 - [`api/errors.md`](./api/errors.md)
 - [`api/midtrans-snap.md`](./api/midtrans-snap.md)
+- [`api/tracker.md`](./api/tracker.md)
 
 ## 4) Architecture Specs
 
@@ -47,6 +49,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 
 - [`frontend/README.md`](./frontend/README.md)
 - [`frontend/features/README.md`](./frontend/features/README.md)
+- [`frontend/features/application-tracker.md`](./frontend/features/application-tracker.md)
 - [`frontend/architecture/README.md`](./frontend/architecture/README.md)
 - [`frontend/flows/README.md`](./frontend/flows/README.md)
 - [`frontend/phases/README.md`](./frontend/phases/README.md)

@@ -43,6 +43,7 @@ Sebelum implementasi lanjutan dimulai, urutan kerja dikunci agar perubahan dieks
 | M4 | Frontend redesign + growth hardening | ✅ Complete |
 | M5 | Phase 4 backend execution | 🟡 In Progress |
 | M6 | Phase 5 AI value layer (backend + frontend) | 🟡 In Progress |
+| M7 | Phase 6 Application Tracker (backend + frontend) | ✅ Complete | Phase 6 backend complete (38 tests pass) + Phase 6 frontend complete (33 test files pass, typecheck clean) |
 
 Catatan progress M1 saat ini:
 
@@ -199,3 +200,16 @@ Catatan progress M6 saat ini:
 2. Isi seluruh kolom evidence saat status `✅`.
 3. Validasi gate mengacu ke `docs/standards/ci-quality-gates.md`.
 4. Update checklist ini di PR yang sama dengan implementasi.
+
+## Phase 6 - Application Tracker & Bookmark
+
+| Item | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
+| ---- | ------ | ------------- | ------------- | ----------- | ----------------- |
+| migration `000007_phase6_application_tracker` (tabel `bookmarks` + `tracked_applications`) | ✅ | `apps/api/migrations/000007_phase6_application_tracker.up.sql`, `apps/api/migrations/000007_phase6_application_tracker.down.sql` | `make -C apps/api check-migrations` | local gate: `go test ./...` pass | `docs/features/application-tracker.md`, `docs/api/tracker.md` |
+| domain tracker + FREE_TIER_APPLICATION_LIMIT | ✅ | `apps/api/internal/domain/tracker/tracker.go`, `apps/api/pkg/errcode/codes.go` | `apps/api/internal/app/tracker/service_test.go` | local gate: `go test ./...` pass | `docs/features/application-tracker.md` |
+| tracker service + memory repository | ✅ | `apps/api/internal/app/tracker/service.go`, `apps/api/internal/adapter/persistence/memory/tracker_repository.go` | `apps/api/internal/app/tracker/service_test.go`, `apps/api/internal/adapter/persistence/memory/tracker_repository_test.go`, `go test ./...` | local gate: `go test ./...` pass | `docs/features/application-tracker.md`, `docs/api/tracker.md` |
+| tracker PostgreSQL repository | ✅ | `apps/api/internal/adapter/persistence/postgres/tracker_repository.go` | `apps/api/internal/app/tracker/service_test.go` | local gate: `go test ./...` pass | `docs/features/application-tracker.md` |
+| tracker HTTP handler (7 endpoint) + router wiring | ✅ | `apps/api/internal/adapter/http/handler/tracker_handler.go`, `apps/api/internal/adapter/http/router/router.go`, `apps/api/cmd/api/main.go` | `apps/api/internal/adapter/http/handler/tracker_handler_test.go`, `apps/api/test/integration/tracker_flow_test.go`, `go test ./...` | local gate: `go test ./...` pass (38 tests) | `docs/api/tracker.md`, `docs/features/application-tracker.md` |
+| frontend tracker service + session-api-client | ✅ | `apps/web/src/services/tracker.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/unit/tracker-service.test.ts`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md`, `docs/api/tracker.md` |
+| BookmarkButton di job detail | ✅ | `apps/web/src/features/tracker/components/bookmark-button.tsx`, `apps/web/src/app/jobs/[id]/page.tsx` | `apps/web/tests/components/job-detail-page.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md` |
+| AccountTrackerClient + route `/account/tracker` | ✅ | `apps/web/src/features/tracker/components/account-tracker-client.tsx`, `apps/web/src/app/account/tracker/page.tsx`, `apps/web/src/features/profile/components/account-dashboard-nav.tsx` | `apps/web/tests/components/account-tracker-client.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md`, `docs/frontend/traceability/frontend-backend-traceability.md` |

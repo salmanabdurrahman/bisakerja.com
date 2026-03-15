@@ -15,7 +15,11 @@ import {
 } from "@/lib/utils/sanitize-job-description";
 import { formatSalaryDisplay } from "@/lib/utils/format-salary-display";
 import { APIRequestError } from "@/lib/utils/fetch-json";
+
 import { getJobDetail, type JobDetail } from "@/services/jobs";
+import { resolveServerAccessToken } from "@/lib/auth/server-session";
+import { listBookmarks } from "@/services/tracker";
+import { BookmarkButton } from "@/features/tracker/components/bookmark-button";
 
 interface JobDetailPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +40,17 @@ export default async function JobDetailPage({
   const backHref = buildBackHref(resolvedSearchParams.back);
   const viewState = await loadDetailViewState(id);
 
+  const accessToken = await resolveServerAccessToken();
+  let isBookmarked = false;
+  if (accessToken) {
+    try {
+      const bookmarksResponse = await listBookmarks(accessToken);
+      isBookmarked = bookmarksResponse.data.some((b) => b.job_id === id);
+    } catch {
+      // silently skip — bookmark status is non-critical
+    }
+  }
+
   return (
     <AppShell>
       <main className="grid gap-5" role="main">
@@ -44,13 +59,18 @@ export default async function JobDetailPage({
           title="Opportunity overview"
           description="Review role details, compensation context, and apply directly on the source site."
         />
-        {renderDetailView(viewState, backHref)}
+        {renderDetailView(viewState, backHref, id, isBookmarked)}
       </main>
     </AppShell>
   );
 }
 
-function renderDetailView(viewState: JobDetailViewState, backHref: string) {
+function renderDetailView(
+  viewState: JobDetailViewState,
+  backHref: string,
+  jobID: string,
+  isBookmarked: boolean,
+) {
   if (viewState.kind === "not_found") {
     return (
       <JobsStatePanel
@@ -91,6 +111,9 @@ function renderDetailView(viewState: JobDetailViewState, backHref: string) {
           <CardDescription className="bk-body">
             {job.company} · {job.location}
           </CardDescription>
+          <div className="flex items-center gap-2">
+            <BookmarkButton jobID={jobID} initialIsBookmarked={isBookmarked} />
+          </div>
           <p className="bk-body">
             Salary:{" "}
             <span className="font-medium text-black">

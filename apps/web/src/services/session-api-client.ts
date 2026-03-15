@@ -51,7 +51,20 @@ import {
   type GenerateAIJobFitSummaryInput,
   type GenerateAISearchAssistantInput,
 } from "@/services/ai";
-
+import {
+  createBookmark,
+  deleteBookmark,
+  listBookmarks,
+  createTrackedApplication,
+  updateApplicationStatus,
+  deleteTrackedApplication,
+  listTrackedApplications,
+  type Bookmark,
+  type TrackedApplication,
+  type ApplicationStatus,
+  type CreateTrackedApplicationInput,
+  type UpdateApplicationStatusInput,
+} from "@/services/tracker";
 interface SessionClientDependencies {
   getSession: typeof readBrowserSession;
   updateAccessToken: typeof writeBrowserAccessToken;
@@ -106,8 +119,21 @@ export interface SessionAPIClient {
   generateAICoverLetterDraft: (
     input: GenerateAICoverLetterDraftInput,
   ) => Promise<APIResponse<AICoverLetterDraftResult>>;
+  createBookmark: (jobID: string) => Promise<APIResponse<Bookmark>>;
+  deleteBookmark: (jobID: string) => Promise<APIResponse<{ job_id: string }>>;
+  listBookmarks: () => Promise<APIResponse<Bookmark[]>>;
+  createTrackedApplication: (
+    input: CreateTrackedApplicationInput,
+  ) => Promise<APIResponse<TrackedApplication>>;
+  updateApplicationStatus: (
+    id: string,
+    input: UpdateApplicationStatusInput,
+  ) => Promise<APIResponse<TrackedApplication>>;
+  deleteTrackedApplication: (
+    id: string,
+  ) => Promise<APIResponse<{ id: string }>>;
+  listTrackedApplications: () => Promise<APIResponse<TrackedApplication[]>>;
 }
-
 let refreshInFlight: Promise<string | null> | null = null;
 
 /**
@@ -176,6 +202,21 @@ export function createSessionAPIClient(
       withAuthorizedRequest((token) =>
         generateAICoverLetterDraft(token, input),
       ),
+    createBookmark: (jobID) =>
+      withAuthorizedRequest((token) => createBookmark(token, jobID)),
+    deleteBookmark: (jobID) =>
+      withAuthorizedRequest((token) => deleteBookmark(token, jobID)),
+    listBookmarks: () => withAuthorizedRequest((token) => listBookmarks(token)),
+    createTrackedApplication: (input) =>
+      withAuthorizedRequest((token) => createTrackedApplication(token, input)),
+    updateApplicationStatus: (id, input) =>
+      withAuthorizedRequest((token) =>
+        updateApplicationStatus(token, id, input),
+      ),
+    deleteTrackedApplication: (id) =>
+      withAuthorizedRequest((token) => deleteTrackedApplication(token, id)),
+    listTrackedApplications: () =>
+      withAuthorizedRequest((token) => listTrackedApplications(token)),
   };
 }
 

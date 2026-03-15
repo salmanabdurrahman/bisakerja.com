@@ -10,7 +10,7 @@ Dokumen ini merinci fitur tambahan yang tidak wajib untuk MVP, tetapi bernilai t
 2. Reuse komponen yang sudah ada (jobs, preference, notification, billing).
 3. Tidak mengganggu stabilitas pipeline scraper dan search.
 
-## Status Implementasi Backend (Phase 3)
+## Status Implementasi Backend (Phase 3 & Phase 6)
 
 - ✅ Saved Search & Alert Rules
 - ✅ Notification Frequency Control (Instant/Digest)
@@ -18,7 +18,7 @@ Dokumen ini merinci fitur tambahan yang tidak wajib untuk MVP, tetapi bernilai t
 - ✅ Company Watchlist
 - 🟡 Phase 4 increment started: coupon-enabled checkout (`coupon_code` -> Mayar `/coupon/validate`)
 - 🟡 Phase 5 increment started: AI search assistant (`POST /api/v1/ai/search-assistant`) + AI job-fit summary premium (`POST /api/v1/ai/job-fit-summary`) + AI cover letter draft premium (`POST /api/v1/ai/cover-letter-draft`) + usage quota read model (`GET /api/v1/ai/usage`)
-
+- ✅ Application Tracker & Bookmark (Phase 6)
 Catatan implementasi saat ini:
 
 - backend sudah menyediakan kontrak CRUD/read model dan preference control untuk fitur growth,
@@ -67,16 +67,21 @@ Catatan implementasi saat ini:
   - tambah normalizer worker.
   - kolom `salary_min`, `salary_max`, `salary_currency`, `salary_period` pada `jobs`.
 
-### 6) Application Tracker & Bookmark
+### 6) Application Tracker & Bookmark ✅ Implemented (Phase 6)
 
 - **Nilai bisnis**: meningkatkan stickiness produk karena user melacak status lamaran.
-- **API tambahan**:
-  - `POST /api/v1/jobs/:id/bookmark`
-  - `DELETE /api/v1/jobs/:id/bookmark`
+- **Status implementasi**: ✅ Phase 6 backend complete + frontend complete.
+- **API aktif**:
+  - `POST /api/v1/bookmarks`
+  - `DELETE /api/v1/bookmarks/{job_id}`
+  - `GET /api/v1/bookmarks`
   - `POST /api/v1/applications`
-  - `PATCH /api/v1/applications/:id/status`
-- **Dampak DB**: tabel `bookmarks` dan `applications`.
-
+  - `PATCH /api/v1/applications/{id}/status`
+  - `DELETE /api/v1/applications/{id}`
+  - `GET /api/v1/applications`
+- **Dampak DB**: tabel `bookmarks` dan `tracked_applications`.
+- **Free tier limit**: maksimal 5 active tracked applications (status bukan `rejected`/`withdrawn`).
+- **Dokumentasi**: [`docs/api/tracker.md`](../api/tracker.md), [`docs/features/application-tracker.md`](./application-tracker.md).
 ### 7) Recommendation Layer (Semantic Matching)
 
 - **Nilai bisnis**: relevansi rekomendasi meningkat untuk user premium.

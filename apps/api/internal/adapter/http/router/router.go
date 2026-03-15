@@ -20,6 +20,7 @@ type Dependencies struct {
 	AIHandler           *handler.AIHandler
 	GrowthHandler       *handler.GrowthHandler
 	NotificationHandler *handler.NotificationHandler
+	TrackerHandler      *handler.TrackerHandler
 	AuthMiddleware      *middleware.Authenticator
 }
 
@@ -127,6 +128,36 @@ func New(logger *slog.Logger, dependencies ...Dependencies) http.Handler {
 		mux.Handle(
 			"PATCH /api/v1/notifications/{id}/read",
 			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.NotificationHandler.MarkNotificationRead)),
+		)
+	}
+	if deps.TrackerHandler != nil && deps.AuthMiddleware != nil {
+		mux.Handle(
+			"POST /api/v1/bookmarks",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.CreateBookmark)),
+		)
+		mux.Handle(
+			"DELETE /api/v1/bookmarks/{job_id}",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.DeleteBookmark)),
+		)
+		mux.Handle(
+			"GET /api/v1/bookmarks",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.ListBookmarks)),
+		)
+		mux.Handle(
+			"POST /api/v1/applications",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.CreateTrackedApplication)),
+		)
+		mux.Handle(
+			"PATCH /api/v1/applications/{id}/status",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.UpdateApplicationStatus)),
+		)
+		mux.Handle(
+			"DELETE /api/v1/applications/{id}",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.DeleteTrackedApplication)),
+		)
+		mux.Handle(
+			"GET /api/v1/applications",
+			deps.AuthMiddleware.RequireAuth(http.HandlerFunc(deps.TrackerHandler.ListTrackedApplications)),
 		)
 	}
 

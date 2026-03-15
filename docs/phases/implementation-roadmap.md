@@ -22,7 +22,7 @@ Implementasi backend saat ini:
 - **Phase 4 backend increment 1** sudah mulai diimplementasikan (coupon-enabled checkout: validasi `coupon_code` ke Mayar + invoice amount diskon + metadata amount response), diikuti hardening `salary normalization` untuk mapping scraper (`min-only`/`max-only`/`exact`/`range`) termasuk comparator (`<= ...`) dan shorthand bulanan (`Rp 8 – Rp 12 per month`), hardening validasi `redirect_url` checkout untuk local development (HTTP localhost/loopback only), retry guard yang mereuse checkout pending agar tidak mudah terkena `429`, serta parser kompatibilitas payload Mayar (object/array + link/expiry variants).
 - **Phase 5 (AI Career Intelligence & Value Layer)** sudah berjalan pada increment 1-3 backend (`POST /ai/search-assistant`, `POST /ai/job-fit-summary`, `POST /ai/cover-letter-draft`, `GET /ai/usage`) dan increment 1 frontend (`/account/ai-tools` + AI usage meter + assistant/job-fit/cover-letter UI).
 
-Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1 + salary normalization + checkout redirect/rate-limit hardening) + Phase 5 in progress (increment 1-3 backend + frontend increment 1)**.
+Status saat ini: **Phase 0 complete + Phase 1 backend (Iteration 1.1-1.3) complete + Phase 2 backend (Iteration 2.1-2.3) complete + Phase 3 backend complete + Phase 4 backend in progress (increment 1 + salary normalization + checkout redirect/rate-limit hardening) + Phase 5 in progress (increment 1-3 backend + frontend increment 1) + Phase 6 (Application Tracker) backend complete + Phase 6 frontend complete**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -37,6 +37,7 @@ Sebelum implementasi feature lanjutan, roadmap eksekusi dikunci terlebih dahulu 
 | M4 | Redesign frontend ala SaaS + hardening growth | ✅ Complete | UI frontend sudah direfresh berbasis design tokens + observability web vitals + e2e growth coverage + refinement visual pass ala Paper sudah ditutup |
 | M5 | Eksekusi Phase 4 backend | 🟡 In Progress | Increment 1 aktif: coupon-enabled checkout pada billing + hardening salary normalization mapping scraper (comparator + shorthand monthly range) + redirect URL/rate-limit hardening + kompatibilitas parser payload Mayar |
 | M6 | Phase 5 AI value layer (backend + frontend) | 🟡 In Progress | Increment 1-3 backend aktif + frontend increment 1 aktif di `/account/ai-tools`; interview prep masih planned |
+| M7 | Phase 6 Application Tracker (backend + frontend) | ✅ Complete | Phase 6 backend complete (38 tests pass) + Phase 6 frontend complete (33 test files pass, typecheck clean) |
 
 Aturan eksekusi:
 
@@ -250,3 +251,41 @@ Progress increment 1 frontend yang sudah aktif:
 - guardrail keamanan (redaction + abuse/rate limit) aktif dan tervalidasi,
 - metrik penggunaan AI per tier tersedia untuk evaluasi conversion premium,
 - checklist phase backend + frontend untuk scope AI sudah berisi evidence minimal `📝`/`🟡` sesuai progres.
+
+## Phase 6 - Application Tracker & Bookmark
+
+### Objective
+
+Meningkatkan stickiness produk dengan memberi user cara menyimpan lowongan (bookmark) dan melacak status lamaran secara aktif, dengan pembatasan jumlah tracking pada free tier untuk mendorong konversi upgrade.
+
+### Scope
+
+- Bookmark engine: simpan/hapus/list bookmark lowongan per user.
+- Application tracker: lacak status pipeline lamaran (`applied` → `interview` → `offer` / `rejected` / `withdrawn`).
+- Free tier limit: maksimal 5 active tracked applications (status bukan `rejected`/`withdrawn`).
+- Premium tier: unlimited tracked applications.
+- Frontend: BookmarkButton di job detail + dashboard `/account/tracker`.
+
+### Progress Backend
+
+- migration `000007_phase6_application_tracker` (tabel `bookmarks` + `tracked_applications`),
+- domain/tracker, app/tracker service + repository memory + repository postgres,
+- handler tracker (7 endpoint),
+- error code `TRACKER_LIMIT_EXCEEDED`,
+- integration test `tracker_flow_test.go`.
+
+### Progress Frontend
+
+- `apps/web/src/services/tracker.ts` (types + service functions),
+- `apps/web/src/features/tracker/components/bookmark-button.tsx`,
+- `apps/web/src/features/tracker/components/account-tracker-client.tsx`,
+- `apps/web/src/app/account/tracker/page.tsx`,
+- BookmarkButton diintegrasikan ke `apps/web/src/app/jobs/[id]/page.tsx`,
+- nav link "Application tracker" ditambahkan ke `account-dashboard-nav.tsx`.
+
+### Exit Criteria (Measurable)
+
+- 38 Go tests pass (`go test ./...` clean),
+- 33 frontend test files pass, `pnpm --filter web typecheck` zero errors,
+- endpoint bookmark + application tracking terdokumentasi di `docs/api/tracker.md`,
+- feature spec tersedia di `docs/features/application-tracker.md` (backend) + `docs/frontend/features/application-tracker.md` (frontend).

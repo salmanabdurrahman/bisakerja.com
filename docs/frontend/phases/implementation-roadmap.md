@@ -19,7 +19,7 @@ Implementasi **Phase 0 frontend** sudah dimulai:
 - **M5 frontend follow-up** sudah mulai diimplementasikan untuk kontrak backend Phase 4 increment 1 (coupon-enabled checkout + safe rendering untuk job description HTML + salary display normalization), termasuk pesan validasi checkout yang lebih actionable untuk `INVALID_REDIRECT_URL` dan `TOO_MANY_REQUESTS`.
 - **Phase AI frontend (post-M5)** sudah masuk implementasi increment 1: route `/account/ai-tools`, search assistant UI, job-fit summary UI, cover letter draft UI, dan quota meter.
 
-Status saat ini: **Phase 0 frontend baseline complete + Phase 1 complete + Phase 2 frontend complete + Phase 4 backend follow-up frontend (M5) in progress + phase AI increment 1 in progress**.
+Status saat ini: **Phase 0 frontend baseline complete + Phase 1 complete + Phase 2 frontend complete + Phase 4 backend follow-up frontend (M5) in progress + phase AI increment 1 in progress + Phase 6 (Application Tracker) frontend complete**.
 
 ## Rencana Lanjutan (Document-First, One-by-One)
 
@@ -34,6 +34,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | M4 | SaaS redesign + hardening growth | ✅ Complete | Redesign SaaS pada halaman auth/jobs/account/pricing + web vitals observability + growth e2e coverage + refinement visual pass ala Paper (hero/nav/footer + copy cleanup non-teknis) + typography scale consistency pass pada shared UI |
 | M5 | Phase 4 backend follow-up | 🟡 In Progress | Coupon-enabled checkout UX + discovery hardening (sanitized job description rendering + salary fallback normalization) + actionable redirect/rate-limit validation message |
 | M6 | AI experience layer follow-up | 🟡 In Progress | Backend increment 1-3 aktif dan frontend increment 1 sudah berjalan di `/account/ai-tools` (assistant + job-fit + cover-letter + usage meter); interview prep masih planned |
+| M7 | Application Tracker frontend | ✅ Complete | 33 test files pass, typecheck clean; BookmarkButton + `/account/tracker` + nav link aktif |
 
 Aturan eksekusi:
 
@@ -232,3 +233,44 @@ Progress implementasi saat ini (increment 1 frontend):
 - tidak ada regression pada flow discovery/account/subscription,
 - UX premium vs free terlihat jelas dan terukur melalui metrik adopsi,
 - traceability frontend-backend untuk endpoint AI tersedia dan sinkron.
+
+## Phase 4 - Application Tracker & Bookmark
+
+### Objective
+
+Menghadirkan fitur bookmark dan pipeline tracker lamaran kerja yang terintegrasi di discovery dan dashboard akun.
+
+### Scope
+
+- BookmarkButton di halaman `/jobs/[id]` (toggle add/remove bookmark).
+- Dashboard `/account/tracker` dengan dua tab: Bookmarks dan Applications.
+- Tracker tab: daftar tracked applications dengan dropdown update status dan tombol hapus.
+- Free tier gate: banner + disable tombol "Track Application" saat limit 5 active applications tercapai (`TRACKER_LIMIT_EXCEEDED`).
+- Nav link "Application tracker" di sidebar account.
+
+### API Dependency Wajib Siap
+
+- `POST /api/v1/bookmarks`
+- `DELETE /api/v1/bookmarks/{job_id}`
+- `GET /api/v1/bookmarks`
+- `POST /api/v1/applications`
+- `PATCH /api/v1/applications/{id}/status`
+- `DELETE /api/v1/applications/{id}`
+- `GET /api/v1/applications`
+
+### Progress Implementasi (selesai)
+
+- `apps/web/src/services/tracker.ts` — types + service functions.
+- `apps/web/src/services/session-api-client.ts` — 7 metode tracker ditambahkan.
+- `apps/web/src/features/tracker/components/bookmark-button.tsx`.
+- `apps/web/src/features/tracker/components/account-tracker-client.tsx`.
+- `apps/web/src/app/account/tracker/page.tsx`.
+- BookmarkButton diintegrasikan ke `apps/web/src/app/jobs/[id]/page.tsx`.
+- Nav link "Application tracker" ditambahkan ke `account-dashboard-nav.tsx`.
+
+### Exit Criteria (Measurable)
+
+- 33 frontend test files pass, `pnpm --filter web typecheck` zero errors,
+- BookmarkButton tampil dan functional di job detail,
+- `/account/tracker` menampilkan daftar bookmarks + applications dengan state management yang benar,
+- traceability FE-BE untuk endpoint tracker tersedia dan sinkron.

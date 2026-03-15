@@ -89,6 +89,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -143,6 +150,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -180,6 +194,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -221,6 +242,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -258,6 +286,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -299,6 +334,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);
@@ -333,6 +375,13 @@ describe("UpgradeCTA", () => {
       generateAISearchAssistant: vi.fn(),
       generateAIJobFitSummary: vi.fn(),
       generateAICoverLetterDraft: vi.fn(),
+      createBookmark: vi.fn(),
+      deleteBookmark: vi.fn(),
+      listBookmarks: vi.fn(),
+      createTrackedApplication: vi.fn(),
+      updateApplicationStatus: vi.fn(),
+      deleteTrackedApplication: vi.fn(),
+      listTrackedApplications: vi.fn(),
     });
 
     render(<UpgradeCTA subscriptionState="free" />);

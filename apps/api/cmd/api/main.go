@@ -19,6 +19,7 @@ import (
 	identityapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/identity"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/jobs"
 	notificationapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/notification"
+	trackerapp "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/app/tracker"
 	platformauth "github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/auth"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/config"
 	"github.com/salmanabdurrahman/bisakerja.com/apps/api/internal/platform/database"
@@ -99,6 +100,10 @@ func main() {
 	})
 	aiHandler := handler.NewAIHandler(aiService)
 
+	trackerRepository := postgres.NewTrackerRepository(dbPool)
+	trackerService := trackerapp.NewService(identityRepository, trackerRepository)
+	trackerHandler := handler.NewTrackerHandler(trackerService)
+
 	httpHandler := router.New(appLogger, router.Dependencies{
 		JobsHandler:         jobsHandler,
 		AuthHandler:         authHandler,
@@ -107,6 +112,7 @@ func main() {
 		AIHandler:           aiHandler,
 		GrowthHandler:       growthHandler,
 		NotificationHandler: notificationHandler,
+		TrackerHandler:      trackerHandler,
 		AuthMiddleware:      authMiddleware,
 	})
 	httpServer := server.NewHTTP(cfg, httpHandler, appLogger)

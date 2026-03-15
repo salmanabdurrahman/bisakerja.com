@@ -10,6 +10,14 @@ vi.mock("@/services/jobs", () => ({
   getJobDetail: vi.fn(),
 }));
 
+vi.mock("@/lib/auth/server-session", () => ({
+  resolveServerAccessToken: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock("@/services/tracker", () => ({
+  listBookmarks: vi.fn().mockResolvedValue({ data: [] }),
+}));
+
 describe("Job detail page", () => {
   it("sanitizes rich HTML descriptions from API response", async () => {
     vi.mocked(getJobDetail).mockResolvedValueOnce({

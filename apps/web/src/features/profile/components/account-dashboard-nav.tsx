@@ -10,6 +10,7 @@ const accountNavigationLinks = [
   { href: "/account", label: "Account overview" },
   { href: "/account/preferences", label: "Manage preferences" },
   { href: "/account/saved-searches", label: "Saved searches" },
+  { href: "/account/tracker", label: "Application tracker" },
   { href: "/account/notifications", label: "Notification center" },
   { href: "/account/subscription", label: "Subscription" },
   { href: "/account/ai-tools", label: "AI tools" },

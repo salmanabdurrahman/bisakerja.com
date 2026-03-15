@@ -35,4 +35,5 @@ const (
 	NotFound                = "NOT_FOUND"
 	ServiceUnavailable      = "SERVICE_UNAVAILABLE"
 	InternalServerError     = "INTERNAL_SERVER_ERROR"
+	TrackerLimitExceeded    = "TRACKER_LIMIT_EXCEEDED"
 )

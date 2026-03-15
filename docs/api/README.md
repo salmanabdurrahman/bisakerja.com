@@ -115,6 +115,7 @@ Contoh:
 - [Billing](./billing.md)
 - [Growth (Saved Searches, Watchlist, Notifications)](./growth.md)
 - [AI (Search Assistant & Usage)](./ai.md)
+- [Application Tracker (Bookmarks & Applications)](./tracker.md)
 - [Admin](./admin.md)
 - [Webhooks](./webhooks.md)
 - [Error Codes](./errors.md)

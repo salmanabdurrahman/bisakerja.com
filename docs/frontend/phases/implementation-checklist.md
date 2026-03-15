@@ -68,6 +68,7 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | M4 | Redesign SaaS + penutupan web vitals dan growth e2e | ✅ Complete |
 | M5 | Follow-up kontrak frontend untuk scope Phase 4 backend | 🟡 In Progress |
 | M6 | AI experience layer (free + premium value) | 🟡 In Progress |
+| M7 | Application Tracker frontend | ✅ Complete | 33 test files pass, typecheck clean; BookmarkButton + /account/tracker + nav link aktif |
 
 ## 4) Checklist per Phase & Iteration
 
@@ -151,6 +152,17 @@ Urutan implementasi lanjutan dikunci agar frontend berjalan seirama dengan readi
 | fallback UX saat AI provider unavailable/quota exhausted | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx` | `apps/web/tests/components/account-ai-tools-client.test.tsx` | local gate: `pnpm --filter web test` | `docs/frontend/features/ai-career-copilot.md`, `docs/standards/security-observability-standards.md`, `docs/api/errors.md` |
 | traceability endpoint AI FE-BE | 🟡 | `apps/web/src/features/ai/components/account-ai-tools-client.tsx`, `apps/web/src/services/ai.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/components/account-ai-tools-client.test.tsx`, `apps/web/tests/unit/ai-service.test.ts` | local gate: `pnpm --filter web test` | `docs/frontend/traceability/frontend-backend-traceability.md`, `docs/frontend/phases/implementation-roadmap.md` |
 
+## Phase 7 - Application Tracker & Bookmark
+
+| Item | Status | Code Evidence | Test Evidence | CI Evidence | Docs/ADR Evidence |
+| ---- | ------ | ------------- | ------------- | ----------- | ----------------- |
+| tracker service + types (`tracker.ts`) | ✅ | `apps/web/src/services/tracker.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/unit/tracker-service.test.ts`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md`, `docs/api/tracker.md` |
+| BookmarkButton di `/jobs/[id]` | ✅ | `apps/web/src/features/tracker/components/bookmark-button.tsx`, `apps/web/src/app/jobs/[id]/page.tsx` | `apps/web/tests/components/job-detail-page.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md` |
+| AccountTrackerClient (bookmarks + applications tab) | ✅ | `apps/web/src/features/tracker/components/account-tracker-client.tsx` | `apps/web/tests/components/account-tracker-client.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md`, `docs/api/tracker.md` |
+| route `/account/tracker` (protected server component) | ✅ | `apps/web/src/app/account/tracker/page.tsx` | `apps/web/tests/components/account-tracker-client.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md` |
+| nav link "Application tracker" di sidebar | ✅ | `apps/web/src/features/profile/components/account-dashboard-nav.tsx` | `apps/web/tests/components/account-tracker-client.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md` |
+| free tier gate UX (`TRACKER_LIMIT_EXCEEDED` → upgrade prompt) | ✅ | `apps/web/src/features/tracker/components/account-tracker-client.tsx` | `apps/web/tests/components/account-tracker-client.test.tsx`, `pnpm --filter web test` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/features/application-tracker.md`, `docs/api/tracker.md`, `docs/api/errors.md` |
+| traceability endpoint tracker FE-BE | ✅ | `apps/web/src/features/tracker/components/bookmark-button.tsx`, `apps/web/src/features/tracker/components/account-tracker-client.tsx`, `apps/web/src/services/tracker.ts`, `apps/web/src/services/session-api-client.ts` | `apps/web/tests/unit/tracker-service.test.ts`, `apps/web/tests/components/account-tracker-client.test.tsx` | local gate: `pnpm --filter web lint && pnpm --filter web test && pnpm --filter web build` | `docs/frontend/traceability/frontend-backend-traceability.md`, `docs/api/tracker.md` |
 ## 5) Cara Pakai
 
 1. Ubah status item mengikuti progres (`⬜` → `🟡` → `✅`).
