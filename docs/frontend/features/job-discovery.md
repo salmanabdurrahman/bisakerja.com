@@ -26,6 +26,12 @@ Memberikan pengalaman pencarian lowongan yang cepat, mudah dipahami, dan stabil 
 - Sorting default mengikuti backend (`-posted_at`) jika user belum memilih manual.
 - Klik item lowongan membuka halaman detail dengan opsi kembali ke hasil pencarian terakhir.
 - Banner/CTA upsell hanya bergantung pada `billing/status.subscription_state`, bukan asumsi lokal.
+- `data.description` dari API detail boleh berupa rich text/HTML; frontend wajib sanitasi sebelum render.
+- `salary_range` harus tetap ditampilkan walaupun backend hanya memiliki min-only/max-only/exact salary fallback.
+- Frontend menormalisasi display salary agar format ambigu tetap terbaca:
+  - `<= 2999998` atau `<= Rp 3.500.000` -> `Up to Rp ...`
+  - `>= 7500000` atau `>= Rp 7.500.000` -> `From Rp ...`
+  - `Rp 8 – Rp 12 per month` -> `Rp 8.000.000 - Rp 12.000.000 / month`
 
 ## UI State Transitions
 
@@ -55,7 +61,7 @@ Memberikan pengalaman pencarian lowongan yang cepat, mudah dipahami, dan stabil 
 | Endpoint | Tujuan di Frontend | Field minimum yang dikonsumsi | Referensi |
 |---|---|---|---|
 | `GET /api/v1/jobs` | Ambil list/search jobs dengan query filter dan pagination. | `data[]`, `meta.pagination.page`, `meta.pagination.total_pages`, `meta.pagination.total_records` | [jobs.md](../../api/jobs.md) |
-| `GET /api/v1/jobs/:id` | Ambil detail lowongan spesifik. | `data.id`, `data.title`, `data.company`, `data.location`, `data.description`, `data.url` | [jobs.md](../../api/jobs.md) |
+| `GET /api/v1/jobs/:id` | Ambil detail lowongan spesifik. | `data.id`, `data.title`, `data.company`, `data.location`, `data.description` (plain text atau HTML), `data.url`, `data.salary_range` | [jobs.md](../../api/jobs.md) |
 | `GET /api/v1/billing/status` | Menentukan tampilan upsell premium berdasarkan state. | `data.subscription_state` | [billing.md](../../api/billing.md) |
 
 ## Loading / Error / Empty States
@@ -68,6 +74,9 @@ Memberikan pengalaman pencarian lowongan yang cepat, mudah dipahami, dan stabil 
   - `400 BAD_REQUEST`: tampilkan pesan "filter tidak valid" + reset filter.
   - `500`/`503`: tampilkan full-state error + tombol retry.
   - Network timeout: tampilkan retry dan pertahankan filter terakhir.
+- **Detail sanitization**
+  - Jika `description` berupa HTML, render hanya setelah sanitasi allowlist tag.
+  - Jika `description` plain text, render dengan preserve line breaks (`whitespace-pre-wrap`).
 - **Empty**
   - Search tanpa hasil: tampilkan pesan relevan + CTA clear filter.
   - Sumber lowongan kosong sementara: tampilkan pesan fallback tanpa crash layout.

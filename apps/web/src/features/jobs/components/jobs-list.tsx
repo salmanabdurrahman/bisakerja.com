@@ -1,5 +1,6 @@
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatSalaryDisplay } from "@/lib/utils/format-salary-display";
 import type { JobListItem } from "@/services/jobs";
 
 interface JobsListProps {
@@ -27,7 +28,7 @@ export function JobsList({ jobs, detailBaseHref }: JobsListProps) {
               <p className="text-[14px] text-[#666666]">
                 Salary:{" "}
                 <span className="text-black">
-                  {job.salary_range || "Not specified"}
+                  {formatSalaryDisplay(job.salary_range) || "Not specified"}
                 </span>
               </p>
               <ButtonLink

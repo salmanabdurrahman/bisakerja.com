@@ -241,6 +241,9 @@ func salaryRangeFallback(item job.Job) string {
 		return ""
 	}
 	if item.SalaryMin != nil && item.SalaryMax != nil {
+		if *item.SalaryMin == *item.SalaryMax {
+			return strconv.FormatInt(*item.SalaryMin, 10)
+		}
 		return strconv.FormatInt(*item.SalaryMin, 10) + " - " + strconv.FormatInt(*item.SalaryMax, 10)
 	}
 	if item.SalaryMin != nil {

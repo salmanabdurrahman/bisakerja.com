@@ -167,12 +167,13 @@ func (a *JobstreetAdapter) Fetch(ctx context.Context, request scraper.FetchReque
 			JobSearchV6 struct {
 				TotalCount int `json:"totalCount"`
 				Data       []struct {
-					ID          string `json:"id"`
-					Title       string `json:"title"`
-					CompanyName string `json:"companyName"`
-					Teaser      string `json:"teaser"`
-					SalaryLabel string `json:"salaryLabel"`
-					Locations   []struct {
+					ID           string   `json:"id"`
+					Title        string   `json:"title"`
+					CompanyName  string   `json:"companyName"`
+					Teaser       string   `json:"teaser"`
+					SalaryLabel  string   `json:"salaryLabel"`
+					BulletPoints []string `json:"bulletPoints"`
+					Locations    []struct {
 						Label string `json:"label"`
 					} `json:"locations"`
 					ListingDate struct {
@@ -194,6 +195,8 @@ func (a *JobstreetAdapter) Fetch(ctx context.Context, request scraper.FetchReque
 	items := make([]job.UpsertInput, 0, len(parsed.Data.JobSearchV6.Data))
 	for _, row := range parsed.Data.JobSearchV6.Data {
 		postedAt := parseOptionalTime(row.ListingDate.DateTimeUTC)
+		description := normalizeDescription(composeJobstreetDescription(row.Teaser, row.BulletPoints))
+		salaryMin, salaryMax, salaryRange := normalizeSalaryFields(nil, nil, row.SalaryLabel)
 		location := ""
 		for _, locationRow := range row.Locations {
 			if strings.TrimSpace(locationRow.Label) != "" {
@@ -207,11 +210,15 @@ func (a *JobstreetAdapter) Fetch(ctx context.Context, request scraper.FetchReque
 			Title:         row.Title,
 			Company:       row.CompanyName,
 			Location:      location,
-			Description:   row.Teaser,
+			Description:   description,
 			URL:           buildJobstreetURL(row.ID),
-			SalaryRange:   row.SalaryLabel,
+			SalaryMin:     salaryMin,
+			SalaryMax:     salaryMax,
+			SalaryRange:   salaryRange,
 			PostedAt:      postedAt,
-			RawData:       map[string]any{},
+			RawData: map[string]any{
+				"search_item": row,
+			},
 		})
 	}
 
@@ -237,6 +244,29 @@ func buildJobstreetReferer(keyword string, page int) string {
 		slugifyPathSegment(keyword),
 		page,
 	)
+}
+
+func composeJobstreetDescription(teaser string, bulletPoints []string) string {
+	normalizedTeaser := strings.TrimSpace(teaser)
+	normalizedBullets := make([]string, 0, len(bulletPoints))
+	for _, bullet := range bulletPoints {
+		normalized := strings.TrimSpace(bullet)
+		if normalized == "" {
+			continue
+		}
+		normalizedBullets = append(normalizedBullets, normalized)
+	}
+
+	switch {
+	case normalizedTeaser == "" && len(normalizedBullets) == 0:
+		return ""
+	case normalizedTeaser == "":
+		return "- " + strings.Join(normalizedBullets, "\n- ")
+	case len(normalizedBullets) == 0:
+		return normalizedTeaser
+	default:
+		return normalizedTeaser + "\n\n- " + strings.Join(normalizedBullets, "\n- ")
+	}
 }
 
 const jobstreetSearchQuery = `query JobSearchV6($params: JobSearchV6QueryInput!, $locale: Locale!, $timezone: Timezone!) {

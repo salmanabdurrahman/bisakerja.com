@@ -15,6 +15,8 @@ Mengumpulkan lowongan kerja dari beberapa portal ke satu sumber data terstandar 
 - Scraping berbasis HTTP untuk portal target yang bisa diakses tanpa browser headless.
 - Parsing data lowongan: `title`, `company`, `location`, `description`, `salary_range`, `url`, `posted_at`.
 - Normalisasi format data (teks, salary, lokasi).
+- Normalisasi salary fleksibel untuk kasus `min-only`, `max-only`, `exact salary`, `range`, dan shorthand rentang bulanan (mis. `Rp 8 – Rp 12 per month`).
+- Menyimpan description kaya (HTML/rich text) dari source ke `jobs.description` tanpa stripping agresif.
 - Deduplikasi berbasis kombinasi `source + original_job_id`.
 - Scheduling otomatis 2 kali sehari.
 
@@ -43,6 +45,9 @@ Mengumpulkan lowongan kerja dari beberapa portal ke satu sumber data terstandar 
 
 1. Data lowongan baru hanya disimpan jika belum ada pasangan `source + original_job_id`.
 2. Jika field non-kritis kosong (contoh salary), data tetap disimpan.
+   - Jika hanya ada salah satu nilai salary (`salary_min` atau `salary_max`), data tetap valid dan `salary_range` dibentuk fallback.
+   - Jika source memberi rentang bulanan shorthand (contoh `Rp 8 – Rp 12 per month`), parser menurunkan nilai numerik agar filter salary tetap akurat.
+   - Jika source hanya memberi label salary non-numerik (contoh `Competitive salary`), `salary_min/salary_max` boleh `NULL` dan label disimpan di `salary_range`.
 3. Jika portal gagal di-scrape, proses portal lain tetap lanjut.
 4. Error scraping dicatat ke log + metrik error per source.
 5. Re-scrape job existing tidak mengirim event `JobCreated` ulang.

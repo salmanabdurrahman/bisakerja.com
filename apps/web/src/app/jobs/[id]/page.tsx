@@ -9,6 +9,11 @@ import {
 } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { JobsStatePanel } from "@/features/jobs/components/jobs-state-panel";
+import {
+  isHTMLDescription,
+  sanitizeJobDescription,
+} from "@/lib/utils/sanitize-job-description";
+import { formatSalaryDisplay } from "@/lib/utils/format-salary-display";
 import { APIRequestError } from "@/lib/utils/fetch-json";
 import { getJobDetail, type JobDetail } from "@/services/jobs";
 
@@ -69,6 +74,11 @@ function renderDetailView(viewState: JobDetailViewState, backHref: string) {
   }
 
   const job = viewState.job;
+  const normalizedDescription = job.description.trim();
+  const richDescription = isHTMLDescription(normalizedDescription);
+  const sanitizedDescription = sanitizeJobDescription(normalizedDescription);
+  const formattedSalary = formatSalaryDisplay(job.salary_range);
+
   return (
     <>
       <ButtonLink href={backHref} size="sm" variant="ghost">
@@ -82,13 +92,26 @@ function renderDetailView(viewState: JobDetailViewState, backHref: string) {
             {job.company} · {job.location}
           </CardDescription>
           <p className="text-sm font-medium text-slate-700">
-            Salary: {job.salary_range || "Not specified"}
+            Salary: {formattedSalary || "Not specified"}
           </p>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <p className="whitespace-pre-wrap text-sm text-slate-700">
-            {job.description}
-          </p>
+          {sanitizedDescription ? (
+            richDescription ? (
+              <div
+                className="job-description-content text-sm text-slate-700 [&_a]:underline [&_a]:underline-offset-2 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+              />
+            ) : (
+              <p className="job-description-content whitespace-pre-wrap text-sm text-slate-700">
+                {sanitizedDescription}
+              </p>
+            )
+          ) : (
+            <p className="job-description-content text-sm text-slate-500">
+              Description is not available for this listing.
+            </p>
+          )}
           <div>
             <ButtonLink
               href={job.url}

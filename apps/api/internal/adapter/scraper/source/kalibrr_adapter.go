@@ -101,6 +101,7 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 			} `json:"google_location"`
 			MinimumSalary nullableSalaryAmount `json:"minimum_salary"`
 			MaximumSalary nullableSalaryAmount `json:"maximum_salary"`
+			Salary        nullableSalaryAmount `json:"salary"`
 		} `json:"jobs"`
 		Results []struct {
 			ID          string `json:"id"`
@@ -120,17 +121,32 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 	for _, row := range parsed.Jobs {
 		location := firstNonEmpty(row.GoogleLocation.AddressComponents.City, row.GoogleLocation.AddressComponents.Region)
 		postedAt := parseOptionalTime(row.CreatedAt)
+		minimumSalary := row.MinimumSalary.Ptr()
+		maximumSalary := row.MaximumSalary.Ptr()
+		exactSalary := row.Salary.Ptr()
+
+		if minimumSalary == nil && exactSalary != nil {
+			minimumSalary = exactSalary
+		}
+		if maximumSalary == nil && exactSalary != nil {
+			maximumSalary = exactSalary
+		}
+
+		salaryMin, salaryMax, salaryRange := normalizeSalaryFields(minimumSalary, maximumSalary, "")
 		items = append(items, job.UpsertInput{
 			OriginalJobID: fmt.Sprintf("%d", row.ID),
 			Title:         row.Name,
 			Company:       row.CompanyName,
 			Location:      location,
-			Description:   row.Description,
+			Description:   normalizeDescription(row.Description),
 			URL:           buildKalibrrURL(row.Company.Code, row.Slug, row.ID),
-			SalaryMin:     row.MinimumSalary.Ptr(),
-			SalaryMax:     row.MaximumSalary.Ptr(),
+			SalaryMin:     salaryMin,
+			SalaryMax:     salaryMax,
+			SalaryRange:   salaryRange,
 			PostedAt:      postedAt,
-			RawData:       map[string]any{},
+			RawData: map[string]any{
+				"search_item": row,
+			},
 		})
 	}
 
@@ -143,7 +159,9 @@ func (a *KalibrrAdapter) Fetch(ctx context.Context, request scraper.FetchRequest
 			Location:      row.Location,
 			URL:           row.URL,
 			PostedAt:      postedAt,
-			RawData:       map[string]any{},
+			RawData: map[string]any{
+				"search_item": row,
+			},
 		})
 	}
 

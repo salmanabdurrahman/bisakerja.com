@@ -64,6 +64,12 @@ Aturan penting:
 2. Field opsional (salary/location/description) boleh kosong, tetapi tidak boleh membuat batch gagal total.
 3. Source-specific parser harus mengembalikan format canonical yang sama sebelum proses insert.
 4. Jika source tidak memberikan URL detail langsung, adapter wajib membentuk URL canonical dari slug/id; jika gagal, item di-skip dengan reason `missing_url`.
+5. Salary parser harus mendukung fallback berikut:
+   - label numerik range (`Rp 8.000.000 - Rp 12.000.000`) -> isi `salary_min`, `salary_max`, dan simpan label di `salary_range`,
+   - min-only / max-only -> isi field numerik yang tersedia + fallback `salary_range` (`>= ...` / `<= ...`),
+   - exact salary tunggal -> set `salary_min == salary_max` + `salary_range` tunggal.
+   - shorthand bulanan (`Rp 8 – Rp 12 per month`) -> infer nilai juta (`8_000_000 - 12_000_000`) untuk menjaga konsistensi filter.
+6. Description tidak dibersihkan secara destruktif di ingestion; rich text/HTML source dipertahankan dan disanitasi di layer render frontend.
 
 ## 5) Strategi Token JobStreet
 

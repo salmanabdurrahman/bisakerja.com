@@ -84,3 +84,14 @@ func TestJobsHandler_ListJobs_InvalidLimit_ReturnsBadRequest(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", recorder.Code)
 	}
 }
+
+func TestSalaryRangeFallback_FormatsExactSalary(t *testing.T) {
+	salary := int64(11_000_000)
+	got := salaryRangeFallback(job.Job{
+		SalaryMin: &salary,
+		SalaryMax: &salary,
+	})
+	if got != "11000000" {
+		t.Fatalf("expected salary range %q, got %q", "11000000", got)
+	}
+}

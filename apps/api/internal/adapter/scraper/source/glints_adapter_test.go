@@ -135,6 +135,15 @@ func TestGlintsAdapter_Fetch_UsesReferenceQueryShape(t *testing.T) {
 	if result.Jobs[0].Location != "Jakarta" {
 		t.Fatalf("expected location %q, got %q", "Jakarta", result.Jobs[0].Location)
 	}
+	if result.Jobs[0].SalaryMin == nil || *result.Jobs[0].SalaryMin != 10000000 {
+		t.Fatalf("expected salary_min %d, got %+v", 10000000, result.Jobs[0].SalaryMin)
+	}
+	if result.Jobs[0].SalaryMax == nil || *result.Jobs[0].SalaryMax != 20000000 {
+		t.Fatalf("expected salary_max %d, got %+v", 20000000, result.Jobs[0].SalaryMax)
+	}
+	if result.Jobs[0].SalaryRange != "10000000 - 20000000" {
+		t.Fatalf("expected salary_range %q, got %q", "10000000 - 20000000", result.Jobs[0].SalaryRange)
+	}
 	if strings.Contains(requestBody, "description") {
 		t.Fatalf("expected reference query without description field, got payload %s", requestBody)
 	}

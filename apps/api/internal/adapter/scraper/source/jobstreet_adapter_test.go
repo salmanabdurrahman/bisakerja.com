@@ -144,3 +144,57 @@ func TestJobstreetAdapter_Fetch_IncludesUpstreamBodySnippetOnBadRequest(t *testi
 		t.Fatalf("expected upstream body snippet in error, got %v", err)
 	}
 }
+
+func TestJobstreetAdapter_Fetch_NormalizesDescriptionAndSalary(t *testing.T) {
+	t.Parallel()
+
+	client := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		return jsonHTTPResponse(request, `{
+			"data": {
+				"jobSearchV6": {
+					"totalCount": 1,
+					"data": [
+						{
+							"id": "90901135",
+							"title": "Backend Engineer",
+							"companyName": "Acme Corp",
+							"teaser": "Build scalable APIs",
+							"salaryLabel": "Rp 8.000.000 - Rp 12.000.000",
+							"bulletPoints": ["Design distributed services", "Improve reliability"],
+							"locations": [{"label": "Jakarta"}],
+							"listingDate": {"dateTimeUtc": "2026-03-12T08:49:05.376Z"}
+						}
+					]
+				}
+			}
+		}`), nil
+	})}
+
+	adapter := NewJobstreetAdapter(client)
+	result, err := adapter.Fetch(context.Background(), scraper.FetchRequest{
+		Keyword: "backend",
+		Page:    1,
+		Limit:   20,
+		Token:   "token-123",
+	})
+	if err != nil {
+		t.Fatalf("fetch: %v", err)
+	}
+	if len(result.Jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(result.Jobs))
+	}
+
+	item := result.Jobs[0]
+	if item.Description != "Build scalable APIs\n\n- Design distributed services\n- Improve reliability" {
+		t.Fatalf("unexpected description %q", item.Description)
+	}
+	if item.SalaryMin == nil || *item.SalaryMin != 8000000 {
+		t.Fatalf("expected salary_min %d, got %+v", 8000000, item.SalaryMin)
+	}
+	if item.SalaryMax == nil || *item.SalaryMax != 12000000 {
+		t.Fatalf("expected salary_max %d, got %+v", 12000000, item.SalaryMax)
+	}
+	if item.SalaryRange != "Rp 8.000.000 - Rp 12.000.000" {
+		t.Fatalf("expected salary_range %q, got %q", "Rp 8.000.000 - Rp 12.000.000", item.SalaryRange)
+	}
+}

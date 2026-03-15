@@ -123,8 +123,9 @@ func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest)
 					} `json:"country"`
 					CreatedAt      string `json:"createdAt"`
 					SalaryEstimate struct {
-						MinAmount *int64 `json:"minAmount"`
-						MaxAmount *int64 `json:"maxAmount"`
+						MinAmount    *int64 `json:"minAmount"`
+						MaxAmount    *int64 `json:"maxAmount"`
+						CurrencyCode string `json:"CurrencyCode"`
 					} `json:"salaryEstimate"`
 				} `json:"jobsInPage"`
 				HasMore bool `json:"hasMore"`
@@ -139,16 +140,25 @@ func (a *GlintsAdapter) Fetch(ctx context.Context, request scraper.FetchRequest)
 	items := make([]job.UpsertInput, 0, len(parsed.Data.SearchJobsV3.JobsInPage))
 	for _, row := range parsed.Data.SearchJobsV3.JobsInPage {
 		postedAt := parseOptionalTime(row.CreatedAt)
+		salaryMin, salaryMax, salaryRange := normalizeSalaryFields(
+			row.SalaryEstimate.MinAmount,
+			row.SalaryEstimate.MaxAmount,
+			"",
+		)
+
 		items = append(items, job.UpsertInput{
 			OriginalJobID: row.ID,
 			Title:         row.Title,
 			Company:       row.Company.Name,
 			Location:      firstNonEmpty(row.City.Name, row.Country.Name),
 			URL:           buildGlintsURL(row.ID),
-			SalaryMin:     row.SalaryEstimate.MinAmount,
-			SalaryMax:     row.SalaryEstimate.MaxAmount,
+			SalaryMin:     salaryMin,
+			SalaryMax:     salaryMax,
+			SalaryRange:   salaryRange,
 			PostedAt:      postedAt,
-			RawData:       map[string]any{},
+			RawData: map[string]any{
+				"search_item": row,
+			},
 		})
 	}
 

@@ -248,6 +248,7 @@ func normalizeInput(input job.UpsertInput) (job.UpsertInput, error) {
 	input.Location = strings.TrimSpace(input.Location)
 	input.Description = strings.TrimSpace(input.Description)
 	input.URL = strings.TrimSpace(input.URL)
+	input.SalaryRange = strings.TrimSpace(input.SalaryRange)
 	if input.RawData == nil {
 		input.RawData = map[string]any{}
 	}

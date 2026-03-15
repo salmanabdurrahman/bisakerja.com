@@ -16,7 +16,7 @@ Implementasi **Phase 0 frontend** sudah dimulai:
 - **Iteration 1.2 frontend** sudah diimplementasikan (`/auth/login` + `/auth/register`, route guard proxy, single-flight refresh, `/account` + `/account/preferences`, draft recovery saat `401`).
 - **Iteration 1.3 frontend** sudah diimplementasikan (`/pricing`, `/account/subscription`, `/billing/success`, checkout initiation + status verification + retry branches + billing tests).
 - **Phase 2 frontend (core growth UI)** sudah diimplementasikan (`/account/saved-searches`, `/account/notifications`, digest control, web vitals observability, dan growth e2e coverage).
-- **M5 frontend follow-up** sudah mulai diimplementasikan untuk kontrak backend Phase 4 increment 1 (coupon-enabled checkout).
+- **M5 frontend follow-up** sudah mulai diimplementasikan untuk kontrak backend Phase 4 increment 1 (coupon-enabled checkout + safe rendering untuk job description HTML + salary display normalization).
 - **Phase AI frontend (post-M5)** sudah masuk implementasi increment 1: route `/account/ai-tools`, search assistant UI, job-fit summary UI, cover letter draft UI, dan quota meter.
 
 Status saat ini: **Phase 0 frontend baseline complete + Phase 1 complete + Phase 2 frontend complete + Phase 4 backend follow-up frontend (M5) in progress + phase AI increment 1 in progress**.
@@ -32,7 +32,7 @@ Sebelum implementasi berikutnya, urutan perubahan lintas domain dikunci dulu aga
 | M2 | Comments/docstrings quality pass | ✅ Complete | TSDoc untuk exported service/lib + doc comment backend exported API sudah dipenuhi |
 | M3 | English-only copy migration | ✅ Complete | UI copy, feedback states, dan test assertions frontend sudah dimigrasikan ke English |
 | M4 | SaaS redesign + hardening growth | ✅ Complete | Redesign SaaS pada halaman auth/jobs/account/pricing + web vitals observability + growth e2e coverage + refinement visual pass ala Paper (hero/nav/footer + copy cleanup non-teknis) |
-| M5 | Phase 4 backend follow-up | 🟡 In Progress | Coupon-enabled checkout UX mengikuti kontrak backend increment 1 |
+| M5 | Phase 4 backend follow-up | 🟡 In Progress | Coupon-enabled checkout UX + discovery hardening (sanitized job description rendering + salary fallback normalization) |
 | M6 | AI experience layer follow-up | 🟡 In Progress | Backend increment 1-3 aktif dan frontend increment 1 sudah berjalan di `/account/ai-tools` (assistant + job-fit + cover-letter + usage meter); interview prep masih planned |
 
 Aturan eksekusi:

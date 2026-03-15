@@ -23,6 +23,12 @@
 - Query kosong (`q` tidak ada) = list lowongan terbaru.
 - `page` di atas `total_pages` -> `200 OK` dengan `data: []`.
 - `source` multi-value (mis. `source=glints,kalibrr`) belum didukung di MVP.
+- `salary_range` selalu diprioritaskan dari label source; jika label kosong backend akan membentuk fallback dari angka numerik:
+  - exact salary (`salary_min == salary_max`) -> `"10000000"`
+  - min-only -> `">= 10000000"`
+  - max-only -> `"<= 12000000"`
+  - range -> `"10000000 - 15000000"`
+- Untuk label shorthand bulanan seperti `Rp 8 – Rp 12 per month`, parser backend menurunkan `salary_min=8000000` dan `salary_max=12000000` agar filter salary tetap konsisten.
 
 ### Example Request
 
@@ -92,6 +98,11 @@
   }
 }
 ```
+
+### Detail Notes
+
+- `data.description` dapat berisi rich text/HTML dari source (terutama dari Kalibrr/detail source lain).
+- Consumer frontend wajib melakukan sanitasi HTML sebelum render ke DOM.
 
 ### Error
 

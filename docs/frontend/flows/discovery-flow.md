@@ -23,6 +23,8 @@ sequenceDiagram
   U->>FE: Klik salah satu kartu lowongan
   FE->>API: GET /api/v1/jobs/:id
   API-->>FE: 200 Job detail retrieved
+  FE->>FE: Sanitasi `data.description` jika rich HTML
+  FE->>FE: Normalisasi display `salary_range` (comparator/range shorthand)
   FE-->>U: Render detail_ready + tombol "Lamar"
 
   U->>FE: Klik "Lamar"
@@ -84,3 +86,5 @@ sequenceDiagram
 - Pergantian filter utama me-reset `page=1` sebelum request dikirim.
 - `404` detail selalu menghasilkan state `detail_not_found` dengan CTA kembali ke hasil.
 - `429` dan `5xx` menampilkan state retry yang berbeda agar user tahu tindakan lanjutan.
+- Konten `description` bertipe HTML tidak pernah dirender mentah; sanitasi frontend wajib aktif sebelum tampil.
+- Salary fallback comparator seperti `<= 2999998`/`<= Rp 3.500.000` ditampilkan sebagai label friendly (`Up to Rp ...`) dan shorthand `Rp 8 – Rp 12 per month` tetap terformat readable.
