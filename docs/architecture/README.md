@@ -7,6 +7,7 @@ Dokumen arsitektur Bisakerja dibagi per domain teknis agar lebih jelas:
 - [Database Schema](./database.md)
 - [Redis, Queue, and Cache](./redis_queue_cache.md)
 - [Mayar Integration Architecture](./mayar-integration.md)
+- [Local Development Runbook](./local-development-runbook.md)
 - [Monorepo Project Layout (Go + Next.js)](./monorepo-project-layout.md)
 
 ## Tujuan Dokumen

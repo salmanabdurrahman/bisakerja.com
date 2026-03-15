@@ -74,6 +74,7 @@ Mengonversi user dari `free`/`premium_expired` menjadi `premium_active` melalui 
   - Saat create checkout: tombol upgrade tampil loading + disabled.
 - **Error**
   - `400 BAD_REQUEST`: tampilkan pesan validasi spesifik (`INVALID_PLAN_CODE`/`INVALID_COUPON_CODE`/`INVALID_REDIRECT_URL`).
+    - Untuk `INVALID_REDIRECT_URL`, arahkan user mengecek `BILLING_REDIRECT_ALLOWLIST`; local dev boleh `http` hanya untuk `localhost`/`127.0.0.1`/`::1`.
   - `401 UNAUTHORIZED`: minta login ulang.
   - `409 CONFLICT`: refresh status dan tampilkan pesan informatif.
   - `502`/`503`: tampilkan error payment provider sementara + retry.

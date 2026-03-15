@@ -38,7 +38,7 @@ Endpoint ini:
 |---|---|
 | `plan_code` | wajib, enum MVP: `pro_monthly`. |
 | `coupon_code` | opsional, jika diisi harus alfanumerik (`A-Z`, `0-9`, `-`, `_`) panjang `3..64`, dan valid di Mayar. |
-| `redirect_url` | wajib, URL HTTPS valid, host harus ada di allowlist backend. |
+| `redirect_url` | wajib, host harus ada di allowlist backend; skema `https` wajib untuk host non-local, sementara `http` hanya diizinkan untuk local development (`localhost`, `127.0.0.1`, `::1`). |
 
 Jika `coupon_code` dikirim:
 

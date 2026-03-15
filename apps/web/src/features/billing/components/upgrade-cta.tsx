@@ -96,15 +96,7 @@ export function UpgradeCTA({
           return;
         }
         if (error.status === 400) {
-          if (error.code === "INVALID_COUPON_CODE") {
-            setMessage(
-              "Coupon code is invalid or unavailable. Please try another code.",
-            );
-            return;
-          }
-          setMessage(
-            "Invalid checkout request. Please ensure the plan and redirect URL are correct.",
-          );
+          setMessage(getCheckoutValidationErrorMessage(error.code));
           return;
         }
         if (error.status === 502 || error.status === 503) {
@@ -277,4 +269,19 @@ function parseAmount(value: number | undefined): number | null {
 
 function formatIDRCurrency(value: number): string {
   return `IDR ${value.toLocaleString("en-US")}`;
+}
+
+function getCheckoutValidationErrorMessage(
+  code: string | null | undefined,
+): string {
+  switch (code) {
+    case "INVALID_COUPON_CODE":
+      return "Coupon code is invalid or unavailable. Please try another code.";
+    case "INVALID_REDIRECT_URL":
+      return "Redirect URL is invalid. Use an allowlisted host and https (http is only allowed for localhost in local development).";
+    case "INVALID_PLAN_CODE":
+      return "Selected plan is unavailable. Please refresh and try again.";
+    default:
+      return "Invalid checkout request. Please ensure the plan and redirect URL are correct.";
+  }
 }

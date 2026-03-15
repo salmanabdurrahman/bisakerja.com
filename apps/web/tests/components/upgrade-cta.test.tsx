@@ -182,4 +182,40 @@ describe("UpgradeCTA", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("renders actionable redirect-url message for redirect validation errors", async () => {
+    vi.mocked(createSessionAPIClient).mockReturnValue({
+      getMe: vi.fn(),
+      getBillingStatus: vi.fn(),
+      createCheckoutSession: vi
+        .fn()
+        .mockRejectedValue(
+          new APIRequestError("Validation error", 400, "INVALID_REDIRECT_URL"),
+        ),
+      getBillingTransactions: vi.fn(),
+      getPreferences: vi.fn(),
+      updatePreferences: vi.fn(),
+      listSavedSearches: vi.fn(),
+      createSavedSearch: vi.fn(),
+      deleteSavedSearch: vi.fn(),
+      listNotifications: vi.fn(),
+      markNotificationAsRead: vi.fn(),
+      updateNotificationPreferences: vi.fn(),
+      getAIUsage: vi.fn(),
+      generateAISearchAssistant: vi.fn(),
+      generateAIJobFitSummary: vi.fn(),
+      generateAICoverLetterDraft: vi.fn(),
+    });
+
+    render(<UpgradeCTA subscriptionState="free" />);
+    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Redirect URL is invalid. Use an allowlisted host and https (http is only allowed for localhost in local development).",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
 });

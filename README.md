@@ -10,17 +10,33 @@ Monorepo implementasi Bisakerja untuk backend Go (`apps/api`) dan frontend Next.
    pnpm install
    ```
 
-2. Jalankan API:
+2. Copy env examples:
+
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   cp apps/web/.env.example apps/web/.env.local
+   ```
+
+3. Jalankan migrasi backend:
+
+   ```bash
+   make -C apps/api check-migrations
+   make -C apps/api migrate-up
+   ```
+
+4. Jalankan API:
 
    ```bash
    make -C apps/api run-api
    ```
 
-3. Jalankan frontend:
+5. Jalankan frontend:
 
    ```bash
    pnpm --filter web dev
    ```
+
+Panduan lengkap (API + scraper + notifier + billing worker + troubleshooting checkout) ada di [`docs/architecture/local-development-runbook.md`](./docs/architecture/local-development-runbook.md).
 
 ## Quality Commands
 

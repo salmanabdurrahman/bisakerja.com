@@ -263,7 +263,7 @@ func TestService_CreateCheckoutSession_ValidationAndState(t *testing.T) {
 	provider := &fakeProvider{}
 
 	service := NewService(identityRepository, transactionRepository, provider, Config{
-		RedirectAllowlist: []string{"app.bisakerja.com"},
+		RedirectAllowlist: []string{"app.bisakerja.com", "localhost:3000"},
 	})
 
 	_, err := service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
@@ -285,12 +285,83 @@ func TestService_CreateCheckoutSession_ValidationAndState(t *testing.T) {
 	}
 
 	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
+		UserID:      normalUser.ID,
+		PlanCode:    "pro_monthly",
+		RedirectURL: "http://localhost:3000/billing/success",
+	})
+	if err != nil {
+		t.Fatalf("expected localhost redirect to be allowed, got %v", err)
+	}
+
+	_, err = service.CreateCheckoutSession(context.Background(), CreateCheckoutSessionInput{
 		UserID:      premiumUser.ID,
 		PlanCode:    "pro_monthly",
 		RedirectURL: "https://app.bisakerja.com/billing/success",
 	})
 	if !errors.Is(err, ErrAlreadyPremium) {
 		t.Fatalf("expected ErrAlreadyPremium, got %v", err)
+	}
+}
+
+func TestIsRedirectURLAllowed(t *testing.T) {
+	allowlist := normalizeAllowedHosts([]string{
+		"app.bisakerja.com",
+		"localhost:3000",
+		"127.0.0.1:3000",
+		"[::1]:3000",
+	})
+
+	tests := []struct {
+		name        string
+		rawURL      string
+		allow       bool
+		description string
+	}{
+		{
+			name:        "https production host",
+			rawURL:      "https://app.bisakerja.com/billing/success",
+			allow:       true,
+			description: "https host in allowlist should pass",
+		},
+		{
+			name:        "http production host",
+			rawURL:      "http://app.bisakerja.com/billing/success",
+			allow:       false,
+			description: "non-local host should require https",
+		},
+		{
+			name:        "http localhost with port",
+			rawURL:      "http://localhost:3000/billing/success",
+			allow:       true,
+			description: "localhost http is allowed in local development",
+		},
+		{
+			name:        "http loopback ipv4",
+			rawURL:      "http://127.0.0.1:3000/billing/success",
+			allow:       true,
+			description: "ipv4 loopback http is allowed in local development",
+		},
+		{
+			name:        "http loopback ipv6",
+			rawURL:      "http://[::1]:3000/billing/success",
+			allow:       true,
+			description: "ipv6 loopback http is allowed in local development",
+		},
+		{
+			name:        "non-allowlisted localhost port",
+			rawURL:      "http://localhost:4000/billing/success",
+			allow:       false,
+			description: "host must still be explicitly allowlisted",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			allowed := isRedirectURLAllowed(testCase.rawURL, allowlist)
+			if allowed != testCase.allow {
+				t.Fatalf("%s: expected %v, got %v", testCase.description, testCase.allow, allowed)
+			}
+		})
 	}
 }
 

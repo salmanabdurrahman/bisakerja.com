@@ -65,7 +65,7 @@ func Load() Config {
 		MayarRequestTimeout:        parseDuration(getenv("MAYAR_REQUEST_TIMEOUT", "5s"), 5*time.Second),
 		MayarMaxRetries:            parseInt(getenv("MAYAR_MAX_RETRIES", "3"), 3),
 		BillingWebhookToken:        getenv("BILLING_WEBHOOK_TOKEN", "bisakerja-dev-webhook-token"),
-		BillingRedirectAllowlist:   parseCSVList(getenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,localhost:3000")),
+		BillingRedirectAllowlist:   parseCSVList(getenv("BILLING_REDIRECT_ALLOWLIST", "app.bisakerja.com,localhost:3000,127.0.0.1:3000,[::1]:3000")),
 		BillingIdempotencyWindow:   parseDuration(getenv("BILLING_IDEMPOTENCY_WINDOW", "15m"), 15*time.Minute),
 		BillingUserRateLimitWindow: parseDuration(getenv("BILLING_USER_RATE_LIMIT_WINDOW", "10s"), 10*time.Second),
 		AIProviderBaseURL:          getenv("AI_PROVIDER_BASE_URL", "https://api.openai.com/v1"),

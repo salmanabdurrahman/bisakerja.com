@@ -78,7 +78,7 @@ sequenceDiagram
 |---|---|---|---|
 | `billing_ready` | User klik "Lanjut bayar" | `checkout_creating` | Disable tombol submit selama request |
 | `checkout_creating` | `POST /api/v1/billing/checkout-session` sukses (`201`) | `checkout_redirecting` | Simpan `transaction_id`, lalu redirect ke `checkout_url` |
-| `checkout_creating` | `400 BAD_REQUEST` | `checkout_error_validation` | Tampilkan validasi plan/redirect URL/coupon secara spesifik |
+| `checkout_creating` | `400 BAD_REQUEST` | `checkout_error_validation` | Tampilkan validasi plan/redirect URL/coupon secara spesifik (termasuk petunjuk allowlist untuk `INVALID_REDIRECT_URL`) |
 | `checkout_creating` | `409 CONFLICT` | `already_premium` | Tampilkan status premium aktif, tanpa redirect |
 | `checkout_creating` | `502/503` | `checkout_error_retry` | Tampilkan retry action |
 | `checkout_redirecting` | User kembali dari gateway | `payment_verifying` | Mulai cek status via `/api/v1/billing/status` |

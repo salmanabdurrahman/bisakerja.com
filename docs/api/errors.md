@@ -54,7 +54,7 @@ Dokumen ini menetapkan standar error lintas endpoint.
 | preferences | `INVALID_JOB_TYPE` | 400 | Nilai `job_types` tidak masuk enum. |
 | billing | `INVALID_PLAN_CODE` | 400 | `plan_code` tidak didukung. |
 | billing | `INVALID_COUPON_CODE` | 400 | `coupon_code` tidak valid/tidak berlaku di Mayar. |
-| billing | `INVALID_REDIRECT_URL` | 400 | URL tidak HTTPS/di luar allowlist. |
+| billing | `INVALID_REDIRECT_URL` | 400 | Host redirect tidak ada di allowlist, atau skema URL tidak valid (`https` wajib untuk non-local; `http` hanya untuk localhost/loopback). |
 | billing | `ALREADY_PREMIUM` | 409 | User masih premium aktif. |
 | billing | `MAYAR_RATE_LIMITED` | 503 | Mayar `429` setelah retry exhausted. |
 | billing | `MAYAR_UPSTREAM_ERROR` | 502 | Mayar memberi error non-rate-limit. |

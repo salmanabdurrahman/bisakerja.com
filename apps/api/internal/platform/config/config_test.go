@@ -123,9 +123,11 @@ func TestLoad_DefaultValues(t *testing.T) {
 		t.Fatalf("expected default billing webhook token, got %q", cfg.BillingWebhookToken)
 	}
 
-	if len(cfg.BillingRedirectAllowlist) != 2 ||
+	if len(cfg.BillingRedirectAllowlist) != 4 ||
 		cfg.BillingRedirectAllowlist[0] != "app.bisakerja.com" ||
-		cfg.BillingRedirectAllowlist[1] != "localhost:3000" {
+		cfg.BillingRedirectAllowlist[1] != "localhost:3000" ||
+		cfg.BillingRedirectAllowlist[2] != "127.0.0.1:3000" ||
+		cfg.BillingRedirectAllowlist[3] != "[::1]:3000" {
 		t.Fatalf("unexpected default billing allowlist: %#v", cfg.BillingRedirectAllowlist)
 	}
 

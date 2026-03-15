@@ -2,6 +2,8 @@
 
 Database utama menggunakan **PostgreSQL 16+**.
 
+Untuk panduan end-to-end menjalankan API + worker + frontend, lihat juga [Local Development Runbook](./local-development-runbook.md).
+
 ## 0. Bootstrap Lokal
 
 Runtime PostgreSQL lokal memerlukan dua langkah eksplisit:

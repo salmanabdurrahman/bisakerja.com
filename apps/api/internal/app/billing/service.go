@@ -289,9 +289,6 @@ func isRedirectURLAllowed(rawURL string, allowlist map[string]struct{}) bool {
 	if err != nil {
 		return false
 	}
-	if !strings.EqualFold(parsed.Scheme, "https") {
-		return false
-	}
 	host := strings.ToLower(strings.TrimSpace(parsed.Host))
 	if host == "" {
 		return false
@@ -299,8 +296,23 @@ func isRedirectURLAllowed(rawURL string, allowlist map[string]struct{}) bool {
 	if len(allowlist) == 0 {
 		return false
 	}
-	_, allowed := allowlist[host]
-	return allowed
+	if _, allowed := allowlist[host]; !allowed {
+		return false
+	}
+
+	switch strings.ToLower(strings.TrimSpace(parsed.Scheme)) {
+	case "https":
+		return true
+	case "http":
+		return isLocalDevelopmentHost(parsed.Hostname())
+	default:
+		return false
+	}
+}
+
+func isLocalDevelopmentHost(hostname string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(hostname))
+	return normalized == "localhost" || normalized == "127.0.0.1" || normalized == "::1"
 }
 
 func isPremiumActive(user identity.User, now time.Time) bool {

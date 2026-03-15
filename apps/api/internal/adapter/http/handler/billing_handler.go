@@ -102,7 +102,7 @@ func (h *BillingHandler) CreateCheckoutSession(w http.ResponseWriter, r *http.Re
 			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{
 				Field:   "redirect_url",
 				Code:    errcode.InvalidRedirectURL,
-				Message: "redirect_url must be https and in allowlist",
+				Message: "redirect_url must use an allowlisted host and https (http allowed only for localhost development)",
 			}})
 		case errors.Is(err, billingapp.ErrInvalidCouponCode):
 			response.WriteError(w, http.StatusBadRequest, "Validation error", requestID, []response.ErrorItem{{

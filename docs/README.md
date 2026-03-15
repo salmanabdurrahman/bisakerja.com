@@ -40,6 +40,7 @@ Seluruh dokumentasi Bisakerja (backend dan frontend) ada di folder `docs/` dan d
 - [`architecture/database.md`](./architecture/database.md)
 - [`architecture/redis_queue_cache.md`](./architecture/redis_queue_cache.md)
 - [`architecture/mayar-integration.md`](./architecture/mayar-integration.md)
+- [`architecture/local-development-runbook.md`](./architecture/local-development-runbook.md)
 - [`architecture/monorepo-project-layout.md`](./architecture/monorepo-project-layout.md)
 
 ## 5) Frontend Docs (User App)
